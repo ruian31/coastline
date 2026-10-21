@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
+import {createPalmCrown,createPineCrown} from './TreeGeometry';
 
 /** Authored, deterministic coastal landscape. Distances and animation time are in metres / seconds. */
-export function createScenery(scene: THREE.Scene, mobile: boolean): {
+export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager=THREE.DefaultLoadingManager): {
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
@@ -19,7 +20,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const textures: THREE.Texture[] = [];
   let disposed = false;
-  const textureLoader = new THREE.TextureLoader();
+  const textureLoader = new THREE.TextureLoader(loadingManager);
   function surfaceTexture(file: string, color = false): THREE.Texture {
     const texture = textureLoader.load(`${import.meta.env.BASE_URL}assets/environment/${file}`, loaded => {
       if (disposed) loaded.dispose();
@@ -538,27 +539,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
     shader.fragmentShader='varying float vPalmHeight;\n'+shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb*=.82+.18*smoothstep(.13,.32,fract(vPalmHeight*3.8));');
   };
   trunkMaterial.customProgramCacheKey=()=>'coast-palm-trunk-rings';
-  const frondVertices:number[]=[],frondColors:number[]=[];
-  const crown=new THREE.Vector3(.65,7.8,0);
-  const putTriangle=(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3,tint:number)=>{[a,b,c].forEach(v=>{frondVertices.push(v.x,v.y,v.z);frondColors.push(.63*tint,.84*tint,.43*tint);});};
-  for(let branch=0;branch<9;branch++) {
-    const angle=branch*Math.PI*2/9+random()*.25,dir=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)),across=new THREE.Vector3(-dir.z,0,dir.x);
-    const length=3.1+random()*1.35,arch=.9+random()*.8,droop=1.15+random()*.85;
-    const center=(t:number)=>crown.clone().addScaledVector(dir,t*length).add(new THREE.Vector3(0,Math.sin(t*Math.PI)*arch-t*t*droop+(branch%4===0?t*.65:0),0));
-    for(let leaf=0;leaf<9;leaf++) {
-      const t=.07+leaf*.10,width=Math.sin(t*Math.PI)*(.58+random()*.14);
-      const a=center(t),b=center(t+.085),tint=.73+random()*.36;
-      putTriangle(a.clone().addScaledVector(across,.022),a.clone().addScaledVector(across,-.022),b,tint*.85);
-      for(const side of [-1,1]) {
-        const tip=center(t+.12).addScaledVector(across,width*side);tip.y-=.16+width*.20;
-        const mid=a.clone().lerp(tip,.52).addScaledVector(dir,.055);mid.y+=.055;
-        putTriangle(a,b,mid,tint);
-        putTriangle(b,tip,mid,tint*.95);
-      }
-    }
-  }
-  const frondGeometry=new THREE.BufferGeometry();frondGeometry.setAttribute('position',new THREE.Float32BufferAttribute(frondVertices,3));frondGeometry.setAttribute('color',new THREE.Float32BufferAttribute(frondColors,3));frondGeometry.computeVertexNormals();
-  const frondMaterial=wind(0x718d43,.009);frondMaterial.vertexColors=true;
+  const frondGeometry=createPalmCrown(mobile);
+  const frondMaterial=wind(0x9cae72,.014);frondMaterial.vertexColors=true;
   const palms:THREE.Matrix4[]=[],palmColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?48:82);i++) {
     const t=i<24?.10+random()*.17:random();
@@ -569,6 +551,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
     if(y<.8||!naturalVerge(x,z,10))continue;
     const size=.78+random()*.55;
     palms.push(matrix(x,y,z,size,size,size));palmColors.push(new THREE.Color().setHSL(.23,.23,.65+random()*.2));
+  }
+  // A few deliberately framed trees give the opening sunset drive a layered near silhouette.
+  for(const [i,t] of [ .844,.861,.883,.905 ].entries()) {
+    const sample=coast.sample(t),offset=-(12.5+i%2*3),x=sample.position.x+sample.right.x*offset,z=sample.position.z+sample.right.z*offset;
+    const size=.94+i*.07;
+    palms.push(matrix(x,groundHeight(x,z),z,size,size,size,i*.87));palmColors.push(new THREE.Color('#c6cca6'));
   }
   batch(trunkGeometry,trunkMaterial,palms).name='Curved palm trunks';
   batch(frondGeometry,frondMaterial,palms,palmColors).name='Wind moving palm fronds';
@@ -585,7 +573,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
   }
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
   batch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
-  batch(new THREE.SphereGeometry(1,12,7),wind(0x74805e,.01),pineCrowns,pineColors).name='Sheltered stone pine crowns';
+  const pineMaterial=wind(0x899968,.01);pineMaterial.vertexColors=true;
+  batch(createPineCrown(),pineMaterial,pineCrowns,pineColors).name='Sheltered stone pine boughs';
 
   // The imported routes also determine safe plant clearance, so future road edits stay coherent.
   root.userData.routeIds = roads.map(r=>r.id);

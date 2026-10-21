@@ -4,10 +4,10 @@ import {coast} from './roads';
 import {createSeededRandom} from '../utils/random';
 
 /** Scanned hero foliage complements the low-cost procedural distance kit. */
-export function createImportedVegetation(scene:THREE.Scene,groundHeight:(x:number,z:number)=>number,mobile:boolean){
+export function createImportedVegetation(scene:THREE.Scene,groundHeight:(x:number,z:number)=>number,mobile:boolean,loadingManager=THREE.DefaultLoadingManager){
  const root=new THREE.Group();root.name='Scanned coastal ferns';scene.add(root);
  const time={value:0},geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();let disposed=false;
- const ready=new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}assets/models/fern_02/fern_02_browser.gltf`).then(gltf=>{
+ const ready=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/fern_02/fern_02_browser.gltf`).then(gltf=>{
   const sources:THREE.Mesh[]=[];gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh)sources.push(o);});
   if(!sources.length)throw Error('Scanned fern resource contains no meshes');
   const sourceMaterials=new Set<THREE.Material>(),sourceGeometries=new Set<THREE.BufferGeometry>();

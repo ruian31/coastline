@@ -10,6 +10,7 @@ interface ThreeGameDiagnostics {
     position: { x: number; y: number; z: number };
     speed: number;
   };
+  cameraRig?: {cockpitEyeError:number|null};
   renderer: {
     calls: number;
     triangles: number;
@@ -28,7 +29,7 @@ interface ThreeGameDiagnostics {
 
 interface ThreeGameTestHooks {
   /** Re-seed the game RNG; all gameplay randomness must flow through it. */
-  seed(value: number): void | Promise<void>;
+  seed?(value: number): void | Promise<void>;
   /** Acknowledge after setup/assets are ready; throw for unknown states. */
   setState(name: string): { state: string } | Promise<{ state: string }>;
   /** Stop simulation/state transitions immediately; keep rendering. Await optional synchronization. */
@@ -36,7 +37,7 @@ interface ThreeGameTestHooks {
   /** Stabilize ambient/idle visuals without requiring an unpaused simulation tick. */
   setReducedMotion(enabled: boolean): void | Promise<void>;
   /** Hide debug UI (lil-gui) before capturing. */
-  hideDebugUi(hidden: boolean): void | Promise<void>;
+  hideDebugUi?(hidden: boolean): void | Promise<void>;
 }
 
 interface Window {

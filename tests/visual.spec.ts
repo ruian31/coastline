@@ -18,3 +18,24 @@ test('驾驶、巡航接管、三视角、选车和暂停恢复',async({page},in
 test('控制区与画布在横竖屏可见且不横向溢出',async({page},info)=>{await page.goto('/?test=1');await page.click('#start-button');for(const size of info.project.name.includes('mobile')?[{width:390,height:844},{width:844,height:390}]:[{width:1440,height:900}]){await page.setViewportSize(size);await expect(page.locator('#game-canvas')).toBeVisible();await expect(page.locator('[data-camera="1"]')).toBeVisible();if(info.project.name.includes('mobile'))await expect(page.locator('[data-drive="throttle"]')).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(size.width);await page.screenshot({path:`artifacts/layout-${size.width}x${size.height}.png`});}});
 
 test('暂停时静音快捷键不能恢复音频',async({page})=>{await page.goto('/?test=1');await page.click('#start-button');await expect.poll(async()=> (await state(page)).state?.audioState).toBe('running');await page.click('#menu-button');await page.keyboard.press('KeyM');await page.keyboard.press('KeyM');await expect.poll(async()=> (await state(page)).state?.paused).toBe(true);await expect.poll(async()=> (await state(page)).state?.audioState).toBe('suspended');await page.click('#resume-button');await expect.poll(async()=> (await state(page)).state?.audioState).toBe('running');});
+
+
+test('车内急转时视点固定在驾驶位，避免穿入靠背',async({page})=>{
+ await page.goto('/?test=1');await page.click('#start-button');await page.click('[data-camera="1"]');
+ await page.keyboard.down('KeyW');await expect.poll(async()=>(await state(page)).player.speed).toBeGreaterThan(3);
+ await page.keyboard.down('KeyA');await page.waitForTimeout(650);
+ expect((await state(page)).cameraRig?.cockpitEyeError).toBeLessThan(.01);
+ await page.keyboard.up('KeyA');await page.keyboard.up('KeyW');
+});
+
+
+test('等待路面贴图加载后再开放驾驶',async({page})=>{
+ let release!:()=>void;const held=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/road-color.jpg',async route=>{await held;await route.continue();});
+ try{
+  await page.goto('/?test=1',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#start-button')).toBeDisabled();
+ }finally{release();}
+ await expect(page.locator('#start-button')).toBeEnabled({timeout:30000});
+ await page.click('#start-button');await expect(page.locator('#welcome')).toBeHidden();
+});

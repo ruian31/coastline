@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import {coast,hill,nearestRoad,type RoadRoute,type RoadLocation} from '../world/roads';
 export type DriveIntent={throttle:number;brake:number;steer:number;handbrake:boolean};
+export const ROAD_POSITION_CLEARANCE=.035;
 const wrap=(a:number)=>Math.atan2(Math.sin(a),Math.cos(a));
 export class Driving {
  position=new THREE.Vector3();yaw=0;pitch=0;speed=0;steer=0;automatic=false;route:RoadRoute=coast;progress=.84;direction=1;preferHill=false;distance=0;hit=false;
  road:RoadLocation;modelIndex=0;
  constructor(){this.road=nearestRoad(0,0);this.teleport(.84);}
- teleport(t:number,route=coast){this.route=route;this.progress=t;const s=route.sample(t);this.position.copy(s.position).addScaledVector(s.right,1.7);this.yaw=Math.atan2(s.tangent.x,s.tangent.z);this.pitch=-Math.asin(s.tangent.y);this.speed=0;this.steer=0;this.road=nearestRoad(this.position.x,this.position.z);}
+ teleport(t:number,route=coast){this.route=route;this.progress=t;const s=route.sample(t);this.position.copy(s.position).addScaledVector(s.right,1.7);this.position.y+=ROAD_POSITION_CLEARANCE;this.yaw=Math.atan2(s.tangent.x,s.tangent.z);this.pitch=-Math.asin(s.tangent.y);this.speed=0;this.steer=0;this.road=nearestRoad(this.position.x,this.position.z);}
  setAutomatic(enabled:boolean){if(enabled){this.road=nearestRoad(this.position.x,this.position.z);this.route=this.road.route;this.progress=this.road.t;const t=this.road.sample.tangent;this.direction=Math.sin(this.yaw)*t.x+Math.cos(this.yaw)*t.z>=0?1:-1;}this.automatic=enabled;}
- recover(){const s=this.road.sample;this.position.copy(s.position).addScaledVector(s.right,1.7*this.direction);this.yaw=Math.atan2(s.tangent.x,s.tangent.z)+(this.direction<0?Math.PI:0);this.pitch=-Math.asin(s.tangent.y)*this.direction;this.speed=0;this.steer=0;if(this.automatic)this.setAutomatic(true);}
+ recover(){const s=this.road.sample;this.position.copy(s.position).addScaledVector(s.right,1.7*this.direction);this.position.y+=ROAD_POSITION_CLEARANCE;this.yaw=Math.atan2(s.tangent.x,s.tangent.z)+(this.direction<0?Math.PI:0);this.pitch=-Math.asin(s.tangent.y)*this.direction;this.speed=0;this.steer=0;if(this.automatic)this.setAutomatic(true);}
  update(dt:number,input:DriveIntent){this.hit=false;const previousSpeed=this.speed;
  if(this.automatic){
  const s=this.route.sample(this.progress),look=this.route.sample(this.progress+this.direction*18/this.route.length),bend=Math.abs(wrap(Math.atan2(look.tangent.x,look.tangent.z)-Math.atan2(s.tangent.x,s.tangent.z))),target=(this.route===hill?10.5:14)/(1+bend*2.8);
@@ -29,7 +30,7 @@ export class Driving {
  }
  this.road=nearestRoad(this.position.x,this.position.z);const r=this.road;
  if(r.distance>r.route.width/2-.7){this.speed*=Math.exp(-dt*1.3);if(r.distance>r.route.width/2+1.1){const offset=THREE.MathUtils.clamp(r.offset,-r.route.width/2-1,r.route.width/2+1);this.position.x=r.sample.position.x+r.sample.right.x*offset;this.position.z=r.sample.position.z+r.sample.right.z*offset;this.speed*=.65;this.hit=true;}}
- this.position.y=r.sample.position.y+.035;this.pitch=THREE.MathUtils.damp(this.pitch,-Math.asin(r.sample.tangent.y)*Math.cos(wrap(this.yaw-Math.atan2(r.sample.tangent.x,r.sample.tangent.z))),6,dt);
+ this.position.y=r.sample.position.y+ROAD_POSITION_CLEARANCE;this.pitch=THREE.MathUtils.damp(this.pitch,-Math.asin(r.sample.tangent.y)*Math.cos(wrap(this.yaw-Math.atan2(r.sample.tangent.x,r.sample.tangent.z))),6,dt);
  this.distance+=Math.abs(this.speed)*dt;
  }
 }

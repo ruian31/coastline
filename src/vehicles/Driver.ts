@@ -42,7 +42,7 @@ function loft(profile: Profile, segments = 20, sculptFace = false) {
 }
 
 /** Continuous taper follows a bend instead of stacking visible primitive joints. */
-function limb(points: THREE.Vector3[], radii: number[], ellipse = 1, segments = 10, rings = 10) {
+function limb(points: THREE.Vector3[], radii: number[], ellipse = 1, segments = 10, rings = 10,capEnds=false) {
   const curve = new THREE.CatmullRomCurve3(points), frame = curve.computeFrenetFrames(rings, false);
   const vertices: number[] = [], colors: number[] = [], indices: number[] = [];
   for (let row = 0; row <= rings; row++) {
@@ -59,6 +59,12 @@ function limb(points: THREE.Vector3[], radii: number[], ellipse = 1, segments = 
         const start = row * (segments + 1) + col, next = start + segments + 1;
         indices.push(start, start + 1, next, next, start + 1, next + 1);
       }
+    }
+  }
+  if(capEnds){
+    for(const end of[0,1]){
+      const point=curve.getPointAt(end),center=vertices.length/3;vertices.push(point.x,point.y,point.z);colors.push(1,1,1);
+      const row=end*rings*(segments+1);for(let col=0;col<segments;col++)if(end)indices.push(center,row+col,row+col+1);else indices.push(center,row+col+1,row+col);
     }
   }
   const g = new THREE.BufferGeometry();
@@ -89,7 +95,7 @@ function merge(list: THREE.BufferGeometry[], material: THREE.MeshStandardMateria
   return mesh;
 }
 
-/** Five material draws: linen, trousers, forearms, face, hair. Head can hide in cockpit. */
+/** A lower cockpit sleeve rig keeps arms connected beyond the frame without hiding the console. */
 export function createDriver(variant = 0): Driver {
   const root = new THREE.Group(); root.name = 'driver'; root.position.x = -.425;
   const head = new THREE.Group(); head.name = 'driver-head'; root.add(head);
@@ -98,7 +104,7 @@ export function createDriver(variant = 0): Driver {
   const linen = mat(variant === 1 ? '#d6d4c6' : '#cec2aa', .95);
   const trousers = mat(variant === 2 ? '#2e363b' : '#4f5554', .96);
   const skin = mat('#b6805d', .85), hair = mat('#302c26', .97);
-  const shirtParts: THREE.BufferGeometry[] = [], trouserParts: THREE.BufferGeometry[] = [], arms: THREE.BufferGeometry[] = [], face: THREE.BufferGeometry[] = [], hairParts: THREE.BufferGeometry[] = [];
+  const shirtParts: THREE.BufferGeometry[] = [], cuffs:THREE.BufferGeometry[]=[],trouserParts: THREE.BufferGeometry[] = [], arms: THREE.BufferGeometry[] = [], face: THREE.BufferGeometry[] = [], hairParts: THREE.BufferGeometry[] = [];
   const drop = variant === 2 ? -.035 : 0;
 
   // Relaxed seated posture: tapered waist, chest and rounded shoulders.
@@ -111,13 +117,14 @@ export function createDriver(variant = 0): Driver {
   addGeometry(shirtParts, limb([v(0, .67, -.359), v(0, .88, -.353), v(0, 1.075, -.365)], [.007, .007, .008], .55, 5, 5), v(0, drop, 0), v(1, 1, 1), .87);
   for (const side of [-1, 1]) {
     addGeometry(shirtParts, limb([v(side * .02, 1.12, -.38), v(side * .06, 1.085, -.366), v(side * .09, 1.07, -.371)], [.018, .022, .007], .23, 6, 4), v(0, drop, 0), v(1, 1, 1), 1.04);
-    addGeometry(shirtParts, limb([v(side * .15, 1.055, -.445), v(side * .195, .995, -.36), v(side * .213, .93, -.26)], [.073, .065, .054], .9, 10, 7), v(0, drop, 0));
-    addGeometry(shirtParts, limb([v(side * .209, .945, -.28), v(side * .214, .927, -.255)], [.057, .057], .95, 10, 2), v(0, drop, 0), v(1, 1, 1), .86);
+    addGeometry(shirtParts,limb([v(side*.15,1.055,-.445),v(side*.195,.995,-.36),v(side*.213,.93,-.26)],[.073,.065,.054],.9,10,7),v(0,drop,0));
+    addGeometry(shirtParts,limb([v(side*.209,.945,-.28),v(side*.214,.927,-.255)],[.057,.057],.95,10,2),v(0,drop,0),v(1,1,1),.86);
+    addGeometry(cuffs,limb([v(side*.17,.72+drop,-.45),v(side*.19,.84+drop,-.33),v(side*.214,.935+drop,-.255)],[.075,.067,.057],.95,14,12),armPivot.position.clone().negate(),v(1,1,1),.9);
     // Upper arm exits its sleeve, bends through an elbow and tapers to the wrist.
     const elbow = v(side * .215, .875 + drop, -.15);
     const wrist = v(side * .13, 1.065, .145);
     const offset = armPivot.position.clone().negate();
-    addGeometry(arms, limb([v(side * .213, .938 + drop, -.265), elbow, v(side * .177, .947, .015), wrist], [.045, .043, .035, .022], .88, 10, 10), offset);
+    addGeometry(arms, limb([v(side * .213, .938 + drop, -.265), elbow, v(side * .177, .947, .015), wrist], [.045, .043, .035, .022], .88, 10, 10,true), offset);
     addGeometry(arms, limb([wrist, v(side * .135, 1.08, .165), v(side * .132, 1.079, .19)], [.021, .029, .013], .68, 10, 5), offset);
     // Fingers wrap the rim as one ridged contour; thumb crosses its inner edge.
     for (let i = 0; i < 3; i++) addGeometry(arms, limb([v(side * (.114 + i * .012), 1.082, .167), v(side * (.114 + i * .012), 1.063, .181), v(side * (.114 + i * .012), 1.056, .164)], [.007, .007, .004], .8, 5, 4), offset);
@@ -139,11 +146,12 @@ export function createDriver(variant = 0): Driver {
   for (const side of [-1, 1]) addGeometry(hairParts, limb([v(side * .019, 1.284 + drop, -.365), v(side * .035, 1.289 + drop, -.366), v(side * .049, 1.284 + drop, -.371)], [.003, .004, .002], .6, 5, 4));
 
   merge(shirtParts, linen, root, 'driver-linen-shirt');
+  const cockpitSleeves=merge(cuffs,linen,armPivot,'driver-cockpit-sleeves');cockpitSleeves.visible=false;
   merge(trouserParts, trousers, root, 'driver-trousers');
   merge(arms, skin, armPivot, 'driver-forearms-and-hands');
   merge(face, skin, head, 'driver-face');
   merge(hairParts, hair, head, 'driver-hair');
-  root.userData.diagnostics = { draws: 5, triangles: 0 };
+  root.userData.diagnostics = { exteriorDraws:5,cockpitDraws:3,triangles:0 };
   root.traverse(obj => { if (obj instanceof THREE.Mesh) root.userData.diagnostics.triangles += obj.geometry.getAttribute('position').count / 3; });
   let steering = 0;
   return {

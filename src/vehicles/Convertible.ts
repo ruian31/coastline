@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createDriver } from './Driver';
 
-/** Coordinates are metres, +Z forward, +Y up, left-hand drive. */
+/** Coordinates are metres, +Z forward, +Y up. Current cabins use right-hand drive. */
 export const CAR_DEFINITIONS = [
   { name: '海风 · 经典', subtitle: '经典双座 / 暖棕皮革', color: '#96b9ac' },
   { name: '落日 · GT', subtitle: '现代豪华敞篷 / 奶油皮革', color: '#8c3433' },
@@ -18,7 +18,7 @@ export interface Convertible {
   dispose: () => void;
 }
 
-type MaterialKey = 'paint' | 'leather' | 'seam' | 'dark' | 'chrome' | 'wood' | 'glass' | 'mirror' | 'headlight' | 'tail' | 'amber';
+type MaterialKey = 'paint' | 'leather' | 'seam' | 'dark' | 'chrome' | 'wood' | 'glass' | 'lens' | 'mirror' | 'headlight' | 'tail' | 'amber';
 type MaterialKit = Record<MaterialKey, THREE.MeshStandardMaterial>;
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -78,7 +78,7 @@ class GeometryBatch {
       if (merged) {
         const mesh = new THREE.Mesh(merged, this.materials[key]);
         mesh.name = `vehicle-${key}`;
-        mesh.castShadow = key !== 'glass' && key !== 'mirror';
+        mesh.castShadow = key !== 'glass' && key !== 'mirror' && key !== 'lens';
         mesh.receiveShadow = true;
         parent.add(mesh);
       }
@@ -136,19 +136,21 @@ function materialKit(index: number): { materials: MaterialKit; textures: THREE.T
   const mat = (color: THREE.ColorRepresentation, roughness: number, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
   const materials: MaterialKit = {
     paint: new THREE.MeshPhysicalMaterial({ color: spec.color, roughness: .32, metalness: .18, clearcoat: .72, clearcoatRoughness: .24, envMapIntensity: .7 }),
-    leather: mat(index === 1 ? '#c9aa7a' : index === 2 ? '#253949' : '#a97040', .86),
+    leather: mat(index === 1 ? '#bca588' : index === 2 ? '#253949' : '#a0704c', .86),
     seam: mat(index === 2 ? '#768892' : '#bf9a70', .88),
     dark: mat('#151a1b', .79),
     chrome: mat('#bdc6c8', .22, .88),
     wood: mat(index === 2 ? '#25292b' : '#805938', .4),
     glass: new THREE.MeshPhysicalMaterial({ color: '#b8d8db', roughness: .08, metalness: 0, transparent: true, opacity: .13, depthWrite: false, side: THREE.DoubleSide }),
+    lens: new THREE.MeshPhysicalMaterial({color:'#d4e0dd',roughness:.07,metalness:0,clearcoat:1,clearcoatRoughness:.06,transparent:true,opacity:.2,depthWrite:false}),
     mirror: mat('#a0bbc1', .13, .95),
     headlight: new THREE.MeshStandardMaterial({ color: '#fff1c9', emissive: '#ffd396', emissiveIntensity: .55, roughness: .24 }),
-    tail: new THREE.MeshStandardMaterial({ color: '#861d20', emissive: '#c12f23', emissiveIntensity: .4, roughness: .3 }),
+    tail: new THREE.MeshPhysicalMaterial({ color: '#861d20', emissive: '#c12f23', emissiveIntensity: .28, roughness: .19,clearcoat:.8,clearcoatRoughness:.12 }),
     amber: new THREE.MeshStandardMaterial({ color: '#e99f32', emissive: '#a0570c', emissiveIntensity: .25, roughness: .3 }),
   };
   const leather = upholsteryTexture('leather'), wood = upholsteryTexture('wood'), paint = upholsteryTexture('paint');
   materials.leather.map = leather; materials.leather.bumpMap = leather; materials.leather.bumpScale = .00065; materials.leather.roughnessMap = leather;
+  materials.dark.bumpMap=leather;materials.dark.bumpScale=.00035;materials.dark.roughnessMap=leather;
   materials.wood.map = wood; materials.wood.bumpMap = wood; materials.wood.bumpScale = .0009; materials.wood.roughnessMap = wood;
   materials.paint.roughnessMap = paint;
   return { materials, textures: [leather, wood, paint] };
@@ -262,11 +264,14 @@ function buildBody(batch: GeometryBatch, variant: number) {
   for (const side of [-1, 1]) {
     if (variant === 0) {
       batch.add('chrome', new THREE.CylinderGeometry(.126, .126, .035, 36), V(side * .61, .82, 2.153), new THREE.Euler(Math.PI / 2, 0, 0));
-      batch.add('headlight', new THREE.CylinderGeometry(.106, .106, .04, 36), V(side * .61, .82, 2.178), new THREE.Euler(Math.PI / 2, 0, 0));
-      for (let i = -3; i <= 3; i++) batch.box('chrome', [.003, .15 - Math.abs(i) * .015, .003], V(side * .61 + i * .023, .82, 2.2));
+      batch.add('chrome',surface((u,v)=>{const a=u*Math.PI*2,r=.012+v*.095;return V(side*.61+Math.sin(a)*r,.82+Math.cos(a)*r,2.166+.036*(r/.107)**2);},40,10));
+      batch.add('headlight',new THREE.SphereGeometry(.025,16,10),V(side*.61,.82,2.195));
+      batch.add('lens',new THREE.SphereGeometry(1,32,16),V(side*.61,.82,2.207),new THREE.Euler(),V(.109,.109,.022));
+      for (let i = -3; i <= 3; i++) batch.box('chrome', [.0015, .15 - Math.abs(i) * .015, .0015], V(side * .61 + i * .023, .82, 2.218));
     } else {
       batch.box('dark', [.34, variant === 1 ? .095 : .065, .025], V(side * .585, variant === 1 ? .84 : .815, 2.168), .017);
       batch.box('headlight', [.30, .018, .025], V(side * .585, variant === 1 ? .86 : .825, 2.19), .006);
+      batch.box('lens',[.33,variant===1?.087:.059,.018],V(side*.585,variant===1?.84:.815,2.212),.014);
       if (variant === 1) for (const dx of [-.065, .065]) batch.box('headlight', [.06, .03, .026], V(side * .585 + dx, .826, 2.191), .008);
       else batch.box('dark', [.20, .12, .035], V(side * .57, .57, 2.178), .014);
     }
@@ -284,19 +289,68 @@ function buildBody(batch: GeometryBatch, variant: number) {
   batch.box('chrome', [.34, .006, .024], V(0, .66, -2.205));
 }
 
+function buildSculptedSeat(batch:GeometryBatch,x:number,variant:number){
+  const shaped=(value:number,power:number)=>Math.sign(value)*Math.abs(value)**power;
+  const radius=(u:number)=>u<=0||u>=1?0:Math.sin(u*Math.PI)**.17;
+  const cushion=(u:number,v:number)=>{
+    const a=-v*Math.PI*2,r=radius(u),across=shaped(Math.cos(a),.62),up=shaped(Math.sin(a),.65);
+    const wing=(variant===2?.065:.034)*Math.abs(across)**5*Math.max(0,Math.sin(a))**.3;
+    return V(x+(.27-.012*u)*r*across,.558+(variant===2?.064:.079)*r*up+wing-.012*(1-across*across)*Math.sin(u*Math.PI),-.675+u*.61);
+  };
+  const height=variant===2?.71:variant===1?.58:.54;
+  const back=(u:number,v:number)=>{
+    const a=v*Math.PI*2,r=radius(u),across=shaped(Math.cos(a),.6),front=shaped(Math.sin(a),.65);
+    const width=(variant===2?.235:.264)*(1-.12*u+.075*Math.exp(-(((u-.72)/.18)**2)));
+    const wing=(variant===2?.115:.062)*Math.abs(across)**4*Math.max(0,Math.sin(a))**.3;
+    const lumbar=.021*Math.exp(-(((u-.3)/.2)**2))*Math.max(0,Math.sin(a));
+    return V(x+width*r*across,.61+u*height,-.705-.085*u+.066*r*front+wing+lumbar);
+  };
+  batch.add('leather',surface(cushion,24,32));batch.add('leather',surface(back,28,36));
+  const front=(u:number,nx:number)=>{const angle=Math.acos(shaped(nx,1/.6));const p=back(u,angle/(Math.PI*2));p.z+=.0016;return p;};
+  const top=(u:number,nx:number)=>{const angle=Math.acos(shaped(nx,1/.62));const p=cushion(u,-angle/(Math.PI*2));p.y+=.0015;return p;};
+  for(const side of[-1,1]){
+    batch.tube('seam',Array.from({length:18},(_,i)=>front(.08+i/17*.84,side*.73)),.0018,24);
+    batch.tube('seam',Array.from({length:18},(_,i)=>top(.07+i/17*.86,side*.71)),.0017,24);
+    for(let i=0;i<26;i++){
+      batch.tube('seam',[front(.12+i*.029,side*.69),front(.128+i*.029,side*.69)],.0008,1);
+      batch.tube('seam',[top(.12+i*.029,side*.67),top(.128+i*.029,side*.67)],.0008,1);
+    }
+  }
+  if(variant===0){
+    for(let column=-2;column<=2;column++){
+      batch.tube('wood',Array.from({length:14},(_,i)=>front(.12+i/13*.76,column*.205)),.0013,16);
+      batch.tube('wood',Array.from({length:14},(_,i)=>top(.12+i/13*.76,column*.205)),.0011,16);
+    }
+  }else if(variant===1){
+    for(const slope of[-1,1])for(let diagonal=-3;diagonal<=3;diagonal++){
+      const points:THREE.Vector3[]=[];
+      for(let i=0;i<=28;i++){const f=i/28,nx=(f-.5)*1.1*slope+diagonal*.205;if(Math.abs(nx)<=.55)points.push(front(.17+f*.66,nx));}
+      if(points.length>1)batch.tube('seam',points,.00105,16);
+    }
+  }else{
+    for(const u of[.27,.5,.73])batch.tube('seam',Array.from({length:15},(_,i)=>front(u,-.48+i/14*.96)),.0012,16);
+  }
+}
+
 function buildCabin(batch: GeometryBatch, variant: number) {
   batch.box('dark', [1.49, .08, 1.5], V(0, .44, -.18));
+  // A closed inner tub joins the floor, doors and rear deck. Wide phone views
+  // must not see the rear wheels through the space behind the seats.
+  batch.box('dark',[1.49,.61,.075],V(0,.7,-.92));
   // Full-height kickboard seals both footwells against the front wheel houses.
   // It overlaps the dash, floor and door liners so a low cockpit view stays enclosed.
   batch.box('dark', [1.52, .65, .12], V(0, .715, .63));
   for (const side of [-1, 1]) {
-    batch.box('dark', [.13, .53, .63], V(side * .665, .695, .25), .022);
-    batch.box('dark', [.20, .13, .5], V(side * .62, .51, .27), .025);
+    batch.box('dark',[.045,.19,1.62],V(side*.735,.47,-.14));
+    batch.box('leather',[.035,.35,1.62],V(side*.735,.72,-.14));
+    batch.box('leather', [.055, .50, .65], V(side * .735, .70, .25), .012);
+    batch.box('dark', [.12, .06, .48], V(side * .665, .485, .27), .012);
     batch.box('leather', [.08, .29, .35], V(side * .748, .81, .29), .014);
   }
   batch.box(variant === 0 ? 'wood' : 'dark', [1.46, .19, .15], V(0, .96, .57), .02);
-  batch.box(variant === 1 ? 'leather' : 'dark', [1.48, variant === 1 ? .05 : .055, variant === 0 ? .22 : .19], V(0, 1.075, .59), .02);
+  batch.add(variant===1?'leather':'dark',surface((u,v)=>{const a=v*Math.PI*2;return V((u*2-1)*.74,1.067+Math.sin(a)*.048,.59+Math.cos(a)*(variant===0?.12:.105));},32,20));
   batch.box('dark', [.65, .14, .035], V(-.37, .995, .475), .018);
+  batch.add('dark',surface((u,v)=>{const a=u*Math.PI;return V(-.41+Math.cos(a)*.35,1.008+Math.sin(a)*.16,.44+v*.16);},32,8));
   // Passenger glovebox, vents and pull handle.
   batch.box('dark', [.44, .006, .008], V(.42, .99, .477));
   batch.box('chrome', [.11, .014, .015], V(.43, .955, .466), .004);
@@ -331,29 +385,17 @@ function buildCabin(batch: GeometryBatch, variant: number) {
   batch.tube('dark', [V(.06, .70, -.45), V(.06, .75, -.34), V(.06, .785, -.18)], .024, 10);
   batch.box('chrome', [.032, .022, .023], V(.06, .785, -.168), .005);
   // Floor pedals visible from driver eye looking down.
-  for (const x of [-.57, -.42, -.28]) batch.box('dark', [.075, .018, .13], V(x, .49, .35), .008);
+  for(const [i,x]of(variant===1?[-.28,-.48]:[-.57,-.42,-.28]).entries()){
+    const width=variant===1&&i===0?.108:.07;
+    batch.box('chrome',[width,.014,.13],V(x,.49,.35),.006);
+    for(let rib=0;rib<5;rib++)batch.box('dark',[width*.87,.004,.012],V(x,.5,.302+rib*.024),.002);
+  }
   for (const side of [-1, 1]) {
     const x = side * .425;
-    const seatTop = variant === 2 ? .612 : .638;
-    batch.box('leather', [.56, variant === 2 ? .10 : .15, .57], V(x, .56, -.37), .048);
-    // Backrest reclines towards the rear. Side bolsters, piping, fluted leather.
-    batch.box('leather', [variant === 2 ? .47 : .55, variant === 2 ? .72 : .55, .12], V(x, variant === 2 ? .93 : .86, -.72), .045);
-    for (const edge of [-1, 1]) {
-      batch.box('leather', [variant === 2 ? .095 : .07, .45, variant === 2 ? .22 : .15], V(x + edge * .225, .85, -.66), .025);
-      batch.tube('seam', [V(x + edge * .18, seatTop, -.62), V(x + edge * .18, seatTop, -.25), V(x + edge * .18, seatTop - .009, -.12)], .0018, 9);
-      batch.tube('seam', [V(x + edge * .18, .7, -.655), V(x + edge * .18, .91, -.655), V(x + edge * .18, 1.07, -.655)], .0018, 9);
-      for (let stitch = 0; stitch < 25; stitch++) {
-        batch.box('seam', [.0015, .0015, .006], V(x + edge * .169, seatTop + .001, -.58 + stitch * .015));
-        batch.box('seam', [.0015, .006, .0015], V(x + edge * .169, .72 + stitch * .0135, -.653));
-      }
-    }
-    for (let i = -2; i <= 2; i++) {
-      batch.tube('wood', [V(x + i * .057, seatTop - .001, -.61), V(x + i * .057, seatTop - .001, -.18)], .0012, 4);
-      batch.tube('wood', [V(x + i * .057, .72, -.655), V(x + i * .057, 1.06, -.655)], .0018, 4);
-    }
+    buildSculptedSeat(batch,x,variant);
     if (variant === 2) {
-      batch.box('dark', [.22, .07, .025], V(x, 1.18, -.645), .018);
-      batch.box('seam', [.08, .018, .027], V(x, 1.09, -.646), .005);
+      batch.box('dark', [.22, .07, .025], V(x, 1.18, -.686), .018);
+      batch.box('seam', [.08, .018, .027], V(x, 1.09, -.672), .005);
     } else {
       for (const dx of [-.13, .13]) batch.box('chrome', [.014, .13, .014], V(x + dx, 1.15, -.73));
       batch.box('leather', [variant === 1 ? .38 : .31, .15, .12], V(x, 1.205, -.73), .037);
@@ -482,14 +524,14 @@ export function createConvertible(index = 0): Convertible {
   gradient.addColorStop(0,'rgba(0,0,0,.72)');gradient.addColorStop(.6,'rgba(0,0,0,.45)');gradient.addColorStop(1,'rgba(0,0,0,0)');
   shadowContext.fillStyle=gradient;shadowContext.fillRect(0,0,128,128);
   const shadowMap=new THREE.CanvasTexture(shadowCanvas);surfaceTextures.push(shadowMap);
-  const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(2.5,4.9),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.56,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
-  contactShadow.name='vehicle-contact-shadow';contactShadow.rotation.x=-Math.PI/2;contactShadow.position.y=-.012;contactShadow.visible=false;root.add(contactShadow);
+  const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(2.5,4.9),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.46,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
+  contactShadow.name='vehicle-contact-shadow';contactShadow.rotation.x=-Math.PI/2;contactShadow.position.y=.008;contactShadow.visible=false;root.add(contactShadow);
   const batch = new GeometryBatch(materials);
   buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
 
   const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [];
   for (const z of [-1.28, 1.28]) for (const x of [-.845, .845]) {
-    const steering = new THREE.Group(); steering.position.set(x, .35, z);
+    const steering = new THREE.Group(); steering.position.set(x, .338, z);
     const roll = wheelTemplate.clone(true); steering.add(roll); root.add(steering); rolls.push(roll);
     if (z > 0) steers.push(steering);
   }
@@ -497,13 +539,25 @@ export function createConvertible(index = 0): Convertible {
   const steeringTilt = new THREE.Group(); steeringTilt.position.set(-.425, 1.015, .17); steeringTilt.rotation.x = -.31;
   const steering = new THREE.Group(); steering.name = 'steeringWheel'; steeringTilt.add(steering); root.add(steeringTilt);
   const wheelBatch = new GeometryBatch(materials);
-  wheelBatch.add(index === 0 ? 'wood' : 'dark', new THREE.TorusGeometry(index === 2 ? .145 : .156, index === 0 ? .014 : .019, 10, 56));
-  wheelBatch.add('chrome', new THREE.TorusGeometry(.139, .004, 5, 48));
-  for (let i = 0; i < 3; i++) {
-    const angle = Math.PI * .5 + i / 3 * Math.PI * 2;
-    wheelBatch.tube('chrome', [V(Math.cos(angle) * .028, Math.sin(angle) * .028, -.002), V(Math.cos(angle) * .14, Math.sin(angle) * .14, 0)], .011, 1);
+  if(index===2){
+    const rim=Array.from({length:65},(_,i)=>{const a=i/64*Math.PI*2;return V(Math.cos(a)*.15,Math.max(-.108,Math.sin(a)*.155),0);});
+    wheelBatch.tube('dark',rim,.019,80);
+  }else wheelBatch.add(index===0?'wood':'dark',new THREE.TorusGeometry(.156,index===0?.014:.019,10,56));
+  if(index===0){
+    wheelBatch.add('chrome',new THREE.TorusGeometry(.139,.004,5,48));
+    for(let i=0;i<3;i++){const angle=Math.PI*.5+i/3*Math.PI*2;wheelBatch.tube('chrome',[V(Math.cos(angle)*.028,Math.sin(angle)*.028,-.002),V(Math.cos(angle)*.14,Math.sin(angle)*.14,0)],.011,1);}
+    wheelBatch.add('dark',new THREE.CylinderGeometry(.035,.035,.025,22),V(0,0,-.012),new THREE.Euler(Math.PI/2,0,0));
+  }else{
+    wheelBatch.box('dark',[.112,.082,.038],V(0,0,-.01),.025);
+    for(const side of[-1,1]){
+      wheelBatch.tube('dark',[V(side*.042,.008,-.004),V(side*.092,.03,-.002),V(side*.139,.042,0)],.018,4);
+      wheelBatch.box('dark',[.041,.025,.012],V(side*.088,.028,-.025),.006);
+      for(let key=-1;key<=1;key++)wheelBatch.box('chrome',[.004,.005,.002],V(side*.088+key*.01,.028,-.032));
+      wheelBatch.tube('chrome',[V(side*.046,-.015,-.025),V(side*.087,.006,-.023),V(side*.121,.018,-.018)],.0035,8);
+      wheelBatch.box('chrome',[.021,.067,.008],V(side*.122,.03,.035),.006);
+    }
+    wheelBatch.tube('dark',[V(0,-.025,-.003),V(0,-.075,-.002),V(0,index===2?-.108:-.142,0)],.014,4);
   }
-  wheelBatch.add('dark', new THREE.CylinderGeometry(.035, .035, .025, 22), V(0, 0, -.012), new THREE.Euler(Math.PI / 2, 0, 0));
   wheelBatch.add('chrome', new THREE.CylinderGeometry(.02, .02, .027, 20), V(0, 0, -.02), new THREE.Euler(Math.PI / 2, 0, 0));
   wheelBatch.finish(steering);
 
@@ -539,6 +593,7 @@ export function createConvertible(index = 0): Convertible {
     root, cockpitEye, cockpitLook,setContactShadow(visible){contactShadow.visible=visible;},
     update(speed, steer, dt) {
       driver.update(steer, dt);
+      contactShadow.rotation.set(-Math.PI/2,0,-root.rotation.z,'ZXY');
       // Speed is metres/second and steer is normalized [-1,1].
       wheelRotation = (wheelRotation + speed * Math.min(dt, .1) / .338) % (Math.PI * 2);
       rolls.forEach(roll => { roll.rotation.x = wheelRotation; });

@@ -65,3 +65,11 @@ test('手机开始点击先申请全屏，再锁定横屏',async({page},info)=>{
  await page.click('#portrait-continue');await expect(page.locator('#landscape-prompt')).toBeHidden();
  await expect.poll(async()=>(await state(page)).state?.running).toBe(true);
 });
+
+
+test('图形上下文丢失时显示可恢复的重载提示',async({page})=>{
+ await page.goto('/?test=1');await dismissPortrait(page);await page.click('#start-button');
+ const supported=await page.evaluate(()=>{const canvas=document.querySelector<HTMLCanvasElement>('#game-canvas')!,gl=canvas.getContext('webgl2'),extension=gl?.getExtension('WEBGL_lose_context');if(!extension)return false;extension.loseContext();return true;});
+ test.skip(!supported,'当前测试引擎未开放WEBGL_lose_context扩展');
+ await expect(page.locator('#error-panel')).toBeVisible();await expect(page.locator('#error-message')).toContainText('重新加载');
+});

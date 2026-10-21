@@ -35,7 +35,7 @@
 - 同一天空HDR反射到海面、近岸水色/远波抗闪烁；扩大向下环顾，修复衣物遮挡手刹并细化手刹。
 - 三车逐车真实油门测试，desktop5+Android5+WebKit5=15项通过。22状态正式manifest evidence-sea-cabins.json；海水/cabin当前build完成，桌面87/606036/81/34、手机72/288701/63/30，均预算内。子路径静态build验证通过。
 
-## 当前待提交：手机优化与横屏全屏
+## 已提交78f99ff：手机优化与横屏全屏
 - 一加12 Chrome首轮画面掉帧；修正UI图标/文本无变化仍重建、小地图重复曲线采样，缓存Path2D与地标。
 - baseline→cached-ui→optimized-low：8秒DOM1543→14→14、布局108ms→3→2、Task2689ms→2111→1995；4xCPU节流桌面RTX4050 Android视口对照，非真机fps。
 - 手机自动档从low启动，DPR1、轻量车底影，少些远景草/灌/蕨，保留近景风动与海岸风格；coarse UI去实时背景模糊。
@@ -44,10 +44,17 @@
 - 当前build通过；desktop5+Android7+WebKit7共19项功能通过。两项仅手机测试在桌面skip；API顺序测试桩曾因DOM尚未建立/ScreenOrientation不存在失败，桩已修正为HTMLElement.prototype与完整screen.orientation对象，Chrome/WebKit聚焦重跑通过；源功能未因此改动。
 - 22份inspector截图已生成，artifacts/evidence-mobile-performance.json。目视mobile-tunnel有一次车身表面不见/路面透出异常，保留并继续查，不能假称全视觉通过。考虑冷启动GPU预编译，但尚未实施或验证根因。
 
-## 下一步
-1. 提交当前已验证手机优化/横屏全屏阶段，保留异常说明。
-2. 重复冷加载手机tunnel/换车，定位偶发材质/绘制缺失；检查renderer.compileAsync预热是否有实际帮助，不能无证据称已修复。
-3. work/manual-route.mjs未运行，且route.nearest不存在需改nearestRoad(x,z,route)。继续真实输入主环/支路与最终逐项审计、10类视觉评分；当前goal active，用户没有要求暂停。
+## 当前待提交：着色器准备与完整驾驶验证
+- compileAsync在开放开始前与测试换车后等待；棕榈冠心风动固定。
+- build、8项逻辑、24项浏览器通过，3项桌面不适用跳过；新增语义材质保护、上下文丢失和倒车检查。
+- 真实键盘259.5秒/3136m，主环、小镇、隧道与山路返回完成；支路入口机器人偏移最大5.69m后恢复，无脚本错误。非手机性能数据。
+- evidence-prewarm.json共28条证据检查通过，最新手机隧道车漆正常；偶发缺失根因未证实，原图保留。
+
+## 用户最新评价与下一步
+- 用户明确给风景50/车辆70/整体勉强60分，希望两者接近满分。当前视觉未达标，goal继续active。
+- docs10记录重制计划：先建立扫描岩壁、礁石/碎石和自然灌木组合的代表性海岸，再扩展沿线；随后改进车辆曲面、座椅、门板与灯具。
+- PolyHaven扫描高模需要离线简化LOD后再集成，记录许可/哈希/体积，不直接加载数十万三角形原件。
+- 保持一加12已确认的流畅度和横屏全屏；外部生成凭据仍缺失，使用CC0与程序化资源。
 
 ## 当前可用服务
 - dev 5188，exec session29673，http://localhost:5188/ (LAN 192.168.3.10)。
@@ -59,5 +66,5 @@
 ## 剩余差距
 - 仍有程序化树冠/岸线和部分设施形体需更自然；持续目标未达成。
 - 手机Chrome/WebKit引擎功能已验证，缺真实设备GPU/手感与Safari宿主差异证据。
-- 未运行本轮完整canvas inspector/视觉scorecard，不应声称整体premium验收已通过。
+- 本轮canvas inspector已通过，用户视觉评价明确未通过，不应声称premium验收完成。
 - 并行子任务已结束；文件全部可由主代理接管。原外部生成服务凭据缺失，当前使用程序化与Poly Haven CC0扫描资源。

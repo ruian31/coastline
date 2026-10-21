@@ -339,7 +339,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   function matrix(x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = random() * Math.PI * 2): THREE.Matrix4 {
     return new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),angle), new THREE.Vector3(sx,sy,sz));
   }
-  function wind(color: number, amplitude: number): THREE.MeshStandardMaterial {
+  function wind(color: number, amplitude: number,crownRoot=false): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness: .9, side: THREE.DoubleSide });
     material.onBeforeCompile = shader => {
       shader.uniforms.uSceneryTime = time;
@@ -348,11 +348,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         #ifdef USE_INSTANCING
           phase=instanceMatrix[3].x*.34+instanceMatrix[3].z*.19;
         #endif
-        float anchoredHeight=max(position.y,0.0);
+        float anchoredHeight=${crownRoot?'length(position-vec3(.65,7.8,0.0))':'max(position.y,0.0)'};
         transformed.x+=sin(uSceneryTime*1.25+phase+position.y*.2)*${amplitude.toFixed(4)}*anchoredHeight;
         transformed.z+=cos(uSceneryTime*.83+phase)*${(amplitude * .55).toFixed(4)}*anchoredHeight;`);
     };
-    material.customProgramCacheKey = () => `coast-wind-${amplitude}`;
+    material.customProgramCacheKey = () => `coast-wind-${amplitude}-${crownRoot}`;
     windMaterials.push(material);
     return material;
   }
@@ -552,7 +552,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   };
   trunkMaterial.customProgramCacheKey=()=>'coast-palm-trunk-rings';
   const frondGeometry=createPalmCrown(mobile);
-  const frondMaterial=wind(0x9cae72,.014);frondMaterial.vertexColors=true;
+  const frondMaterial=wind(0x9cae72,.014,true);frondMaterial.vertexColors=true;
   const palms:THREE.Matrix4[]=[],palmColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?48:82);i++) {
     const t=i<24?.10+random()*.17:random();

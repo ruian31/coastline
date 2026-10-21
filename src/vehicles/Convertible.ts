@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createDriver } from './Driver';
 
 /** Coordinates are metres, +Z forward, +Y up, left-hand drive. */
@@ -34,6 +34,17 @@ class GeometryBatch {
     else source = source.clone();
     if (!source.getAttribute('uv')) source.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute('position').count * 2), 2));
     source.applyMatrix4(new THREE.Matrix4().compose(position, new THREE.Quaternion().setFromEuler(rotation), scale));
+    if (key === 'leather' || key === 'wood' || key === 'paint') {
+      // Metre-scaled box projection prevents bevel/extrusion UVs stretching the grain.
+      const p = source.getAttribute('position'), n = source.getAttribute('normal'), uv = source.getAttribute('uv');
+      const density = key === 'leather' ? 8 : key === 'wood' ? 2.1 : 12;
+      for (let i = 0; i < p.count; i++) {
+        const nx = Math.abs(n.getX(i)), ny = Math.abs(n.getY(i)), nz = Math.abs(n.getZ(i));
+        if (ny >= nx && ny >= nz) uv.setXY(i, p.getX(i) * density, p.getZ(i) * density);
+        else if (nx >= nz) uv.setXY(i, p.getZ(i) * density, p.getY(i) * density);
+        else uv.setXY(i, p.getX(i) * density, p.getY(i) * density);
+      }
+    }
     const list = this.batches.get(key) ?? [];
     list.push(source);
     this.batches.set(key, list);
@@ -46,9 +57,13 @@ class GeometryBatch {
       const [w, h, d] = dimensions;
       const bevel = Math.min(radius, w / 4, h / 4, d / 3);
       const shape = roundedShape(w - bevel * 2, h - bevel * 2, bevel);
-      const geo = new THREE.ExtrudeGeometry(shape, { depth: d - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, steps: 1, curveSegments: 5 });
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: d - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: key === 'leather' ? 4 : 2, steps: 1, curveSegments: key === 'leather' ? 8 : 5 });
       geo.translate(0, 0, -d / 2 + bevel);
-      this.add(key, geo, position);
+      if (key === 'leather') {
+        geo.deleteAttribute('normal'); geo.deleteAttribute('uv');
+        const padded = mergeVertices(geo, .00001); padded.computeVertexNormals(); geo.dispose();
+        this.add(key, padded, position);
+      } else this.add(key, geo, position);
     } else this.add(key, new THREE.BoxGeometry(...dimensions), position);
   }
 
@@ -82,22 +97,60 @@ function roundedShape(w: number, h: number, r: number) {
   return s;
 }
 
-function materialKit(index: number): MaterialKit {
+function upholsteryTexture(kind: 'leather' | 'wood' | 'paint') {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+  const c = canvas.getContext('2d')!;
+  let seed = kind === 'leather' ? 5189 : kind === 'wood' ? 8213 : 3109;
+  const rand = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const image = c.createImageData(256, 256);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const value = kind === 'wood' ? 207 + rand() * 24 : kind === 'leather' ? 231 + rand() * 23 : 218 + rand() * 31;
+    image.data[i] = value; image.data[i + 1] = value; image.data[i + 2] = value; image.data[i + 3] = 255;
+  }
+  c.putImageData(image, 0, 0);
+  if (kind === 'wood') {
+    for (let line = 0; line < 100; line++) {
+      const y = line * 2.56, phase = rand() * 6.28;
+      c.strokeStyle = `rgba(87,67,43,${.06 + rand() * .11})`; c.lineWidth = .5 + rand() * 1.1; c.beginPath();
+      for (let x = 0; x <= 256; x += 4) {
+        const wave = Math.sin(x / 45 + phase) * 1.8 + Math.sin(x / 14 + phase) * .45;
+        if (x === 0) c.moveTo(x, y + wave); else c.lineTo(x, y + wave);
+      }
+      c.stroke();
+    }
+  } else if (kind === 'leather') {
+    for (let i = 0; i < 2200; i++) {
+      const x = rand() * 256, y = rand() * 256;
+      c.strokeStyle = `rgba(107,98,86,${.025 + rand() * .055})`; c.lineWidth = .6;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x + 1.7, y + .7); c.lineTo(x + 2.8, y - .3); c.stroke();
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas); texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = kind === 'paint' ? THREE.NoColorSpace : THREE.SRGBColorSpace; texture.anisotropy = 4;
+  texture.name = `vehicle-${kind}-grain`; return texture;
+}
+
+function materialKit(index: number): { materials: MaterialKit; textures: THREE.Texture[] } {
   const spec = CAR_DEFINITIONS[index];
   const mat = (color: THREE.ColorRepresentation, roughness: number, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
-  return {
-    paint: new THREE.MeshPhysicalMaterial({ color: spec.color, roughness: .24, metalness: .48, clearcoat: .85, clearcoatRoughness: .2 }),
-    leather: mat(index === 1 ? '#c9aa7a' : index === 2 ? '#253949' : '#a97040', .77),
-    seam: mat(index === 2 ? '#839099' : '#e0ba86', .85),
+  const materials: MaterialKit = {
+    paint: new THREE.MeshPhysicalMaterial({ color: spec.color, roughness: .32, metalness: .18, clearcoat: .72, clearcoatRoughness: .24, envMapIntensity: .7 }),
+    leather: mat(index === 1 ? '#c9aa7a' : index === 2 ? '#253949' : '#a97040', .86),
+    seam: mat(index === 2 ? '#768892' : '#bf9a70', .88),
     dark: mat('#151a1b', .79),
     chrome: mat('#bdc6c8', .22, .88),
-    wood: mat(index === 2 ? '#25292b' : '#543526', .4),
+    wood: mat(index === 2 ? '#25292b' : '#805938', .4),
     glass: new THREE.MeshPhysicalMaterial({ color: '#b8d8db', roughness: .08, metalness: 0, transparent: true, opacity: .13, depthWrite: false, side: THREE.DoubleSide }),
     mirror: mat('#a0bbc1', .13, .95),
     headlight: new THREE.MeshStandardMaterial({ color: '#fff1c9', emissive: '#ffd396', emissiveIntensity: .55, roughness: .24 }),
     tail: new THREE.MeshStandardMaterial({ color: '#861d20', emissive: '#c12f23', emissiveIntensity: .4, roughness: .3 }),
     amber: new THREE.MeshStandardMaterial({ color: '#e99f32', emissive: '#a0570c', emissiveIntensity: .25, roughness: .3 }),
   };
+  const leather = upholsteryTexture('leather'), wood = upholsteryTexture('wood'), paint = upholsteryTexture('paint');
+  materials.leather.map = leather; materials.leather.bumpMap = leather; materials.leather.bumpScale = .00065; materials.leather.roughnessMap = leather;
+  materials.wood.map = wood; materials.wood.bumpMap = wood; materials.wood.bumpScale = .0009; materials.wood.roughnessMap = wood;
+  materials.paint.roughnessMap = paint;
+  return { materials, textures: [leather, wood, paint] };
 }
 
 function surface(sample: (u: number, v: number) => THREE.Vector3, us: number, vs: number) {
@@ -162,8 +215,21 @@ function buildBody(batch: GeometryBatch, variant: number) {
       }
       batch.tube(variant === 0 ? 'chrome' : 'paint', points, variant === 0 ? .012 : .018, 34);
     }
-    batch.tube('dark', [V(side * .826, .91, .5), V(side * .842, .66, .3), V(side * .845, .42, -.68), V(side * .855, .83, -.96)], .006, 25);
-    batch.box('chrome', [.12, .026, .025], V(side * .856, .85, -.5), .006);
+    const sideSkinX = (y: number, z: number) => {
+      let bottom = .37;
+      for (const wheelZ of [-1.28, 1.28]) {
+        const distance = Math.abs(z - wheelZ);
+        if (distance < .42) bottom = Math.max(bottom, .35 + Math.sqrt(.42 ** 2 - distance ** 2));
+      }
+      const v = THREE.MathUtils.clamp((y - bottom) / (shoulder(z) - bottom), 0, 1);
+      return bodyWidth(z) - .065 * (1 - v) + .02 * Math.sin(v * Math.PI);
+    };
+    const doorCurve = new THREE.CatmullRomCurve3([V(0, .91, .5), V(0, .66, .3), V(0, .42, -.68), V(0, .83, -.96)]);
+    const doorSeam = Array.from({ length: 37 }, (_, i) => {
+      const p = doorCurve.getPoint(i / 36); p.x = side * (sideSkinX(p.y, p.z) + .002); return p;
+    });
+    batch.tube('dark', doorSeam, .0025, 40);
+    batch.box('chrome', [.025, .026, .12], V(side * (sideSkinX(.85, -.5) + .012), .85, -.5), .006);
   }
   for (const [start, end] of [[.61, 2.14], [-2.14, -.91]]) {
     batch.add('paint', surface((u, v) => {
@@ -176,7 +242,7 @@ function buildBody(batch: GeometryBatch, variant: number) {
   if (variant === 0) batch.tube('chrome', [V(0, 1.015, .7), V(0, 1.025, 1.2), V(0, .975, 2.08)], .005, 22);
   else for (const side of [-1, 1]) batch.tube('paint', [V(side * .38, shoulder(.65) + .035, .65), V(side * .46, shoulder(1.2) + .035, 1.2), V(side * .42, shoulder(2) + .03, 2)], .011, 22);
   for (let i = 0; i < (variant === 0 ? 9 : 5); i++) for (const x of [-.54, .54]) batch.box('dark', [variant === 2 ? .24 : .19, .005, .014], V(x, shoulder(.85 + i * .036) + .021, .85 + i * .036));
-  batch.box('dark', [1.53, .10, 1.61], V(0, .39, -.12));
+  batch.box('dark', [1.47, .10, 1.61], V(0, .39, -.12));
   // Curved front and rear valances, including broad radiator aperture.
   for (const z of [-2.14, 2.14]) {
     batch.add('paint', surface((u, v) => V((u * 2 - 1) * .755, .41 + v * (shoulder(z) + .04 * Math.sin(u * Math.PI) - .41), z + Math.sin(u * Math.PI) * .025 * Math.sign(z)), 22, 7));
@@ -221,10 +287,10 @@ function buildCabin(batch: GeometryBatch, variant: number) {
   batch.box('dark', [1.49, .08, 1.5], V(0, .44, -.18));
   // Full-height kickboard seals both footwells against the front wheel houses.
   // It overlaps the dash, floor and door liners so a low cockpit view stays enclosed.
-  batch.box('dark', [1.57, .65, .12], V(0, .715, .63));
+  batch.box('dark', [1.52, .65, .12], V(0, .715, .63));
   for (const side of [-1, 1]) {
-    batch.box('dark', [.15, .53, .63], V(side * .72, .695, .25), .022);
-    batch.box('dark', [.24, .13, .5], V(side * .67, .51, .27), .025);
+    batch.box('dark', [.13, .53, .63], V(side * .665, .695, .25), .022);
+    batch.box('dark', [.20, .13, .5], V(side * .62, .51, .27), .025);
     batch.box('leather', [.08, .29, .35], V(side * .748, .81, .29), .014);
   }
   batch.box(variant === 0 ? 'wood' : 'dark', [1.46, .19, .15], V(0, .96, .57), .02);
@@ -265,16 +331,21 @@ function buildCabin(batch: GeometryBatch, variant: number) {
   for (const x of [-.57, -.42, -.28]) batch.box('dark', [.075, .018, .13], V(x, .49, .35), .008);
   for (const side of [-1, 1]) {
     const x = side * .425;
+    const seatTop = variant === 2 ? .612 : .638;
     batch.box('leather', [.56, variant === 2 ? .10 : .15, .57], V(x, .56, -.37), .048);
     // Backrest reclines towards the rear. Side bolsters, piping, fluted leather.
     batch.box('leather', [variant === 2 ? .47 : .55, variant === 2 ? .72 : .55, .12], V(x, variant === 2 ? .93 : .86, -.72), .045);
     for (const edge of [-1, 1]) {
       batch.box('leather', [variant === 2 ? .095 : .07, .45, variant === 2 ? .22 : .15], V(x + edge * .225, .85, -.66), .025);
-      batch.tube('seam', [V(x + edge * .18, .654, -.62), V(x + edge * .18, .654, -.25), V(x + edge * .18, .64, -.12)], .003, 9);
-      batch.tube('seam', [V(x + edge * .18, .7, -.64), V(x + edge * .18, .91, -.647), V(x + edge * .18, 1.07, -.65)], .003, 9);
+      batch.tube('seam', [V(x + edge * .18, seatTop, -.62), V(x + edge * .18, seatTop, -.25), V(x + edge * .18, seatTop - .009, -.12)], .0018, 9);
+      batch.tube('seam', [V(x + edge * .18, .7, -.655), V(x + edge * .18, .91, -.655), V(x + edge * .18, 1.07, -.655)], .0018, 9);
+      for (let stitch = 0; stitch < 25; stitch++) {
+        batch.box('seam', [.0015, .0015, .006], V(x + edge * .169, seatTop + .001, -.58 + stitch * .015));
+        batch.box('seam', [.0015, .006, .0015], V(x + edge * .169, .72 + stitch * .0135, -.653));
+      }
     }
     for (let i = -2; i <= 2; i++) {
-      batch.tube('wood', [V(x + i * .057, .645, -.61), V(x + i * .057, .645, -.18)], .0018, 4);
+      batch.tube('wood', [V(x + i * .057, seatTop - .001, -.61), V(x + i * .057, seatTop - .001, -.18)], .0012, 4);
       batch.tube('wood', [V(x + i * .057, .72, -.655), V(x + i * .057, 1.06, -.655)], .0018, 4);
     }
     if (variant === 2) {
@@ -282,12 +353,13 @@ function buildCabin(batch: GeometryBatch, variant: number) {
       batch.box('seam', [.08, .018, .027], V(x, 1.09, -.646), .005);
     } else {
       for (const dx of [-.13, .13]) batch.box('chrome', [.014, .13, .014], V(x + dx, 1.15, -.73));
-      batch.box('leather', [variant === 1 ? .38 : .31, .17, .12], V(x, 1.24, -.73), .037);
+      batch.box('leather', [variant === 1 ? .38 : .31, .15, .12], V(x, 1.205, -.73), .037);
+      batch.tube('seam', [V(x - .12, 1.232, -.667), V(x, 1.249, -.667), V(x + .12, 1.232, -.667)], .0015, 16);
     }
     batch.box('dark', [.053, .09, .033], V(x - side * .27, .64, -.5), .008);
     batch.box('tail', [.032, .013, .028], V(x - side * .27, .69, -.5));
-    batch.box('leather', [.065, .36, 1.23], V(side * .765, .72, -.17), .018);
-    batch.tube('seam', [V(side * .722, .78, -.72), V(side * .722, .78, -.4), V(side * .722, .78, .34)], .0035, 20);
+    batch.box('leather', [.055, .36, 1.23], V(side * .735, .72, -.17), .018);
+    batch.tube('seam', [V(side * .701, .78, -.72), V(side * .701, .78, -.4), V(side * .701, .78, .34)], .0022, 20);
     batch.box(variant === 0 ? 'wood' : 'dark', [.055, .045, .4], V(side * .714, .71, -.11), .012);
     batch.box('chrome', [.022, .026, .11], V(side * .714, .86, .12), .006);
     batch.add('chrome', new THREE.CylinderGeometry(.018, .018, .026, 12), V(side * .717, .75, .27), new THREE.Euler(0, 0, Math.PI / 2));
@@ -366,9 +438,39 @@ function gaugeTexture() {
   return texture;
 }
 
+function radioTexture(variant: number) {
+  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = variant === 0 ? 96 : 256;
+  const c = canvas.getContext('2d')!;
+  c.fillStyle = '#101c20'; c.fillRect(0, 0, 512, 256);
+  if (variant === 0) {
+    c.fillStyle = '#d0bc84'; c.font = '28px monospace'; c.textAlign = 'left';
+    c.fillText('FM', 18, 34); c.textAlign = 'right'; c.font = '36px monospace'; c.fillText('88.6', 490, 36);
+    c.strokeStyle = '#b8b085'; c.lineWidth = 2;
+    for (let i = 0; i <= 32; i++) { const x = 25 + i * 14.5; c.beginPath(); c.moveTo(x, 50); c.lineTo(x, i % 4 === 0 ? 84 : 68); c.stroke(); }
+    c.fillStyle = '#d47f45'; c.fillRect(43, 45, 4, 46);
+    c.fillStyle = '#9caa93'; c.font = '22px monospace'; c.textAlign = 'center'; c.fillText('COAST FM', 240, 32);
+  } else {
+    c.fillStyle = '#8ca4a6'; c.font = '18px sans-serif'; c.fillText(variant === 1 ? 'TOURING' : 'SPORT', 22, 30);
+    c.textAlign = 'right'; c.fillStyle = '#e0d8c0'; c.fillText('18:42', 490, 30); c.textAlign = 'left';
+    c.strokeStyle = '#385056'; c.beginPath(); c.moveTo(20, 45); c.lineTo(492, 45); c.stroke();
+    c.fillStyle = '#e5d4ab'; c.font = '600 32px sans-serif'; c.fillText('COAST FM', 22, 96);
+    c.fillStyle = '#9eafb0'; c.font = '21px sans-serif'; c.fillText('Golden Hour', 23, 130);
+    c.fillStyle = '#b8bdb2'; c.font = '18px sans-serif'; c.fillText('88.6 FM  ·  STEREO', 23, 170);
+    c.fillStyle = '#65888c'; c.fillRect(306, 58, 186, 134);
+    c.fillStyle = '#23383c'; c.beginPath(); c.moveTo(306, 58); c.lineTo(373, 58); c.bezierCurveTo(328, 103, 422, 129, 382, 192); c.lineTo(306, 192); c.closePath(); c.fill();
+    c.strokeStyle = '#e4c98e'; c.lineWidth = 5; c.beginPath(); c.moveTo(335, 190); c.bezierCurveTo(402, 151, 333, 116, 362, 63); c.stroke();
+    c.fillStyle = '#faf0cc'; c.beginPath(); c.moveTo(365, 116); c.lineTo(357, 139); c.lineTo(375, 135); c.closePath(); c.fill();
+    c.fillStyle = '#aab8b3'; c.font = '16px sans-serif'; c.fillText('COAST ROAD', 316, 220);
+    c.fillStyle = '#607b7e'; c.fillRect(24, 214, 6, 17); c.fillRect(36, 214, 6, 17);
+    c.strokeStyle = '#607b7e'; c.lineWidth = 3; c.beginPath(); c.moveTo(60, 223); c.lineTo(264, 223); c.stroke();
+    c.strokeStyle = '#c3b183'; c.beginPath(); c.moveTo(60, 223); c.lineTo(114, 223); c.stroke();
+  }
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4; texture.name = 'vehicle-radio-display'; return texture;
+}
+
 export function createConvertible(index = 0): Convertible {
   index = THREE.MathUtils.euclideanModulo(Math.floor(index), CAR_DEFINITIONS.length);
-  const materials = materialKit(index);
+  const { materials, textures: surfaceTextures } = materialKit(index);
   // Double-sided authored body skins remain visible from both the road and the open cockpit.
   materials.paint.side = THREE.DoubleSide;
   const root = new THREE.Group(); root.name = `convertible-${index}`;
@@ -411,6 +513,12 @@ export function createConvertible(index = 0): Convertible {
   for (const x of [-.298, -.532]) instrumentBatch.add('chrome', new THREE.TorusGeometry(.104, .005, 6, 40), V(x, 1.008, .448));
   instrumentBatch.finish(root);
 
+  const radioMap = radioTexture(index);
+  const radioMat = new THREE.MeshBasicMaterial({ map: radioMap, color: index === 0 ? 0xbfc6b1 : 0xbcc6bf, toneMapped: false });
+  const radio = new THREE.Mesh(new THREE.PlaneGeometry(index === 0 ? .145 : .249, index === 0 ? .027 : .125), radioMat);
+  radio.position.set(index === 0 ? 0 : .09, index === 0 ? .92 : .97, index === 0 ? .427 : .412);
+  radio.rotation.y = Math.PI; radio.name = 'radio-display'; root.add(radio);
+
   const driver = createDriver(index);
   root.add(driver.root);
 
@@ -439,7 +547,7 @@ export function createConvertible(index = 0): Convertible {
         geometries.add(object.geometry);
         (Array.isArray(object.material) ? object.material : [object.material]).forEach(m => mats.add(m));
       });
-      geometries.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texture.dispose();
+      geometries.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texture.dispose(); radioMap.dispose(); surfaceTextures.forEach(t => t.dispose());
       root.removeFromParent();
     },
   };

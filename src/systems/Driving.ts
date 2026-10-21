@@ -3,9 +3,9 @@ import {coast,hill,nearestRoad,type RoadRoute,type RoadLocation} from '../world/
 export type DriveIntent={throttle:number;brake:number;steer:number;handbrake:boolean};
 const wrap=(a:number)=>Math.atan2(Math.sin(a),Math.cos(a));
 export class Driving {
- position=new THREE.Vector3();yaw=0;pitch=0;speed=0;steer=0;automatic=false;route:RoadRoute=coast;progress=.04;direction=1;preferHill=false;distance=0;hit=false;
+ position=new THREE.Vector3();yaw=0;pitch=0;speed=0;steer=0;automatic=false;route:RoadRoute=coast;progress=.84;direction=1;preferHill=false;distance=0;hit=false;
  road:RoadLocation;modelIndex=0;
- constructor(){this.road=nearestRoad(0,0);this.teleport(.04);}
+ constructor(){this.road=nearestRoad(0,0);this.teleport(.84);}
  teleport(t:number,route=coast){this.route=route;this.progress=t;const s=route.sample(t);this.position.copy(s.position).addScaledVector(s.right,1.7);this.yaw=Math.atan2(s.tangent.x,s.tangent.z);this.pitch=-Math.asin(s.tangent.y);this.speed=0;this.steer=0;this.road=nearestRoad(this.position.x,this.position.z);}
  setAutomatic(enabled:boolean){if(enabled){this.road=nearestRoad(this.position.x,this.position.z);this.route=this.road.route;this.progress=this.road.t;const t=this.road.sample.tangent;this.direction=Math.sin(this.yaw)*t.x+Math.cos(this.yaw)*t.z>=0?1:-1;}this.automatic=enabled;}
  recover(){const s=this.road.sample;this.position.copy(s.position).addScaledVector(s.right,1.7*this.direction);this.yaw=Math.atan2(s.tangent.x,s.tangent.z)+(this.direction<0?Math.PI:0);this.pitch=-Math.asin(s.tangent.y)*this.direction;this.speed=0;this.steer=0;if(this.automatic)this.setAutomatic(true);}

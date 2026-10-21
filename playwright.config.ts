@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'node:path';
+const baseURL=process.env.TEST_BASE_URL??'http://127.0.0.1:5188';
+const webkitProjects=process.env.RUN_WEBKIT==='1'?[{name:'mobile-webkit',timeout:150000,use:{...devices['iPhone 13'],browserName:'webkit' as const,launchOptions:{executablePath:path.resolve('work/webkit-runtime/launch-webkit.sh'),args:[]}}}]:[];
 
 export default defineConfig({
   testDir: './tests',
@@ -11,20 +14,21 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:5188',
+    baseURL,
     launchOptions: {args: ['--enable-gpu', '--use-gl=angle', '--use-angle=gl']},
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npm run dev',
-    url: 'http://127.0.0.1:5188',
+    command: baseURL.includes(':4188')?'npm run preview':'npm run dev',
+    url: baseURL,
     // Reuse a dev server that is already running for the canvas inspector;
     // CI always starts a fresh one.
     reuseExistingServer: !process.env.CI,
     timeout: 20_000,
   },
   projects: [
+    ...webkitProjects,
     {
       name: 'desktop-chrome',
       use: {

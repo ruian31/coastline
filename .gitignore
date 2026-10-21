@@ -8,3 +8,6 @@ artifacts/*
 .openai/local/
 *.log
 .DS_Store
+
+work/
+playwright-report/

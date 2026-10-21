@@ -4,7 +4,7 @@ import { coast, heightAt } from './roads';
 import { createSeededRandom } from '../utils/random';
 
 type Collider = { x: number; z: number; halfX: number; halfZ: number };
-export function createLandmarks(scene: THREE.Scene, mobile: boolean): {
+export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight:(x:number,z:number)=>number=heightAt): {
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   colliders: Collider[];
@@ -163,7 +163,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean): {
     const row=Math.floor(i/2),side=i%2===0?-1:1,t=.337+row*.0105;
     const width=8.2+random()*2.2,depth=6.6+random()*2,height=i%5===0?6.6:8+random()*2;
     const frame=routeFrame(t,side,12+depth/2),pos=new THREE.Vector3().setFromMatrixPosition(frame);
-    const base=Math.max(coast.sample(t).position.y-.22,heightAt(pos.x,pos.z)-.6);
+    const base=Math.max(coast.sample(t).position.y-.22,groundHeight(pos.x,pos.z)-.6);
     frame.elements[13]=base;const facade=-side,front=facade*(depth/2+.06);
     box(frame,walls[i%walls.length],0,height/2,0,width,height,depth);
     // A sunk plinth prevents gaps where the sloped terrain meets the building.
@@ -312,9 +312,18 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean): {
   for(const y of [5.8,10.8])box(lighthouseFrame,glass,0,y,2.45-y*.035,.65,1.35,.12);
   collider(lighthouseFrame,6,6);
 
+  function supportTerrace(frame:THREE.Matrix4,width:number,depth:number){
+    for(const z of[-depth/2+.45,depth/2-.45])for(let x=-width/2+.6;x<width/2;x+=3.2){
+      const world=new THREE.Vector3(x,0,z).applyMatrix4(frame),height=Math.max(.5,world.y-groundHeight(world.x,world.z)+.5);
+      box(frame,stone,x,-height/2-.16,z,.6,height,.65);
+    }
+    const connectorLength=depth===11?6.8:8.5,connectorZ=-depth/2-connectorLength/2+.2;
+    box(frame,stone,0,-.15,connectorZ,2.5,.3,connectorLength);
+    for(const x of[-.95,.95]){const world=new THREE.Vector3(x,0,connectorZ).applyMatrix4(frame),height=Math.max(.5,world.y-groundHeight(world.x,world.z)+.5);box(frame,stone,x,-height/2-.16,connectorZ,.35,height,.4);}
+  }
   // Sunset viewpoint: terrace, rail, benches and a small interpretive sign.
   const viewpoint=routeFrame(.04,1,17);
-  box(viewpoint,stone,0,-.12,0,18,.4,11);
+  box(viewpoint,stone,0,-.12,0,18,.4,11);supportTerrace(viewpoint,18,11);
   for(let i=0;i<10;i++)box(viewpoint,iron,-8.5+i*1.9,.65,5.2,.07,1.3,.07);
   box(viewpoint,iron,0,1.27,5.2,18,.07,.07);
   bench(viewpoint,-4,0,1);bench(viewpoint,4,0,1);
@@ -323,7 +332,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean): {
 
   // Palm bay has a quiet waterfront rest stop, rather than another large building.
   const bay=routeFrame(.18,1,18);
-  box(bay,stone,0,-.13,0,13,.35,8);
+  box(bay,stone,0,-.13,0,13,.35,8);supportTerrace(bay,13,8);
   bench(bay,-3,0,1);bench(bay,3,0,1);lamp(bay,-5,-2);
   for(const x of [-5,5])planter(bay,x,0,2,1);
   cylinder(bay,wood,0,1.6,-1,.06,.07,3.2,8);

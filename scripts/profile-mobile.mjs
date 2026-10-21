@@ -1,5 +1,6 @@
-import {chromium,devices} from '@playwright/test';import {writeFile,mkdir} from 'node:fs/promises';
-const label=process.argv[2]??'baseline',tier=process.argv[3]??'medium';await mkdir('artifacts/mobile-performance',{recursive:true});
+import {chromium,devices} from '@playwright/test';import {writeFile,mkdir,access} from 'node:fs/promises';
+const label=process.argv[2],tier=process.argv[3]??'low';if(!label||!/^[a-z0-9-]+$/.test(label))throw Error('Provide a unique measurement label: node scripts/profile-mobile.mjs coastal-scans low');await mkdir('artifacts/mobile-performance',{recursive:true});
+const output=`artifacts/mobile-performance/${label}.json`;if(await access(output).then(()=>true,()=>false))throw Error('Measurement already exists: '+output);
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});const context=await browser.newContext({...devices['Pixel 7'],viewport:{width:844,height:390},screen:{width:844,height:390}});const page=await context.newPage();
 await page.addInitScript(t=>localStorage.setItem('coast-settings',JSON.stringify({quality:t,muted:true})),tier);await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:4188')+'/?test=1');await page.click('#start-auto');await page.waitForTimeout(1500);
 const cdp=await context.newCDPSession(page);await cdp.send('Performance.enable');await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});const before=await cdp.send('Performance.getMetrics');

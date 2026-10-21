@@ -1,0 +1,78 @@
+{
+  "models": [
+    {
+      "name": "cliff-near.gltf",
+      "triangles": 23994,
+      "bounds": [
+        {
+          "min": [
+            -45.055580139160156,
+            -0.6119113564491272,
+            -6.205799579620361
+          ],
+          "max": [
+            46.924373626708984,
+            9.675003051757812,
+            4.760909080505371
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cliff-far.gltf",
+      "triangles": 6000,
+      "bounds": [
+        {
+          "min": [
+            -45.014381408691406,
+            -0.5801519155502319,
+            -6.205799579620361
+          ],
+          "max": [
+            46.924373626708984,
+            9.619101524353027,
+            4.717966556549072
+          ]
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "uri": "cliff-near.gltf",
+      "bytes": 2948,
+      "sha256": "abd6686b79f015c6edd6bc02ef2a2b027e8814c45bce757ef3536797ccf309d1"
+    },
+    {
+      "uri": "cliff-near-0.bin",
+      "bytes": 589212,
+      "sha256": "579868580c9e71244cd146f369a81ee484778e7383add685159292e218ee9946"
+    },
+    {
+      "uri": "textures/coastal_cliff_01_nor_gl_1k.jpg",
+      "bytes": 853524,
+      "sha256": "afbe8c2f9ff62dd616f776c074b996d2d275eef982a40aee1f28f4f3b3a3cf0e"
+    },
+    {
+      "uri": "textures/coastal_cliff_01_diff_1k.jpg",
+      "bytes": 699457,
+      "sha256": "6c9626fdb5550ba260b195638c8c89053faedc22005f4ca94d3be5df72ae525a"
+    },
+    {
+      "uri": "textures/coastal_cliff_01_arm_1k.jpg",
+      "bytes": 640985,
+      "sha256": "7f287d0b44a3162b5e360fe45ccc8b6009c189d21bd33c1094060eef613c6fa6"
+    },
+    {
+      "uri": "cliff-far.gltf",
+      "bytes": 2942,
+      "sha256": "c1f227302a56781f987f9025cb9ef96f1cdb25a38b711337e487b1755b000beb"
+    },
+    {
+      "uri": "cliff-far-0.bin",
+      "bytes": 162240,
+      "sha256": "1da3bc67c93bfae6150bf7a1d304b120026afa968c4c39d4ad4d5ad25adac152"
+    }
+  ],
+  "totalBytes": 2951308
+}

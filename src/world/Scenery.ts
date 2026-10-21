@@ -488,6 +488,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const anchor=anchors[i%anchors.length],s=coast.sample(anchor.t+(random()-.5)*.012),offset=anchor.side*(12+random()*21);
     const x=s.position.x+s.right.x*offset,z=s.position.z+s.right.z*offset,y=groundHeight(x,z);
     if(y<.1||!naturalVerge(x,z,9))continue;
+    if(anchor.t>.795&&anchor.t<.94&&Math.abs(offset)<16)continue;
     const size=.65+random()*1.15;
     bushes.push(matrix(x,y-.04,z,size,size*(.65+random()*.3),size));
     bushColors.push(new THREE.Color().setHSL(.19+random()*.07,.12,.72+random()*.19));

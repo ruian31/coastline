@@ -31,20 +31,29 @@
 - motion-trees/drive.webm约21秒；2秒间隔8帧已目视检查。隧道.710到.766，切电影与手动急转，三车型副驾/中控截图已看。
 - 未实现seed/no-debug钩子删除；截图稳定不再误改真实“减少动态”设置或电影构图。
 
-## 当前待提交：海水与内饰
+## 已提交8f9f625：海水与内饰
 - 同一天空HDR反射到海面、近岸水色/远波抗闪烁；扩大向下环顾，修复衣物遮挡手刹并细化手刹。
 - 三车逐车真实油门测试，desktop5+Android5+WebKit5=15项通过。22状态正式manifest evidence-sea-cabins.json；海水/cabin当前build完成，桌面87/606036/81/34、手机72/288701/63/30，均预算内。子路径静态build验证通过。
 
-## 用户最新反馈与下步
-- 一加12 Chrome画面掉帧，用户明确需要手机默认横屏全屏。要针对帧时间优化，不把桌面手机模拟当真机通过。D17/D18已记录。
-- 排查发现地图12.5Hz重复计算约350个CatmullRom样本、UI图标/文案每帧重建；先缓存地图与UI再对比测量。
-- 测量基线与优化后同场景CPU/布局/DOM变动及渲染统计，视GPU负担调整手机流畅档和阴影；保持干燥加州风格。
-- 需实现手机点击开始自动全屏+横屏锁定，平台不支持时明确横置/主屏幕方式。已查MDN与WebKit当前来源，iPhone元素全屏仍有限制，不能假称可强制所有浏览器。
-- work/manual-route.mjs已写但未运行，且route.nearest不存在须改用nearestRoad(x,z,route)；不要声称已有完整手动环线证据。先处理真实手机缺陷。
+## 当前待提交：手机优化与横屏全屏
+- 一加12 Chrome首轮画面掉帧；修正UI图标/文本无变化仍重建、小地图重复曲线采样，缓存Path2D与地标。
+- baseline→cached-ui→optimized-low：8秒DOM1543→14→14、布局108ms→3→2、Task2689ms→2111→1995；4xCPU节流桌面RTX4050 Android视口对照，非真机fps。
+- 手机自动档从low启动，DPR1、轻量车底影，少些远景草/灌/蕨，保留近景风动与海岸风格；coarse UI去实时背景模糊。
+- MobilePresentation默认横置引导，点击开始同步申请fullscreen，成功后尝试landscape锁定；能力不足有手动横置与iPhone添加到主屏幕说明。webmanifest/icon/iOSmeta已加。
+- 用户真实一加12复测稳定地址 http://192.168.3.10:5190/ 后确认“明显更流畅，横屏全屏正常”。docs09记录。
+- 当前build通过；desktop5+Android7+WebKit7共19项功能通过。两项仅手机测试在桌面skip；API顺序测试桩曾因DOM尚未建立/ScreenOrientation不存在失败，桩已修正为HTMLElement.prototype与完整screen.orientation对象，Chrome/WebKit聚焦重跑通过；源功能未因此改动。
+- 22份inspector截图已生成，artifacts/evidence-mobile-performance.json。目视mobile-tunnel有一次车身表面不见/路面透出异常，保留并继续查，不能假称全视觉通过。考虑冷启动GPU预编译，但尚未实施或验证根因。
+
+## 下一步
+1. 提交当前已验证手机优化/横屏全屏阶段，保留异常说明。
+2. 重复冷加载手机tunnel/换车，定位偶发材质/绘制缺失；检查renderer.compileAsync预热是否有实际帮助，不能无证据称已修复。
+3. work/manual-route.mjs未运行，且route.nearest不存在需改nearestRoad(x,z,route)。继续真实输入主环/支路与最终逐项审计、10类视觉评分；当前goal active，用户没有要求暂停。
 
 ## 当前可用服务
 - dev 5188，exec session29673，http://localhost:5188/ (LAN 192.168.3.10)。
 - production preview4188，exec session40693，http://127.0.0.1:4188/。
+- 稳定LAN生产5190，exec session79618，http://192.168.3.10:5190/。
+- 子路径静态示例4190，exec session61671，仅本地。
 - 私有Site仅预登记未发布；commit技能禁止push，本轮不走外部部署。
 
 ## 剩余差距

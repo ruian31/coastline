@@ -14,6 +14,7 @@ export interface Convertible {
   cockpitEye: THREE.Vector3;
   cockpitLook: THREE.Vector3;
   update: (speed: number, steer: number, dt: number) => void;
+  setContactShadow:(visible:boolean)=>void;
   dispose: () => void;
 }
 
@@ -476,6 +477,13 @@ export function createConvertible(index = 0): Convertible {
   // Double-sided authored body skins remain visible from both the road and the open cockpit.
   materials.paint.side = THREE.DoubleSide;
   const root = new THREE.Group(); root.name = `convertible-${index}`;
+  const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;
+  const shadowContext=shadowCanvas.getContext('2d')!,gradient=shadowContext.createRadialGradient(64,64,20,64,64,64);
+  gradient.addColorStop(0,'rgba(0,0,0,.72)');gradient.addColorStop(.6,'rgba(0,0,0,.45)');gradient.addColorStop(1,'rgba(0,0,0,0)');
+  shadowContext.fillStyle=gradient;shadowContext.fillRect(0,0,128,128);
+  const shadowMap=new THREE.CanvasTexture(shadowCanvas);surfaceTextures.push(shadowMap);
+  const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(2.5,4.9),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.56,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
+  contactShadow.name='vehicle-contact-shadow';contactShadow.rotation.x=-Math.PI/2;contactShadow.position.y=-.012;contactShadow.visible=false;root.add(contactShadow);
   const batch = new GeometryBatch(materials);
   buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
 
@@ -528,7 +536,7 @@ export function createConvertible(index = 0): Convertible {
   const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
-    root, cockpitEye, cockpitLook,
+    root, cockpitEye, cockpitLook,setContactShadow(visible){contactShadow.visible=visible;},
     update(speed, steer, dt) {
       driver.update(steer, dt);
       // Speed is metres/second and steer is normalized [-1,1].

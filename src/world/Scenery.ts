@@ -10,6 +10,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
   setSkyReflection:(texture:THREE.Texture)=>void;
+  setLowDetail:(enabled:boolean)=>void;
 } {
   const root = new THREE.Group();
   root.name = 'Coastal landscape';
@@ -593,6 +594,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   return {
     groundHeight:cameraGroundHeight,
     setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
+    setLowDetail(enabled){
+      for(const child of root.children){
+        if(!(child instanceof THREE.InstancedMesh))continue;
+        const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:1;
+        const full=child.userData.fullCount??child.count;child.userData.fullCount=full;
+        child.count=enabled?Math.max(1,Math.floor(full*factor)):full;
+      }
+    },
     update(elapsed, carPosition) {
       time.value=elapsed;
       sky.position.set(carPosition.x,0,carPosition.z);

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+test-results/
+artifacts/*
+!artifacts/game-progress.md
+!artifacts/final-evidence.md
+.git-commit-message.txt
+.openai/local/
+*.log
+.DS_Store

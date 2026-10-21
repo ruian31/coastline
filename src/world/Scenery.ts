@@ -15,7 +15,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const root = new THREE.Group();
   root.name = 'Coastal landscape';
   scene.add(root);
-  const random = createSeededRandom(864203);
+  let random = createSeededRandom(864203);
   const time = { value: 0 };
   const sun = new THREE.Vector3(.8058, .1072, .5824).normalize();
   const windMaterials: THREE.MeshStandardMaterial[] = [];
@@ -70,6 +70,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const {point,distance}=closestSurface(x,z);
     if(distance<clearance)return false;
     if(point.id==='coast') {
+      const seaward=(x-point.position.x)*point.right.x+(z-point.position.z)*point.right.z;
+      if(point.t>.795&&point.t<.955&&Math.abs(point.t-.88)>.025&&seaward>11.5)return false;
+      if(point.t>.865&&point.t<.895&&seaward>16)return false;
       if(point.t>.328&&point.t<.423&&distance<15.2)return false;
       if(point.t>.665&&point.t<.751&&distance<23)return false;
       // The tunnel hill is an exposed rock formation rather than a planted flat roof.
@@ -78,6 +81,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     return true;
   }
   const shoreScale=(a:number)=>1+Math.sin(a*5+.4)*.025+Math.sin(a*11+1.8)*.014+Math.sin(a*19-.8)*.007;
+  let sampledTerrain:((x:number,z:number)=>number)|null=null;
   function peninsulaHeight(x:number,z:number,distance:number,landward:number):number {
     const radius=Math.hypot(x/355,z/292),angle=Math.atan2(z/292,x/355);
     const shift=1+(shoreScale(angle)-1)*THREE.MathUtils.smoothstep(radius,.97,1.08);
@@ -89,6 +93,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     return coastal+ridge*erosion*THREE.MathUtils.smoothstep(distance,17,58)*landward;
   }
   function groundHeight(x: number, z: number): number {
+    if(sampledTerrain)return sampledTerrain(x,z);
     const {point:closest,distance}=closestSurface(x,z);
     const cut = 1 - THREE.MathUtils.smoothstep(distance, closest.width / 2 + 8, closest.width / 2 + 19);
     const outward=(x-closest.position.x)*closest.right.x+(z-closest.position.z)*closest.right.z;
@@ -97,6 +102,13 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     if(closest.id==='coast'&&closest.t>.328&&closest.t<.423) {
       // Retain the existing town foundations and promenade before the hillside rises.
       y=THREE.MathUtils.lerp(heightAt(x,z),y,THREE.MathUtils.smoothstep(distance,25,46));
+    }
+    if(closest.id==='coast') {
+      const headland=THREE.MathUtils.smoothstep(closest.t,.79,.805)*(1-THREE.MathUtils.smoothstep(closest.t,.945,.96));
+      const lighthouse=1-THREE.MathUtils.smoothstep(Math.abs(closest.t-.88),.013,.025);
+      const inlet=headland*(1-lighthouse)*THREE.MathUtils.smoothstep(outward,13,28);
+      // Real coastal drop below the scanned rim; retain the lighthouse's continuous peninsula.
+      y-=Math.max(0,y+2.2)*inlet;
     }
     return y - Math.max(0, y - closest.position.y + .62) * cut - .025;
   }
@@ -126,6 +138,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   }
   terrain.setAttribute('color', new THREE.Float32BufferAttribute(terrainColors, 3));
   terrain.computeVertexNormals();
+  sampledTerrain=(x,z)=>{
+    const gx=THREE.MathUtils.clamp((x+530)/1060*subdivisions,0,subdivisions),gz=THREE.MathUtils.clamp((z+470)/940*subdivisions,0,subdivisions);
+    const ix=Math.min(subdivisions-1,Math.floor(gx)),iz=Math.min(subdivisions-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(subdivisions+1)+ix,b=a+subdivisions+1,d=a+1,c=b+1;
+    return u+v<=1?tp.getY(a)*(1-u-v)+tp.getY(d)*u+tp.getY(b)*v:tp.getY(c)*(u+v-1)+tp.getY(b)*(1-u)+tp.getY(d)*(1-v);
+  };
   const groundMaterial = new THREE.MeshStandardMaterial({ roughness: .96, metalness: 0 });
   groundMaterial.onBeforeCompile = shader => {
     for (const [prefix, maps] of Object.entries({ Ground:groundMaps, Sand:sandMaps, Rock:rockMaps })) {
@@ -277,8 +294,10 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         float warp=noise(p*.025+t*.012)*6.0;
         float w1=sin(p.x*.17+p.y*.11-t*.73+warp),w2=sin(p.x*-.13+p.y*.23+t*.51+warp*.71);
         float footprint=max(length(dFdx(p)),length(dFdy(p)));
-        float fine=(noise(p*.76+vec2(t*.10,-t*.07))-.5)/(1.0+footprint*.6);
-        vec3 n=normalize(vec3(w1*.028+fine*.045,1.0,w2*.036+fine*.031));
+        float fineFilter=1.0/(1.0+footprint*.6);
+        float w3=sin(p.x*.51+p.y*-.39-t*1.13+warp*.8)*fineFilter;
+        vec2 fine=(vec2(noise(p*.76+vec2(t*.10,-t*.07)),noise(p.yx*.63+vec2(18.3-t*.08,9.7+t*.11)))-.5)*fineFilter;
+        vec3 n=normalize(vec3(w1*.022+w2*.011+w3*.018+fine.x*.055,1.0,w2*.024-w1*.012-w3*.014+fine.y*.050));
         vec3 view=normalize(cameraPosition-vWorld);
         float fres=pow(1.0-max(dot(n,view),0.0),4.0);
         float shoreDistance=abs(length(p/vec2(355.0,292.0))-1.116)*310.0;
@@ -335,6 +354,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     mesh.computeBoundingSphere();
     root.add(mesh);
     return mesh;
+  }
+  function treeBatch(geometry:THREE.BufferGeometry,material:THREE.Material,matrices:THREE.Matrix4[],colors?:THREE.Color[]):THREE.Group {
+    // A whole-island instanced bound submits every crown even behind the camera.
+    // Spatial batches retain shared geometry/materials while enabling normal frustum culling.
+    const cells=new Map<string,{matrices:THREE.Matrix4[];colors:THREE.Color[]}>(),group=new THREE.Group();root.add(group);
+    matrices.forEach((m,i)=>{const key=`${Math.floor(m.elements[12]/140)},${Math.floor(m.elements[14]/140)}`;let cell=cells.get(key);if(!cell){cell={matrices:[],colors:[]};cells.set(key,cell);}cell.matrices.push(m);if(colors)cell.colors.push(colors[i]);});
+    for(const [key,cell]of cells){const mesh=batch(geometry,material,cell.matrices,colors?cell.colors:undefined);mesh.name='tree-cell '+key;group.add(mesh);}
+    return group;
   }
   function matrix(x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = random() * Math.PI * 2): THREE.Matrix4 {
     return new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),angle), new THREE.Vector3(sx,sy,sz));
@@ -554,6 +581,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   trunkMaterial.customProgramCacheKey=()=>'coast-palm-trunk-rings';
   const frondGeometry=createPalmCrown(mobile);
   const frondMaterial=wind(0x9cae72,.014,true);frondMaterial.vertexColors=true;
+  random=createSeededRandom(864208);
   const palms:THREE.Matrix4[]=[],palmColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?48:82);i++) {
     const t=i<24?.10+random()*.17:random();
@@ -571,10 +599,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const size=.94+i*.07;
     palms.push(matrix(x,groundHeight(x,z),z,size,size,size,i*.87));palmColors.push(new THREE.Color('#c6cca6'));
   }
-  batch(trunkGeometry,trunkMaterial,palms).name='Curved palm trunks';
-  batch(frondGeometry,frondMaterial,palms,palmColors).name='Wind moving palm fronds';
+  treeBatch(trunkGeometry,trunkMaterial,palms).name='Curved palm trunks';
+  treeBatch(frondGeometry,frondMaterial,palms,palmColors).name='Wind moving palm fronds';
 
   // Inland stone-pine silhouettes break the hill contour, leaving the coastal road open.
+  random=createSeededRandom(864209);
   const pines:THREE.Matrix4[]=[],pineCrowns:THREE.Matrix4[]=[],pineColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?44:85);i++) {
     const x=(random()-.5)*460,z=(random()-.5)*360,y=groundHeight(x,z);
@@ -585,13 +614,30 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     pineColors.push(new THREE.Color().setHSL(.23,.23,.36+random()*.12));
   }
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
-  batch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
+  treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
   const pineMaterial=wind(0x899968,.01);pineMaterial.vertexColors=true;
-  batch(createPineCrown(),pineMaterial,pineCrowns,pineColors).name='Sheltered stone pine boughs';
+  treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors).name='Sheltered stone pine boughs';
+
+  // Baked contact occlusion grounds static props even when mobile sun shadows are disabled.
+  // One shared texture and one draw; projected onto the rendered heightfield rather than a flat decal.
+  const contactCanvas=document.createElement('canvas');contactCanvas.width=contactCanvas.height=128;
+  const contactContext=contactCanvas.getContext('2d')!,gradient=contactContext.createRadialGradient(64,64,2,64,64,64);
+  gradient.addColorStop(0,'rgba(255,255,255,.38)');gradient.addColorStop(.35,'rgba(255,255,255,.18)');gradient.addColorStop(1,'rgba(255,255,255,0)');contactContext.fillStyle=gradient;contactContext.fillRect(0,0,128,128);
+  const contactMap=new THREE.CanvasTexture(contactCanvas);textures.push(contactMap);
+  const contactPositions:number[]=[],contactUvs:number[]=[],contactIndices:number[]=[];
+  for(const [matrices,radiusScale]of[[palms,1.1],[pines,7.5],[rocks,.7]] as const){
+    for(const m of matrices){const x=m.elements[12],z=m.elements[14],radius=Math.hypot(m.elements[0],m.elements[2])*radiusScale,start=contactPositions.length/3;
+      for(let j=0;j<3;j++)for(let i=0;i<3;i++){const px=x+(i-1)*radius,pz=z+(j-1)*radius;contactPositions.push(px,groundHeight(px,pz)+.025,pz);contactUvs.push(i/2,1-j/2);}
+      for(let j=0;j<2;j++)for(let i=0;i<2;i++){const a=start+j*3+i;contactIndices.push(a,a+3,a+1,a+1,a+3,a+4);}
+    }
+  }
+  const contactGeometry=new THREE.BufferGeometry();contactGeometry.setAttribute('position',new THREE.Float32BufferAttribute(contactPositions,3));contactGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(contactUvs,2));contactGeometry.setIndex(contactIndices);
+  place(contactGeometry,new THREE.MeshBasicMaterial({color:0x131b17,map:contactMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}),'Soft contact occlusion under palms, pines and boulders');
 
   // The imported routes also determine safe plant clearance, so future road edits stay coherent.
   root.userData.routeIds = roads.map(r=>r.id);
-  root.userData.sceneryBudget = { tier:mobile?'mobile':'desktop', instancedBatches:10, terrainTriangles:subdivisions*subdivisions*2 };
+  let instancedBatches=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)instancedBatches++;});
+  root.userData.sceneryBudget = { tier:mobile?'mobile':'desktop', instancedBatches, terrainTriangles:subdivisions*subdivisions*2 };
   return {
     groundHeight:cameraGroundHeight,
     setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},

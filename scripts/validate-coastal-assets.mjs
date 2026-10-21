@@ -5,8 +5,8 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const io=new NodeIO();
-for(const folder of ['coastal_cliff_01','coastal_shrubs']){
- const root=`public/assets/models/${folder}`,names=folder==='coastal_cliff_01'?['cliff-near.gltf','cliff-far.gltf']:['shrubs.gltf'];
+for(const folder of ['coastal_cliff_01','coastal_shrubs','coastal_reef']){
+ const root=`public/assets/models/${folder}`,names=folder==='coastal_cliff_01'?['cliff-near.gltf','cliff-far.gltf']:folder==='coastal_reef'?['reef-near.gltf','reef-far.gltf']:['shrubs.gltf'];
  const resources=new Set(),models=[];
  for(const name of names){
   const filename=path.join(root,name),gltf=JSON.parse(await readFile(filename,'utf8'));resources.add(name);

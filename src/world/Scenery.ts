@@ -9,6 +9,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
+  setSkyReflection:(texture:THREE.Texture)=>void;
 } {
   const root = new THREE.Group();
   root.name = 'Coastal landscape';
@@ -262,26 +263,36 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   sky.renderOrder = -10;
 
   // View-dependent sun glitter, layered wave normals, and distance haze in one draw call.
+  const seaSky={value:null as THREE.Texture|null},hasSeaSky={value:0};
   const ocean = place(new THREE.PlaneGeometry(9000, 9000, 1, 1), new THREE.ShaderMaterial({
-    uniforms: { uTime: time, uSun: { value: sun } },
+    uniforms: { uTime: time, uSun: { value: sun },uSkyMap:seaSky,uHasSky:hasSeaSky },
     vertexShader: `varying vec3 vWorld;
       void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorld=wp.xyz;gl_Position=projectionMatrix*viewMatrix*wp;}`,
-    fragmentShader: `uniform float uTime;uniform vec3 uSun;varying vec3 vWorld;
+    fragmentShader: `uniform float uTime,uHasSky;uniform sampler2D uSkyMap;uniform vec3 uSun;varying vec3 vWorld;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.0),f.x),f.y);}
       void main(){
         vec2 p=vWorld.xz;float t=uTime;
         float warp=noise(p*.025+t*.012)*6.0;
         float w1=sin(p.x*.17+p.y*.11-t*.73+warp),w2=sin(p.x*-.13+p.y*.23+t*.51+warp*.71);
-        float fine=noise(p*.76+vec2(t*.10,-t*.07))-.5;
-        vec3 n=normalize(vec3(w1*.035+fine*.025,1.0,w2*.04+fine*.022));
+        float footprint=max(length(dFdx(p)),length(dFdy(p)));
+        float fine=(noise(p*.76+vec2(t*.10,-t*.07))-.5)/(1.0+footprint*.6);
+        vec3 n=normalize(vec3(w1*.028+fine*.045,1.0,w2*.036+fine*.031));
         vec3 view=normalize(cameraPosition-vWorld);
         float fres=pow(1.0-max(dot(n,view),0.0),4.0);
-        vec3 col=mix(vec3(.012,.065,.079),vec3(.18,.23,.31),fres*.82);
+        float shoreDistance=abs(length(p/vec2(355.0,292.0))-1.116)*310.0;
+        vec3 water=mix(vec3(.008,.038,.057),vec3(.018,.105,.105),exp(-shoreDistance*.035));
+        vec3 reflection=vec3(.18,.23,.31);
+        if(uHasSky>.5){
+          vec3 reflected=reflect(-view,n);
+          vec2 skyUv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);
+          reflection=min(texture2D(uSkyMap,skyUv).rgb,vec3(6.0))*.28;
+        }
+        vec3 col=mix(water,reflection,.025+fres*.88);
         vec3 halfway=normalize(view+uSun);
         float glitter=pow(max(dot(n,halfway),0.0),220.0);
         glitter*=.45+noise(p*1.1+t*.14)*.55;
-        col+=vec3(2.5,1.08,.24)*glitter;
+        col+=vec3(2.5,1.35,.49)*glitter;
         col+=vec3(.025,.035,.038)*(noise(p*.31+warp*.05)-.5);
         float dist=length(cameraPosition.xz-p);
         col=mix(col,vec3(.51,.32,.28),smoothstep(650.0,3800.0,dist)*.72);
@@ -581,6 +592,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   root.userData.sceneryBudget = { tier:mobile?'mobile':'desktop', instancedBatches:10, terrainTriangles:subdivisions*subdivisions*2 };
   return {
     groundHeight:cameraGroundHeight,
+    setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
     update(elapsed, carPosition) {
       time.value=elapsed;
       sky.position.set(carPosition.x,0,carPosition.z);

@@ -325,8 +325,10 @@ function buildCabin(batch: GeometryBatch, variant: number) {
   batch.tube('chrome', [V(0, .73, .02), V(0, .81, -.015), V(0, .86, -.04)], .012, 8);
   if (variant === 1) batch.box('chrome', [.065, .055, .12], V(0, .79, -.04), .017);
   else batch.add(variant === 0 ? 'wood' : 'dark', new THREE.SphereGeometry(.035, 14, 10), V(0, .87, -.04));
-  batch.tube('dark', [V(-.1, .67, -.35), V(-.1, .72, -.26), V(-.1, .74, -.18)], .019, 8);
-  batch.box('chrome', [.027, .018, .021], V(-.1, .74, -.17), .004);
+  // The centre-mounted handbrake stays readable beside the driver's elbow.
+  batch.box('dark', [.065, .038, .11], V(.06, .698, -.43), .009);
+  batch.tube('dark', [V(.06, .70, -.45), V(.06, .75, -.34), V(.06, .785, -.18)], .024, 10);
+  batch.box('chrome', [.032, .022, .023], V(.06, .785, -.168), .005);
   // Floor pedals visible from driver eye looking down.
   for (const x of [-.57, -.42, -.28]) batch.box('dark', [.075, .018, .13], V(x, .49, .35), .008);
   for (const side of [-1, 1]) {

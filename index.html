@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#172b2c" /><meta name="description" content="沿着落日海岸，开着敞篷车，慢慢驶向海风。逐海是一款放松的浏览器驾驶游戏。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%23172b2c'/%3E%3Cpath d='M8 30q8-9 16 0t16 0M8 37q8-9 16 0t16 0' stroke='%23f0ce8d' fill='none' stroke-width='3'/%3E%3Ccircle cx='24' cy='16' r='7' fill='%23f0ce8d'/%3E%3C/svg%3E" />
+<title>逐海 · Golden Coast</title>
+</head>
+<body>
+<main id="app">
+<canvas id="game-canvas" aria-label="逐海：沿海驾驶场景，使用方向键或触控驾驶"></canvas>
+<div class="screen-shade" aria-hidden="true"></div>
+<header class="topbar">
+ <div class="brand"><svg viewBox="0 0 42 32" aria-hidden="true"><path d="M2 23q9-9 19 0t19 0M2 30q9-9 19 0t19 0"/><path d="M11 13a10 10 0 0 1 20 0"/></svg><div><strong>逐海</strong><span>GOLDEN COAST</span></div></div>
+ <div class="trip-weather"><span class="sun-dot"></span>18:42 <span class="separator">/</span> 落日海岸</div>
+ <nav class="top-tools" aria-label="游戏控制"><button id="sound-button" class="icon-button" aria-label="声音开关" title="声音开关 (M)"></button><button id="garage-button" class="icon-button" aria-label="选择车辆" title="选择车辆 (V)"></button><button id="menu-button" class="icon-button" aria-label="暂停与设置" title="暂停 (Esc)"></button></nav>
+</header>
+<div id="driving-ui" class="driving-ui hidden">
+ <div class="view-controls"><div class="view-tabs" role="group" aria-label="切换视角"><button data-camera="0" class="selected">追随</button><button data-camera="1">车内</button><button data-camera="2">电影</button></div><button id="auto-button" class="auto-button"><span class="auto-led"></span><span id="auto-label">自动巡航</span></button></div>
+ <div class="location"><span class="eyebrow">THE COAST IS YOURS</span><h2 id="location-name">落日观景台</h2><p id="road-name">逐海环线</p></div>
+ <div class="speedometer"><div class="speed-main"><span id="speed-value">0</span><span class="speed-unit">km/h</span><span id="gear-value">N</span></div><div class="speed-track"><div id="speed-fill"></div></div><div class="drive-status"><span id="drive-mode">手动驾驶</span><span id="distance-value">0.0 km</span></div></div>
+ <div class="map-wrap"><canvas id="minimap" width="256" height="256" aria-label="海岸道路地图"></canvas><div class="map-label"><span class="compass">N ↑</span><span id="map-route-label">COASTLINE</span></div></div>
+ <div class="radio"><button id="radio-button" class="icon-button" aria-label="切换音乐播放"></button><div class="radio-copy"><span class="eyebrow">COAST FM · 88.6</span><span id="radio-track">余晖电台 <span class="radio-dot">·</span> Golden Hour</span></div><div class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></div><button id="next-track" class="icon-button" aria-label="下一首音乐"></button></div>
+ <div class="bottom-hints"><span><kbd>W A S D</kbd> 驾驶</span><span><kbd>C</kbd> 视角</span><span>拖动画面环顾</span><button id="recenter-button">镜头回正</button></div>
+ <button id="junction-button" class="junction-button"><span>下个岔路</span><strong id="junction-label">继续沿海 ↗</strong></button>
+ <div id="touch-controls"><div class="touch-steering"><button data-drive="left" aria-label="向左转向">‹</button><button data-drive="right" aria-label="向右转向">›</button></div><div class="touch-pedals"><button data-drive="handbrake" class="handbrake" aria-label="手刹">P</button><button data-drive="brake" class="brake" aria-label="刹车与倒车"><span>Ⅱ</span><small>刹车</small></button><button data-drive="throttle" class="throttle" aria-label="油门"><span>↑</span><small>油门</small></button></div></div>
+</div>
+<section id="welcome" class="welcome"><div class="welcome-copy"><span class="eyebrow">TAKE THE LONG WAY HOME</span><h1>慢一点，<br>海就在前面。</h1><p>一辆敞篷车，一段海岸线。<br>把时间留给风景，把心事留给海风。</p><button id="start-button" class="primary-button">开往海边 <span>↗</span></button><button id="start-auto" class="text-button">让风景带路 · 自动巡航</button><div class="welcome-controls">键盘驾驶 / 拖动环顾 / 手机触控</div></div><div class="welcome-caption"><span>GOLDEN HOUR</span><div></div><span>无须赶路，随心而行</span></div></section>
+<section id="menu-panel" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="menu-title"><div class="panel"><span class="eyebrow">A MOMENT BY THE SEA</span><h2 id="menu-title">在这里，歇一会。</h2><button id="resume-button" class="primary-button">继续旅程 <span>↗</span></button><div class="settings"><label>车载音乐 <input id="music-volume" type="range" min="0" max="100" value="50"></label><label>风与发动机 <input id="ambient-volume" type="range" min="0" max="100" value="65"></label><label>画面质量 <select id="quality-select"><option value="low">流畅</option><option value="medium" selected>标准</option><option value="high">精致</option></select></label><label class="check-label">减少镜头动态 <input id="reduced-motion" type="checkbox"></label></div><div class="panel-actions"><button id="recover-button" class="secondary-button">返回道路</button><button id="fullscreen-button" class="secondary-button">全屏</button></div><p class="panel-note">WASD / 方向键驾驶 · 空格手刹<br>C 切视角 · P 自动巡航 · R 返回道路</p></div></section>
+<section id="garage-panel" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="garage-title"><div class="panel garage-panel"><div class="panel-heading"><div><span class="eyebrow">FIND YOUR COMPANION</span><h2 id="garage-title">今天，开什么？</h2></div><button id="close-garage" class="icon-button" aria-label="关闭车辆选择">✕</button></div><div id="car-options" class="car-options"></div><p class="panel-note">选车后停稳在当前道路，保留你的旅程。</p><button id="garage-done" class="primary-button">就开这辆 <span>↗</span></button></div></section>
+<div id="toast" class="toast" role="status"></div><div id="error-panel" class="error-panel hidden"><h2>暂时无法驶向海边</h2><p id="error-message"></p><button onclick="location.reload()">重新加载</button></div>
+</main>
+<script type="module" src="/src/main.ts"></script>
+</body></html>

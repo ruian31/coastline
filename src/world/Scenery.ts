@@ -16,6 +16,27 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
   const windMaterials: THREE.MeshStandardMaterial[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const textures: THREE.Texture[] = [];
+  let disposed = false;
+  const textureLoader = new THREE.TextureLoader();
+  function surfaceTexture(file: string, color = false): THREE.Texture {
+    const texture = textureLoader.load(`${import.meta.env.BASE_URL}assets/environment/${file}`, loaded => {
+      if (disposed) loaded.dispose();
+    });
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    texture.anisotropy = mobile ? 4 : 8;
+    textures.push(texture);
+    return texture;
+  }
+  const groundMaps = {
+    color: surfaceTexture('ground-color.jpg', true), normal: surfaceTexture('ground-normal.jpg'), roughness: surfaceTexture('ground-roughness.jpg'),
+  };
+  const sandMaps = {
+    color: surfaceTexture('sand-color.jpg', true), normal: surfaceTexture('sand-normal.jpg'), roughness: surfaceTexture('sand-roughness.jpg'),
+  };
+  const rockMaps = {
+    color: surfaceTexture('rock-color.jpg', true), normal: surfaceTexture('rock-normal.jpg'), roughness: surfaceTexture('rock-roughness.jpg'),
+  };
   const keep = <T extends THREE.BufferGeometry | THREE.Material>(resource: T): T => {
     resources.add(resource);
     return resource;
@@ -71,17 +92,40 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
   }
   terrain.setAttribute('color', new THREE.Float32BufferAttribute(terrainColors, 3));
   terrain.computeVertexNormals();
-  const groundMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .96, metalness: 0 });
+  const groundMaterial = new THREE.MeshStandardMaterial({ roughness: .96, metalness: 0 });
   groundMaterial.onBeforeCompile = shader => {
-    shader.vertexShader = 'varying vec3 vGroundPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPosition = position;');
-    shader.fragmentShader = 'varying vec3 vGroundPosition;\n' + shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-      float grit = fract(sin(dot(floor(vGroundPosition.xz * 9.0), vec2(12.9898,78.233))) * 43758.5453);
-      float patches = sin(vGroundPosition.x*.12+sin(vGroundPosition.z*.095)*2.1)*sin(vGroundPosition.z*.14+vGroundPosition.x*.035);
-      float lichen = smoothstep(.2,.6,patches);
-      diffuseColor.rgb *= .79 + grit * .20 + patches * .12;
-      diffuseColor.rgb = mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.77,.97,.62),lichen*.33);`);
+    for (const [prefix, maps] of Object.entries({ Ground:groundMaps, Sand:sandMaps, Rock:rockMaps })) {
+      shader.uniforms[`u${prefix}Color`] = { value:maps.color };
+      shader.uniforms[`u${prefix}Normal`] = { value:maps.normal };
+      shader.uniforms[`u${prefix}Rough`] = { value:maps.roughness };
+    }
+    shader.vertexShader = 'varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPosition = (modelMatrix*vec4(position,1.0)).xyz;vGroundWorldNormal=normalize(mat3(modelMatrix)*normal);');
+    shader.fragmentShader = `varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;
+      uniform sampler2D uGroundColor,uGroundNormal,uGroundRough,uSandColor,uSandNormal,uSandRough,uRockColor,uRockNormal,uRockRough;
+      float coastHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float coastNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(coastHash(i),coastHash(i+vec2(1,0)),f.x),mix(coastHash(i+vec2(0,1)),coastHash(i+1.0),f.x),f.y);}
+    ` + shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      vec2 soilUv=vGroundPosition.xz/15.0,sandUv=vGroundPosition.xz/12.0,rockUv=vGroundPosition.xz/3.5;
+      float macro=coastNoise(vGroundPosition.xz*.035);
+      float sandWeight=1.0-smoothstep(2.0,9.0,vGroundPosition.y+macro*2.2);
+      float rockWeight=clamp((1.0-vGroundWorldNormal.y)*2.5+smoothstep(.67,.93,macro)*.36,0.0,.7);
+      vec3 soil=texture2D(uGroundColor,soilUv).rgb;
+      vec3 sand=texture2D(uSandColor,sandUv).rgb;
+      vec3 stone=texture2D(uRockColor,rockUv).rgb;
+      ${mobile ? '' : `soil=mix(soil,texture2D(uGroundColor,soilUv*1.73+vec2(17.3,9.7)).rgb,coastNoise(vGroundPosition.xz*.08)*.34);
+      sand=mix(sand,texture2D(uSandColor,sandUv*1.57+vec2(3.7,8.1)).rgb,.26);`}
+      vec3 albedo=mix(mix(soil,sand,sandWeight),stone,rockWeight);
+      float damp=1.0-smoothstep(-.7,1.4,vGroundPosition.y);
+      diffuseColor.rgb=albedo*mix(.86,1.14,macro)*mix(1.0,.65,damp);
+      vec3 soilNormal=texture2D(uGroundNormal,soilUv).xyz*2.0-1.0;
+      vec3 sandNormal=texture2D(uSandNormal,sandUv).xyz*2.0-1.0;
+      vec3 stoneNormal=texture2D(uRockNormal,rockUv).xyz*2.0-1.0;
+      vec3 mixedGroundNormal=mix(mix(soilNormal,sandNormal,sandWeight),stoneNormal,rockWeight);
+      float scannedRoughness=mix(mix(texture2D(uGroundRough,soilUv).r,texture2D(uSandRough,sandUv).r,sandWeight),texture2D(uRockRough,rockUv).r,rockWeight);
+    `).replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=clamp(scannedRoughness*.92,.67,1.0);')
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal=normalize(normal+mat3(viewMatrix)*vec3(mixedGroundNormal.x*.42,0.0,mixedGroundNormal.y*.42));');
   };
-  groundMaterial.customProgramCacheKey = () => 'coastal-ground-grit-v1';
+  groundMaterial.customProgramCacheKey = () => `coastal-scanned-ground-v1-${mobile}`;
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
   // A sky dome avoids an external HDR dependency while retaining a consistent sunset direction.
@@ -254,9 +298,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
     if(roadDistance(x,z)<9 || y<-1.8)continue;
     const scale=.7+random()*3.4;
     rocks.push(matrix(x,y-.3,z,scale,scale*(.5+random()*.65),scale*(.8+random()*.5)));
-    rockColors.push(new THREE.Color('#b3aa8f').multiplyScalar(.76+random()*.35));
+    rockColors.push(new THREE.Color('#e4dfd2').multiplyScalar(.88+random()*.22));
   }
-  batch(rockShape,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.93}),rocks,rockColors).name='Coastal limestone boulders';
+  const rockMaterial=new THREE.MeshStandardMaterial({color:0xffffff,map:rockMaps.color,normalMap:rockMaps.normal,roughnessMap:rockMaps.roughness,roughness:.95});
+  for(const texture of Object.values(rockMaps))texture.repeat.set(2,2);
+  rockMaterial.normalScale.set(.72,.72);
+  batch(rockShape,rockMaterial,rocks,rockColors).name='Coastal limestone boulders';
 
   // Procedural leaf atlases retain fine organic silhouettes without thousands of opaque triangles.
   function plantTexture(kind: 'grass' | 'shrub'): THREE.CanvasTexture {
@@ -441,6 +488,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean): {
       sky.position.set(carPosition.x,0,carPosition.z);
     },
     dispose() {
+      disposed = true;
       root.removeFromParent();
       for(const resource of resources)resource.dispose();
       windMaterials.length=0;

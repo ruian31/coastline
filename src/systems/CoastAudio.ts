@@ -19,7 +19,7 @@ export class CoastAudio {
  applyVolumes(){const t=this.context?.currentTime??0;this.master?.gain.setTargetAtTime(this.muted?0:.65,t,.05);this.music?.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.8:0,t,.1);this.environment?.gain.setTargetAtTime(this.ambientVolume,t,.1);}
  update(speed:number,elapsed:number,inTunnel:boolean){const t=this.context?.currentTime??0,s=Math.abs(speed);this.engine?.frequency.setTargetAtTime(31+s*3.2,t,.08);this.engine2?.frequency.setTargetAtTime(62+s*6.4,t,.08);this.engineGain?.gain.setTargetAtTime((.012+Math.min(s/30,1)*.04)*(inTunnel?1.6:1),t,.15);this.windGain?.gain.setTargetAtTime(.014+s*.004,t,.2);this.surfGain?.gain.setTargetAtTime((.035+Math.sin(elapsed*.3)*.015)*(inTunnel?.12:1),t,.6);}
  async pause(){if(this.context?.state==='running')await this.context.suspend();}
- async resume(){if(this.context){await this.context.resume();this.noteTime=this.context.currentTime+.08;}}
+ async resume(){if(this.context){await this.context.resume();this.noteTime=Math.max(this.noteTime,this.context.currentTime+.08);}}
  next(){this.track=1-this.track;this.step=0;}
  dispose(){if(this.timer)clearInterval(this.timer);void this.context?.close();}
 }

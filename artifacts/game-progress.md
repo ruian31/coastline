@@ -23,3 +23,14 @@ Vite dev server：http://localhost:5188/；局域网：http://192.168.3.10:5188/
 
 ## 并行任务
 vehicle_art 完成src/vehicles/Convertible.ts；coastal_world正在完成Scenery提升，已完成Landmarks.ts待主代理集成。资源生成服务凭据缺失；没有外部生成任务，当前资源全部程序化。
+
+## M2 与真实材质迭代
+- M1提交234a27c，用户反馈优先画面更精致、更接近真实风景（D14）。
+- M2已接入Landmarks：连续小镇人行道/房屋/瓦/街景、实际弯曲隧道/内壁/路肩、灯塔与休息处；增加建筑AABB接触和通用摄像机障碍收短。
+- 驾驶者5draws/3458tris已接入三款车；车内隐藏头部保留握盘手臂；修好内轮罩和防火墙，不再可见前轮。
+- 集成Poly Haven本地CC0扫描地面/海砂/岩石/道路1k PBR与真实无建筑纯天空HDR，手机单独1k天空。资源来源和SHA256在public/assets/environment/manifest.json、docs/06。
+- 独立审查3项实际缺陷已修：暂停按M不再恢复音频、音乐恢复保留已排队游标、第三人称目标和最终位置按建筑AABB收短避免进墙。
+- 6项Chrome桌面/手机行为测试通过，5项驾驶/音频逻辑检查通过。自动巡航220s合2621m，整圈1818m；最大中心偏移1.698m；双向支路能回主路。
+- 实际隧道运行7s无pageerror，Chrome RTX4050约60FPS。已有artifacts/motion-m2视频；尚需正式多状态截图manifest与生产预览验证。
+- 剩余视觉问题：少量草穿小镇铺装、初始机位没有面向落日、地形山海层次仍偏平、若干物体仍程序化感强。不能判定目标已达成，继续M4。
+- 未push、未发布。

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { createDriver } from './Driver';
 
 /** Coordinates are metres, +Z forward, +Y up, left-hand drive. */
 export const CAR_DEFINITIONS = [
@@ -218,7 +219,14 @@ function buildBody(batch: GeometryBatch, variant: number) {
 
 function buildCabin(batch: GeometryBatch, variant: number) {
   batch.box('dark', [1.49, .08, 1.5], V(0, .44, -.18));
-  batch.box('dark', [1.45, .37, .07], V(0, .64, .44));
+  // Full-height kickboard seals both footwells against the front wheel houses.
+  // It overlaps the dash, floor and door liners so a low cockpit view stays enclosed.
+  batch.box('dark', [1.57, .65, .12], V(0, .715, .63));
+  for (const side of [-1, 1]) {
+    batch.box('dark', [.15, .53, .63], V(side * .72, .695, .25), .022);
+    batch.box('dark', [.24, .13, .5], V(side * .67, .51, .27), .025);
+    batch.box('leather', [.08, .29, .35], V(side * .748, .81, .29), .014);
+  }
   batch.box(variant === 0 ? 'wood' : 'dark', [1.46, .19, .15], V(0, .96, .57), .02);
   batch.box(variant === 1 ? 'leather' : 'dark', [1.48, variant === 1 ? .05 : .055, variant === 0 ? .22 : .19], V(0, 1.075, .59), .02);
   batch.box('dark', [.65, .14, .035], V(-.37, .995, .475), .018);
@@ -403,12 +411,16 @@ export function createConvertible(index = 0): Convertible {
   for (const x of [-.298, -.532]) instrumentBatch.add('chrome', new THREE.TorusGeometry(.104, .005, 6, 40), V(x, 1.008, .448));
   instrumentBatch.finish(root);
 
+  const driver = createDriver(index);
+  root.add(driver.root);
+
   let wheelRotation = 0;
   const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
     root, cockpitEye, cockpitLook,
     update(speed, steer, dt) {
+      driver.update(steer, dt);
       // Speed is metres/second and steer is normalized [-1,1].
       wheelRotation = (wheelRotation + speed * Math.min(dt, .1) / .338) % (Math.PI * 2);
       rolls.forEach(roll => { roll.rotation.x = wheelRotation; });
@@ -419,6 +431,7 @@ export function createConvertible(index = 0): Convertible {
       needles[1].rotation.z = -Math.PI * .25 + Math.min(1, .12 + Math.abs(speed) / 52) * Math.PI * 1.5;
     },
     dispose() {
+      driver.dispose();
       const geometries = new Set<THREE.BufferGeometry>();
       const mats = new Set<THREE.Material>();
       root.traverse(object => {

@@ -15,7 +15,9 @@ test('树木根部落在实际绘制的地形网格上',async({page})=>{
   const feet:number[][]=[];
   for(const name of ['Curved palm trunks','Stone pine trunks'])scene.getObjectByName(name)!.traverse(object=>{
    const mesh=object as THREE.InstancedMesh;if(!mesh.isInstancedMesh)return;
-   const matrix=mesh.matrix.clone();for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);feet.push([matrix.elements[12],matrix.elements[13],matrix.elements[14]]);}
+   const placements=mesh.userData.authoredInstances as THREE.Matrix4[];const matrix=mesh.matrix.clone();
+   for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);if(!placements.some(m=>m.elements.every((v,k)=>Math.abs(v-matrix.elements[k])<.001)))throw Error('visible instance lost its authored transform');}
+   for(const m of placements)feet.push([m.elements[12],m.elements[13],m.elements[14]]);
   });
   return{positions:Array.from(terrain.geometry.getAttribute('position').array as ArrayLike<number>),indices:Array.from(terrain.geometry.index!.array),feet:feet.filter((_,i)=>i%Math.ceil(feet.length/20)===0)};
  });

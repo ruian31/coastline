@@ -13,6 +13,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   terrainMaterial: THREE.Material;
   rockMaterial: THREE.MeshStandardMaterial;
   blocksCar: (x:number,z:number) => boolean;
+  cullForCamera:(camera:THREE.Camera)=>void;
+  registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -351,21 +353,31 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }`}), 'Soft receding shoreline wash');
 
   // Geometry assembly helpers keep repeated coastal assets in a handful of draw calls.
-  function batch(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], colors?: THREE.Color[]): THREE.InstancedMesh {
+  type TreeLod={near:Uint8Array;detail:'near'|'far';anchors:THREE.Vector3[]};
+  const visibleBatches:{mesh:THREE.InstancedMesh;matrices:THREE.Matrix4[];colors?:THREE.Color[];bounds:THREE.Sphere[];slots:Int32Array;limit:number;lod?:TreeLod}[]=[];
+  const viewFrustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),viewPosition=new THREE.Vector3();
+  const debugPlacements=import.meta.env.DEV||new URLSearchParams(location.search).has('test');
+  function registerInstances(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[],colors?:THREE.Color[],lod?:TreeLod){
+    const geometry=mesh.geometry;mesh.computeBoundingSphere();geometry.computeBoundingSphere();
+    const bounds=matrices.map(matrix=>{const sphere=geometry.boundingSphere!.clone().applyMatrix4(matrix);sphere.radius+=.8;return sphere;});
+    visibleBatches.push({mesh,matrices,colors,bounds,slots:Int32Array.from(matrices.map((_,i)=>i)),limit:matrices.length,lod});
+    if(debugPlacements)mesh.userData.authoredInstances=matrices;
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);if(mesh.instanceColor)mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+  }
+  function batch(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], colors?: THREE.Color[],lod?:TreeLod): THREE.InstancedMesh {
     const mesh = new THREE.InstancedMesh(keep(geometry), keep(material), matrices.length);
     matrices.forEach((matrix, i) => { mesh.setMatrixAt(i, matrix); if (colors) mesh.setColorAt(i, colors[i]); });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    registerInstances(mesh,matrices,colors,lod);
     root.add(mesh);
     return mesh;
   }
-  function treeBatch(geometry:THREE.BufferGeometry,material:THREE.Material,matrices:THREE.Matrix4[],colors?:THREE.Color[]):THREE.Group {
-    // A whole-island instanced bound submits every crown even behind the camera.
-    // Spatial batches retain shared geometry/materials while enabling normal frustum culling.
-    const cells=new Map<string,{matrices:THREE.Matrix4[];colors:THREE.Color[]}>(),group=new THREE.Group();root.add(group);
-    matrices.forEach((m,i)=>{const key=`${Math.floor(m.elements[12]/140)},${Math.floor(m.elements[14]/140)}`;let cell=cells.get(key);if(!cell){cell={matrices:[],colors:[]};cells.set(key,cell);}cell.matrices.push(m);if(colors)cell.colors.push(colors[i]);});
-    for(const [key,cell]of cells){const mesh=batch(geometry,material,cell.matrices,colors?cell.colors:undefined);mesh.name='tree-cell '+key;group.add(mesh);}
+  function treeBatch(geometry:THREE.BufferGeometry,material:THREE.Material,matrices:THREE.Matrix4[],colors?:THREE.Color[],farGeometry?:THREE.BufferGeometry):THREE.Group {
+    // Per-instance visibility removes the need for many spatial draw batches.
+    const group=new THREE.Group();root.add(group);const near=new Uint8Array(matrices.length).fill(1),anchors=matrices.map(m=>new THREE.Vector3(m.elements[12],m.elements[13],m.elements[14]));
+    const mesh=batch(geometry,material,matrices,colors,farGeometry?{near,anchors,detail:'near'}:undefined);mesh.name='Visible detailed trees';group.add(mesh);
+    if(farGeometry){const far=batch(farGeometry,material,matrices,colors,{near,anchors,detail:'far'});far.name='Visible distant trees';group.add(far);}
     return group;
   }
   function matrix(x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = random() * Math.PI * 2): THREE.Matrix4 {
@@ -605,7 +617,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     palms.push(matrix(x,groundHeight(x,z),z,size,size,size,i*.87));palmColors.push(new THREE.Color('#c6cca6'));
   }
   treeBatch(trunkGeometry,trunkMaterial,palms).name='Curved palm trunks';
-  treeBatch(frondGeometry,frondMaterial,palms,palmColors).name='Wind moving palm fronds';
+  treeBatch(frondGeometry,frondMaterial,palms,palmColors,createPalmCrown(mobile,true)).name='Wind moving palm fronds';
 
   // Inland stone-pine silhouettes break the hill contour, leaving the coastal road open.
   random=createSeededRandom(864209);
@@ -621,7 +633,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
   treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
   const pineMaterial=wind(0x899968,.01);pineMaterial.vertexColors=true;
-  treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors).name='Sheltered stone pine boughs';
+  treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors,createPineCrown(true)).name='Sheltered stone pine boughs';
 
   // Baked contact occlusion grounds static props even when mobile sun shadows are disabled.
   // One shared texture and one draw; projected onto the rendered heightfield rather than a flat decal.
@@ -654,13 +666,25 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     terrainMaterial:groundMaterial,
     rockMaterial,
     blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
+    registerInstances,
+    cullForCamera(camera){
+      camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
+      for(const record of visibleBatches){const{mesh,matrices,colors,bounds,slots,limit,lod}=record;let count=0,changed=false;
+        for(let i=0;i<limit;i++){
+          if(lod){if(lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=mobile?130:200;if(distance<(range-12)**2)lod.near[i]=1;else if(distance>(range+12)**2)lod.near[i]=0;}if(Boolean(lod.near[i])!==(lod.detail==='near'))continue;}
+          // Retain off-screen casters if a later lighting pass enables their shadows.
+          if(!mesh.castShadow&&!viewFrustum.intersectsSphere(bounds[i]))continue;
+          if(slots[count]!==i){mesh.setMatrixAt(count,matrices[i]);if(colors)mesh.setColorAt(count,colors[i]);slots[count]=i;changed=true;}count++;
+        }
+        mesh.count=count;if(changed){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
+      }
+    },
     setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
     setLowDetail(enabled){
-      for(const child of root.children){
-        if(!(child instanceof THREE.InstancedMesh))continue;
+      for(const record of visibleBatches){const child=record.mesh;
         const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:1;
-        const full=child.userData.fullCount??child.count;child.userData.fullCount=full;
-        child.count=enabled?Math.max(1,Math.floor(full*factor)):full;
+        const full=record.matrices.length;child.userData.fullCount=full;
+        record.limit=enabled?Math.min(full,Math.max(1,Math.floor(full*factor))):full;
       }
     },
     update(elapsed, carPosition) {

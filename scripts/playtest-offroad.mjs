@@ -2,7 +2,9 @@
 import{chromium,devices}from'@playwright/test';
 import{createServer}from'vite';
 import{mkdir,writeFile}from'node:fs/promises';
-const rocky=process.env.OFFROAD_ROUTE==='rocks',dir=rocky?'artifacts/rock-offroad-drive':'artifacts/offroad-drive';await mkdir(dir,{recursive:true});
+const rocky=process.env.OFFROAD_ROUTE==='rocks',label=process.env.OFFROAD_LABEL??`${rocky?'rocks':'drive'}-${Date.now()}`;
+if(!/^[a-z0-9-]+$/.test(label))throw Error('OFFROAD_LABEL must contain lowercase letters, digits and hyphens');
+const dir=`artifacts/offroad-${label}`;await mkdir(dir);
 const server=await createServer({server:{middlewareMode:true},appType:'custom'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts');
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
@@ -17,7 +19,18 @@ try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:process.env
  while(Date.now()-started<(rocky?110000:65000)){
   const sample=await page.evaluate(()=>{const d=window.__THREE_GAME_DIAGNOSTICS__,scene=window.__coastObserved.find(s=>s.isScene&&s.getObjectByName('road-network')),car=scene.getObjectByName('convertible-'+d.state.car);return{d,yaw:car.rotation.y};});
   const{d,yaw}=sample,p=d.player.position,speed=d.player.speed;maxDistance=Math.max(maxDistance,d.state.roadDistance);
-  if(waypoint<waypoints.length-1&&Math.hypot(p.x-target.x,p.z-target.z)<7){await setInput([]);await page.screenshot({path:`${dir}/${name}-waypoint-${waypoint}.png`});waypoint++;target=waypoints[waypoint];phase=waypoint===waypoints.length-1?'return':'inland';}
+  if(waypoint<waypoints.length-1&&Math.hypot(p.x-target.x,p.z-target.z)<7){
+   await setInput([]);await page.screenshot({path:`${dir}/${name}-waypoint-${waypoint}.png`});
+   if(rocky&&waypoint===1){
+    await setInput(['brake']);await page.waitForFunction(()=>Math.abs(window.__THREE_GAME_DIAGNOSTICS__.player.speed)<.35);await setInput([]);
+    const size=page.viewportSize();for(const[view,delta]of[.2,-.4].entries()){
+     await page.mouse.move(size.width*.55,size.height*.43);await page.mouse.down();await page.mouse.move(size.width*(.55+delta),size.height*.45,{steps:30});await page.mouse.up();await page.waitForTimeout(500);await page.screenshot({path:`${dir}/${name}-orbit-${view}.png`});
+     const d=await page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__);samples.push({seconds:(Date.now()-started)/1000,phase:'orbit',position:d.player.position,speed:d.player.speed,roadDistance:d.state.roadDistance,renderer:d.renderer});
+    }
+    await page.click(mobile?'[data-camera="0"]':'#recenter-button');
+   }
+   waypoint++;target=waypoints[waypoint];phase=waypoint===waypoints.length-1?'return':'inland';
+  }
   if(phase==='return'&&d.state.roadDistance<3.4){finished=true;await setInput(['brake']);await page.waitForTimeout(600);await setInput([]);await page.screenshot({path:`${dir}/${name}-returned.png`});break;}
   const error=wrap(Math.atan2(target.x-p.x,target.z-p.z)-yaw),targetSpeed=Math.abs(error)>.65?4.5:8;
   const desired=[];if(error>.045)desired.push('left');if(error<-.045)desired.push('right');if(speed<targetSpeed-.15)desired.push('throttle');if(speed>targetSpeed+1.1)desired.push('brake');await setInput(desired);

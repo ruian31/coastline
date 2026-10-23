@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import {createSeededRandom} from '../utils/random';
 
 /** Feathered pinnate leaves: thin curved leaflets rather than broad triangular fans. */
-export function createPalmCrown(mobile:boolean):THREE.BufferGeometry {
+export function createPalmCrown(mobile:boolean,distant=false):THREE.BufferGeometry {
  const random=createSeededRandom(864212),positions:number[]=[],colors:number[]=[];
- const crown=new THREE.Vector3(.65,7.8,0),fronds=mobile?9:14,leaflets=mobile?18:30;
+ const crown=new THREE.Vector3(.65,7.8,0),fronds=distant?7:mobile?9:14,leaflets=distant?8:mobile?18:30;
  function triangle(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3,tint:number){
   for(const v of[a,b,c]){positions.push(v.x,v.y,v.z);colors.push(.42*tint,.60*tint,.23*tint);}
  }
@@ -36,10 +36,10 @@ export function createPalmCrown(mobile:boolean):THREE.BufferGeometry {
 }
 
 /** Overlapping uneven boughs replace the single smooth ellipsoid silhouette. */
-export function createPineCrown():THREE.BufferGeometry {
+export function createPineCrown(distant=false):THREE.BufferGeometry {
  const positions:number[]=[],colors:number[]=[],random=createSeededRandom(93855);
  for(let lobe=0;lobe<5;lobe++){
-  const geometry=new THREE.IcosahedronGeometry(1,1),p=geometry.getAttribute('position');
+  const geometry=new THREE.IcosahedronGeometry(1,distant?0:1),p=geometry.getAttribute('position');
   const angle=lobe*2.399,x=lobe?Math.cos(angle)*.52:0,z=lobe?Math.sin(angle)*.45:0,y=lobe?-.07+random()*.22:.28;
   for(let i=0;i<p.count;i++){
    const px=p.getX(i),py=p.getY(i),pz=p.getZ(i),shape=1+Math.sin(px*9+pz*7)*.10+Math.sin(py*11-px*6)*.05;

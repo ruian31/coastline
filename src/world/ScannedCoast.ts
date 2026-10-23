@@ -25,7 +25,7 @@ export function scanSurface(parts:THREE.BufferGeometry[]){
 }
 
 /** Photographed faces plus authored solid rock bodies, overlapping land and extending below the sea. */
-export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=>number,mobile:boolean,manager:THREE.LoadingManager,rockMaterial:THREE.MeshStandardMaterial){
+export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=>number,mobile:boolean,manager:THREE.LoadingManager,rockMaterial:THREE.MeshStandardMaterial,registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void){
  const root=new THREE.Group();root.name='Eroded sandstone headland';scene.add(root);
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();
  const sections:{group:THREE.Group;inverse:THREE.Matrix4;surface:ReturnType<typeof scanSurface>}[]=[];
@@ -66,12 +66,12 @@ export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=
     transformed.z+=cos(uShrubTime*.8+phase)*h*h*.035;`);};material.customProgramCacheKey=()=> 'scanned-dry-shrub-v1';
    const count=mobile?12:14,instances=new THREE.InstancedMesh(geometry,material,count);instances.name='Scanned dry coastal scrub '+variant;instances.receiveShadow=true;instances.castShadow=!mobile;
    const beats=mobile?[.834,.85,.874,.902]:[.817,.832,.849,.867,.884,.903,.924];
-   for(let i=0;i<count;i++){
+   const placements:THREE.Matrix4[]=[];for(let i=0;i<count;i++){
     const t=beats[Math.floor(i/(mobile?3:2))]+(random()-.5)*.004,sample=coast.sample(t),side=i%4===0?1:-1,offset=side*(8.2+random()*(side===1?2.2:4.8));
     const x=sample.position.x+sample.right.x*offset,z=sample.position.z+sample.right.z*offset,scale=2.3+random()*1.8;
-    dummy.position.set(x,ground(x,z)-.035,z);dummy.rotation.set(0,random()*Math.PI*2,0);dummy.scale.set(scale,scale*(.82+random()*.25),scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);
+    dummy.position.set(x,ground(x,z)-.035,z);dummy.rotation.set(0,random()*Math.PI*2,0);dummy.scale.set(scale,scale*(.82+random()*.25),scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);placements.push(dummy.matrix.clone());
    }
-   instances.computeBoundingSphere();root.add(instances);
+   instances.computeBoundingSphere();registerInstances(instances,placements);root.add(instances);
   }
   if(disposed){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}
  });

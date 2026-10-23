@@ -18,7 +18,7 @@ test('摄影低草可见、近远互斥，切换质量后保留原始摆放与�
   const key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),authored=new Set(original.map(key)),farKeys=new Set<string>(),nearKeys=new Set<string>(),unknown:string[]=[];let duplicates=0;
   for(const mesh of [far,...near])for(let i=0;i<mesh.count;i++){
    const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m);if(!authored.has(k))unknown.push(k);if(farKeys.has(k)||nearKeys.has(k))duplicates++;(mesh===far?farKeys:nearKeys).add(k);
-   if(mesh!==far){const slope=mesh.geometry.getAttribute('instanceGrassSlope'),x=m.elements[12],z=m.elements[14];slopeError=Math.max(slopeError,Math.abs(slope.getX(i)-(height(x+.15,z)-height(x-.15,z))/.3),Math.abs(slope.getY(i)-(height(x,z+.15)-height(x,z-.15))/.3));}
+   if(mesh!==far){const slope=mesh.geometry.getAttribute('instanceGroundSlope'),x=m.elements[12],z=m.elements[14];slopeError=Math.max(slopeError,Math.abs(slope.getX(i)-(height(x+.15,z)-height(x-.15,z))/.3),Math.abs(slope.getY(i)-(height(x,z+.15)-height(x,z-.15))/.3));}
   }
   const material=near[0].material as THREE.MeshStandardMaterial,image=material.map!.image as {width:number;height:number};
   return{detail:root.userData.grassDetail,near:near.map(m=>m.count),far:far.count,duplicates,unknown,slopeError,texture:material.map!.uuid,dimensions:[image.width,image.height],alpha:material.alphaTest,doubleSided:material.side===2,shared:near.every(m=>(m.material as THREE.MeshStandardMaterial).map===material.map),triangles:near.map(m=>m.geometry.index!.count/3),grounded:near.every(m=>{m.geometry.computeBoundingBox();return Math.abs(m.geometry.boundingBox!.min.y)<.001;}),memory:window.__THREE_GAME_DIAGNOSTICS__!.renderer};
@@ -47,6 +47,40 @@ test('低草资源失效仍能开始和行驶，保留完整远景草',async({pa
  expect(fallback.detail.fallback).toBe(true);expect(fallback.visible).toBeGreaterThan(0);expect(fallback.near).toBe(false);expect(fallback.running).toBe(true);
  // This pose is 12m off-road: cruise intentionally requires returning first.
  await page.click('#menu-button');await page.click('#recover-button');await page.click('#auto-button');await expect.poll(async()=>page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__!.player!.speed),{timeout:10000}).toBeGreaterThan(2);
+});
+
+test('灰绿灌木近远互斥且遵守低档原始前缀，切档复用图集',async({page},info)=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));
+  const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));
+ });
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const inspect=()=>page.evaluate(()=>{
+  const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,original=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh,placements=original.userData.authoredInstances as THREE.Matrix4[],key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),lookup=new Map(placements.map((m,i)=>[key(m),i]));
+  const limit=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low'?Math.floor(placements.length*.65):placements.length,seen=new Set<string>(),unknown:string[]=[],outside:number[]=[],variants:number[]=[],textures=new Set<string>();let duplicates=0,near=0,slopeMissing=0;
+  for(const detail of ['near','far','impostor'])for(let variant=0;variant<2;variant++){
+   const mesh=root.getObjectByName(`Grey green coastal scrub ${detail} ${variant}`) as THREE.InstancedMesh,material=mesh.material as THREE.MeshStandardMaterial;variants.push(mesh.geometry.index!.count/3);textures.add(material.map!.uuid);if(detail==='near')near+=mesh.count;
+   const slopes=mesh.geometry.getAttribute('instanceGroundSlope');if(!slopes||mesh.frustumCulled)slopeMissing++;
+   for(let i=0;i<mesh.count;i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);if(seen.has(k))duplicates++;seen.add(k);}
+  }
+  return{detail:root.userData.scrubDetail,originalVisible:original.visible,near,duplicates,unknown,outside,slopeMissing,variants,textures:[...textures]};
+ });
+ const first=await inspect(),cap=info.project.name.includes('mobile')?8:16;
+ expect(first.detail.ready).toBe(true);expect(first.near).toBeGreaterThan(0);expect(first.near).toBe(first.detail.visible);expect(first.detail.selected).toBeLessThanOrEqual(cap);expect(first.originalVisible).toBe(false);expect(first.duplicates).toBe(0);expect(first.unknown).toEqual([]);expect(first.outside).toEqual([]);expect(first.slopeMissing).toBe(0);expect(first.textures).toHaveLength(2);expect(first.variants[0]).toBeGreaterThan(first.variants[2]);expect(first.variants[1]).toBeGreaterThan(first.variants[3]);expect(first.variants.slice(4)).toEqual([10,10]);
+ for(const quality of ['high','low','high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
+  const state=await inspect();expect(state.duplicates).toBe(0);expect(state.unknown).toEqual([]);expect(state.outside).toEqual([]);expect(state.detail.selected).toBeLessThanOrEqual(cap);expect(state.textures).toEqual(first.textures);
+ }
+ expect(errors).toEqual([]);
+});
+
+for(const resource of ['scrub.gltf','scrub-impostors.png'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page})=>{
+ await page.route('**/assets/models/coastal_scrub/'+resource,route=>route.abort());
+ await page.addInitScript(()=>{const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const result=await page.evaluate(()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh;return{fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
+ expect(result).toEqual({fallback:true,original:true,loaded:false,running:true});
 });
 
 test('树木根部落在实际绘制的地形网格上',async({page})=>{

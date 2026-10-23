@@ -1,0 +1,124 @@
+{
+  "asset": "shrub_04",
+  "page": "https://polyhaven.com/a/shrub_04",
+  "license": "CC0-1.0",
+  "authors": {
+    "Rico Cilliers": "All"
+  },
+  "sourceFiles": [
+    {
+      "path": "shrub_04_1k.gltf",
+      "include": {
+        "textures/shrub_04_nor_gl_1k.jpg": {
+          "size": 449241,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_04/shrub_04_nor_gl_1k.jpg",
+          "md5": "b08f500d19ee9b29d7da06fc0e874bb2"
+        },
+        "textures/shrub_04_diff_1k.jpg": {
+          "size": 373350,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_04/shrub_04_diff_1k.jpg",
+          "md5": "b2b4682a82f44be10b8d4b4d481a4fe8"
+        },
+        "textures/shrub_04_arm_1k.jpg": {
+          "size": 332957,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_04/shrub_04_arm_1k.jpg",
+          "md5": "65e414abd3533b7157f05aed63f5f329"
+        },
+        "shrub_04.bin": {
+          "size": 749084,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/shrub_04/shrub_04.bin",
+          "md5": "987a672e598f9dc04b6d23cb8f36d697"
+        }
+      },
+      "size": 2882,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/shrub_04/shrub_04_1k.gltf",
+      "md5": "eba22f7e018dd3d9ed951150c2092f17",
+      "sha256": "782832cbc57e96686b78c6ef9df6234c25f564f78421c8ed4bd42c3631f5aeae"
+    },
+    {
+      "path": "shrub_04.bin",
+      "size": 749084,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/shrub_04/shrub_04.bin",
+      "md5": "987a672e598f9dc04b6d23cb8f36d697",
+      "sha256": "cb442c39682e54cc63f912aa78ab17a03566f947a61adbbbaaa6473166744f01"
+    },
+    {
+      "path": "textures/shrub_04_diff_1k.jpg",
+      "size": 373350,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_04/shrub_04_diff_1k.jpg",
+      "md5": "b2b4682a82f44be10b8d4b4d481a4fe8",
+      "sha256": "0b0fa0a474753d13f3093858cea79d0de05da1e6a0c5d6e181cd351080980b6c"
+    },
+    {
+      "path": "textures/shrub_04_alpha_1k.png",
+      "size": 42906,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/shrub_04/shrub_04_alpha_1k.png",
+      "md5": "c899653f9884941bdb2ada187809f4c8",
+      "sha256": "6ddd60dcdbdcf55d7258ae747866f68f5acc9d88a7735c9eb05b02d6dec527e3"
+    }
+  ],
+  "conversion": "Two complete non-intersecting x bands; ignore source display translation, reset roots, scale xz 12x/y 6x. Simplify connected components independently; both LODs retain every leaf and woody component, far reduces each leaf toward two triangles. Merge official alpha into diffuse; no normal/ARM.",
+  "variants": [
+    {
+      "variant": 0,
+      "lod": "near",
+      "sourceTriangles": 3726,
+      "components": 74,
+      "triangles": 1272,
+      "vertices": 1067,
+      "leaves": 64,
+      "branches": 10,
+      "maxError": 0.034955836832523346
+    },
+    {
+      "variant": 0,
+      "lod": "far",
+      "sourceTriangles": 3726,
+      "components": 74,
+      "triangles": 307,
+      "vertices": 383,
+      "leaves": 64,
+      "branches": 10,
+      "maxError": 0.21351908147335052
+    },
+    {
+      "variant": 1,
+      "lod": "near",
+      "sourceTriangles": 6589,
+      "components": 129,
+      "triangles": 2255,
+      "vertices": 1881,
+      "leaves": 110,
+      "branches": 19,
+      "maxError": 0.03487082198262215
+    },
+    {
+      "variant": 1,
+      "lod": "far",
+      "sourceTriangles": 6589,
+      "components": 129,
+      "triangles": 536,
+      "vertices": 667,
+      "leaves": 110,
+      "branches": 19,
+      "maxError": 0.22937676310539246
+    }
+  ],
+  "preparedAssets": [
+    {
+      "path": "scrub.gltf",
+      "bytes": 5913,
+      "sha256": "5af2d2f02d6047fa3d7f3e106d04ce21f69dd0c0b0f8c0fa037c843383c3e6b6"
+    },
+    {
+      "path": "scrub.bin",
+      "bytes": 154160,
+      "sha256": "f847eadae29563930601a352ef943752862d3f293cb3aadadfc0a6bbed991b29"
+    },
+    {
+      "path": "scrub-color.png",
+      "bytes": 956047,
+      "sha256": "9153dc96ffb19372401c5eb76aae06128e3e3982dcc89fc9389e4a06212ced9e"
+    }
+  ]
+}

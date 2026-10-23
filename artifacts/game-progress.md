@@ -193,3 +193,27 @@
 - 最终主包X9KjVLTb：tsc、独立/正常构建通过。最终三浏览器贴地/切档/互斥/载入回退6项全过；此前三浏览器摆放fixture已过，后续仅改根部贴地shader/属性。初次6失败因测试Float32舍入和离路12米不允许直接巡航，修正测试后全过，失败coastal-grass-regression保留。
 - 正式pass-m20-coastal-grass八机位0错误，桌面130calls/654187tri/107geo/51tex，手机91/251947/98/44。手机横屏真实双指内陆往返65.03米，约22秒0错误，峰109/281578/106/49，近草可见0–13；已看多个时刻。不同于M19绕岩路线，不声称319k高峰已解决。4倍CPU8秒Task2547/Script2169ms vs2460/2072（+3.5%/+4.7%），终点82/218456/97/44。没有新增GPU计时/手机真机数据。
 - 普通dist与候选主包一致，5190普通无query入口实际开始通过，近草ready、组合地形风动shader、一次缓存、RTX4050硬件渲染正常，钩子/诊断undefined，0错误。证据清单8+15=23项通过；来源脚本/四输入MD5-SHA/三输出SHA已保留，资源348943+4318B。即将提交本步后进入M21放射球灌木/三角蕨叶，整体Goal active。
+
+## 2026-10-24 · M21灰绿灌木代表段开发中
+
+- M20已提交15fe191，UTF8核验通过，无push。普通5190/4188与独立4191当前X9KjVLTb；整体Goal active，本目标turn有实质已提交进展。
+- 新scripts/prepare-coastal-scrub.mjs从已缓存shrub_04中取两个完整分离x区间（3726/6589源tri），剔除展示平移，分别逐叶/逐木枝组件简化，避免跨叶焊接；近1272/2255tri，远265/472tri，源74/129独立组件。1k官方Alpha合入Diffuse，PNG956047B，无normal/ARM；源四文件MD5/SHA与输出SHA保留。资源public/assets/models/coastal_scrub目前不被运行游戏引用，尚未验证其实际美术收益。
+- work/scrub-preview.html沿用实际夕阳/填光/HDR的素材观察器，coastal-scrub-asset-first十二张前/侧/俯视正在/已采集，待查看。近景全部叶组件，远景保留三分之一叶组件和全部木枝；远景472tri偏高，先检查叶片是否过度稀疏，再按投影尺寸优化。手机纹理已超目标，不能直接再铺大量高模或把素材小下载量视为免费。
+- 待做：代表路段替换球状程序化maquis，复用原摆放/颜色/随机调用，近远互斥/低档前缀、资源回退、根部和风动、侧视体积与真实驾驶/手机预算验证。Scenery.userData.sceneryBudget目前仅初始化同步批次数，不含M20异步三近草；renderer实际诊断为准，M21接异步植被时同步整理该元数据。
+- M21已接入dev：两个variant近远四批次复用原maquis矩阵/颜色，以独立整数hash分配，保留原共享RNG。近草与灌木真实复用局部贴地/坡度和受限LOD选择，手机灌木近8/30–36m、桌面16/45–53m；新far/near统一遵守旧source.limit低档前缀。
+- 独立只读review确认资源释放、失败回退、索引映射、坡度槽位和RNG；指出far删2/3叶冠使近景cap超额时变裸枝、逐实例包围球扩张但整批球未扩张。已保留全部叶/木枝组件，通过每叶简化降面，far最终307/536tri，near仍1272/2255；grounded foliage关闭整批二次剔除并扩张逐实例球。review未递归，未运行GPU。
+- 原coastal-scrub-game-first及full-canopy仍较细稀，普通maquis原先3米宽放射球，新株型约1米级，地表仍平绿，尖三角蕨叶尚未处理。不能将删掉旧球而覆盖减少称作整体达标，后续继续地表/成片分布。
+- 候选CmQFXlBR阶段三浏览器新增灌木+共享草丛+故障回退+原摆放共15项通过。随后只补成功加载后释放旧maquis Canvas贴图/材质，失败时仍保留旧景观，正在重跑相关六项并最终采集。SceneryBudget批次数在异步植被就绪后重新数自身root，避免仅记录同步初值。
+- 最终BPdEa1rz候选专项15项（上一CmQ）+仅释放旧图后相关6项全过；八正式视图已通过，桌面峰133/723234/111/51，手机92/254428/102/44，纹理数量未增加但新1k替代256图仍增加约5MiB GPU。Far全叶素材十二角度已查看，near/far覆盖一致。
+- **M21暂不发布/提交运行改动**：真实双指绕岩/环顾/返回45.7秒0错误，离路88.0米，峰115calls/373169tri/110geo/50tex，比300k目标高24.4%。M19同类路线319619tri但离路77m，不能把差额全归新灌木。当前5190仍M20/15fe191/X9KjVLTb，独立4191候选BPd高成本；artifact证据和profile先保留为优化前。
+- 4倍CPU8秒BPd Task2751/Script2323ms（M20为2547/2169），终点83/233647/101/44，heap26.26MiB。图形提升主要在枝叶形体，但大量536tri远灌木造成宽视野开销；需要加入真正远距廉价表现，不能删除叶冠或直接再次提高手机负荷。
+- 正在做M21第二级远景：从当前实际模型离线渲染透明颜色图（4侧面+顶部，2变体，512²atlas），远于约60米用10tri立体交叉代理，近/中保持真实1272/2255与307/536几何。候选需带迟滞且三LOD互斥、低档前缀保持；图集只保存 albedo，运行仍接受固定夕阳与缓存阴影。近处侧视必须保留实际枝叶，远距代理要实际像素/切换/颜色与行驶检查。额外约1.33MiB/1纹理换取远景数万tri，需实测，不先宣称预算已解决。
+- 离线远景代理已生成：scripts/bake-coastal-scrub.html + bake-coastal-scrub-impostors.mjs 用实际近景网格只渲染albedo、透明背景，2株×4侧+顶部共10格128²，合成512²PNG125955B；每格1161–3155实叶像素，透明RGB仅作邻色扩张防黑边，输入三文件SHA和输出SHA在impostor-source.json。原始10图/result存artifacts/scrub-impostor-bake-albedo-first，已看0-front。源无光照/背景烘焙。
+- runtime现在三LOD：近限额保持；中景保留完整真实枝叶；手机60±6m/桌面110±6m后切到10tri五面代理，两变体共用一张512图。所有层共用原索引/颜色/低档前缀，互斥并迟滞；代理仍接收固定夕阳和世界缓存，其法线简化向上，风动/贴地复用，不宣称远处是真网格。新增约1.33MiB/1纹理以换远景数万tri。atlas失败或模型失败均回退完整原灌木，成功释放旧占位图。正在三浏览器18项回归，尚未进行最终视觉/行驶/profile，不把旧BPd的15+6结果当三LOD新结果。
+- 候选新证据清单artifacts/evidence-coastal-scrub-impostors.json，run pass-m21c-scrub-impostors，尚未采集；此前pass-m21-grey-scrub/高峰profile都保留为优化前，不覆盖。普通5190仍M20 X9/15fe191，未发布高成本BPd，也未提交M21运行改动。
+- 三LOD最终候选Bz0T4lOs：tsc/build通过，三浏览器共享草/灌木切档、3层互斥/低档前缀、模型失败与atlas失败、原摆放fixture共18项全过。正式pass-m21c-scrub-impostors八视图均0错误，桌面135/666515/113/52，手机92/251959/104/45。原BPd桌面723234的负荷下降，但新增atlas使手机纹理上限44→45；不声称达到40。
+- work/profile-scrub-lod.mjs固定真实手机横屏grass-verge机位，用同一批23个代理变换临时换回中景3D作控制对照，82calls不变、207674 vs217024tri（节省9350），已保存scrub-lod-compare-verge，两张图待/已查看。首次rock-back朝空岩岸、copies0，标为inconclusive且保留，不拿0差异当效益证明。该对照不是旧构建/真机FPS比较。
+- 当前正在真实双指绕岩完整行程，label coastal-scrub-impostor-phone；之后需CPU profile新标签coastal-scrub-impostor-manual、普通dist烟测与新清单检查。5190仍M20，勿提前发布/提交M21。bake输入/输出SHA已核验与当前模型一致。
+- 最终三LOD绕岩行程45.8秒、离路76.53m、0错误，峰115calls/319877tri/112geo/51tex；已看停车环顾/回路帧。优化前373169来自离路88m，轨迹不同，不能全归因LOD；本次与M19约77m范围接近，峰319619也并非逐帧同路径。仍超300k/40约6.6%/27.5%，未称预算全过。
+- 最终CPU标签coastal-scrub-impostor-manual：Task2732/Script2326ms vsM20 2547/2169（+7.3%/+7.2%）；前BPd2751/2323，远距优化CPU未明显下降。相同终点83/218536/103/45，旧BPd233647tri；heap20.46MiB仅记录，不用单次GC差异宣称内存下降。
+- npm run build正常dist与候选同Bz0T4lOs，5190已更新，普通无query入口实际开始/三级准备/1024+512图/旧图null/10tri/一次缓存正常、钩子诊断undefined、0错误，coastal-scrub-release-smoke留存。新清单8+22=30项检查通过；即将提交M21，随后M22干燥地表/路肩与尖片蕨叶，整体Goal active。

@@ -1,0 +1,120 @@
+{
+  "kind": "Unlit photographed albedo from real model, four sides plus top per plant; RGB-only transparent dilation",
+  "inputs": [
+    {
+      "path": "scrub.gltf",
+      "sha256": "5af2d2f02d6047fa3d7f3e106d04ce21f69dd0c0b0f8c0fa037c843383c3e6b6"
+    },
+    {
+      "path": "scrub.bin",
+      "sha256": "f847eadae29563930601a352ef943752862d3f293cb3aadadfc0a6bbed991b29"
+    },
+    {
+      "path": "scrub-color.png",
+      "sha256": "9153dc96ffb19372401c5eb76aae06128e3e3982dcc89fc9389e4a06212ced9e"
+    }
+  ],
+  "size": [
+    512,
+    512
+  ],
+  "tileSize": 128,
+  "views": [
+    {
+      "variant": 0,
+      "view": 0,
+      "tile": 0,
+      "covered": 1161,
+      "width": 2.045167422294617,
+      "height": 1.013020431995392,
+      "maxY": 0.9130204319953918
+    },
+    {
+      "variant": 0,
+      "view": 1,
+      "tile": 1,
+      "covered": 1233,
+      "width": 2.045167422294617,
+      "height": 1.013020431995392,
+      "maxY": 0.9130204319953918
+    },
+    {
+      "variant": 0,
+      "view": 2,
+      "tile": 2,
+      "covered": 1166,
+      "width": 2.045167422294617,
+      "height": 1.013020431995392,
+      "maxY": 0.9130204319953918
+    },
+    {
+      "variant": 0,
+      "view": 3,
+      "tile": 3,
+      "covered": 1253,
+      "width": 2.045167422294617,
+      "height": 1.013020431995392,
+      "maxY": 0.9130204319953918
+    },
+    {
+      "variant": 0,
+      "view": 4,
+      "tile": 4,
+      "covered": 1188,
+      "width": 2.045167422294617,
+      "height": 1.013020431995392,
+      "maxY": 0.9130204319953918
+    },
+    {
+      "variant": 1,
+      "view": 0,
+      "tile": 5,
+      "covered": 2191,
+      "width": 1.6900850296020509,
+      "height": 1.0729056358337403,
+      "maxY": 0.9729056358337402
+    },
+    {
+      "variant": 1,
+      "view": 1,
+      "tile": 6,
+      "covered": 2151,
+      "width": 1.6900850296020509,
+      "height": 1.0729056358337403,
+      "maxY": 0.9729056358337402
+    },
+    {
+      "variant": 1,
+      "view": 2,
+      "tile": 7,
+      "covered": 2186,
+      "width": 1.6900850296020509,
+      "height": 1.0729056358337403,
+      "maxY": 0.9729056358337402
+    },
+    {
+      "variant": 1,
+      "view": 3,
+      "tile": 8,
+      "covered": 2150,
+      "width": 1.6900850296020509,
+      "height": 1.0729056358337403,
+      "maxY": 0.9729056358337402
+    },
+    {
+      "variant": 1,
+      "view": 4,
+      "tile": 9,
+      "covered": 3155,
+      "width": 1.6900850296020509,
+      "height": 1.0729056358337403,
+      "maxY": 0.9729056358337402
+    }
+  ],
+  "output": {
+    "path": "scrub-impostors.png",
+    "bytes": 125955,
+    "sha256": "4b9f3d3cf28b96aadc640bb6adb1684811d81c13bebfc719c35722688a4f55a1"
+  },
+  "errors": []
+}

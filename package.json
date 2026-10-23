@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc && vite build",
-    "build:pages": "tsc && vite build --base=/coastline/",
-    "deploy": "npm run build:pages && gh-pages --dist dist --nojekyll --message 'deploy: publish GitHub Pages'",
+    "build:pages": "tsc && vite build --base=/coastline/ --outDir=dist-pages",
+    "deploy": "npm run build:pages && gh-pages --dist dist-pages --nojekyll --message 'deploy: publish GitHub Pages'",
     "preview": "vite preview --host 127.0.0.1",
     "test": "playwright test",
     "verify:visual": "playwright test tests/visual.spec.ts",

@@ -83,6 +83,6 @@ npm ci
 npm run deploy
 ```
 
-`deploy` 先进行 TypeScript 检查，再以 `/coastline/` 为资源前缀构建并推送 `dist/` 到 `gh-pages`。它会包含本地尚未提交的源码改动所生成的页面，但不会提交或切换当前源码分支；源码提交和推送仍单独进行。GitHub 完成 Pages 发布后，线上页面更新。
+`deploy` 先进行 TypeScript 检查，再以 `/coastline/` 为资源前缀构建并推送 `dist-pages/` 到 `gh-pages`。Pages 使用独立构建目录，避免被普通本地构建覆盖。它会包含本地尚未提交的源码改动所生成的页面，但不会提交或切换当前源码分支；源码提交和推送仍单独进行。GitHub 完成 Pages 发布后，线上页面更新。
 
-只检查部署构建可运行 `npm run build:pages`，随后用 `npm run preview -- --base=/coastline/` 预览，访问 `http://127.0.0.1:4188/coastline/`。普通 `npm run build` 和 `npm run dev` 继续使用根路径。
+只检查部署构建可运行 `npm run build:pages`，随后用 `npm run preview -- --base=/coastline/ --outDir=dist-pages` 预览，访问 `http://127.0.0.1:4188/coastline/`。普通 `npm run build` 和 `npm run dev` 继续使用根路径。

@@ -1,0 +1,315 @@
+{
+  "provider": "Poly Haven",
+  "license": "CC0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "apiUserAgent": "GoldenCoastAssetPipeline/0.1",
+  "downloaded": "2026-10-21",
+  "assets": [
+    {
+      "asset": "coast_sand_rocks_02",
+      "file": "ground-color.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_rocks_02/coast_sand_rocks_02_diff_1k.jpg",
+      "sourceMd5": "6fa7bee516a8c01a383a782d802b6a3b",
+      "sourceBytes": 839184,
+      "bytes": 212757,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "sha256": "606a20241dc9c0705a424525302819ea8921d2173f1fc665a9176311d08bd5e8",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "SRGBColorSpace"
+    },
+    {
+      "asset": "coast_sand_rocks_02",
+      "file": "ground-normal.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_rocks_02/coast_sand_rocks_02_nor_gl_1k.jpg",
+      "sourceMd5": "38045b4c257fb5a87b373e960e3cbb9c",
+      "sourceBytes": 1265458,
+      "bytes": 425638,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "sha256": "d4654a33a81ddaf4222803cf87f58583c84488c0058eeb456ea4687cbc96518b",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "coast_sand_rocks_02",
+      "file": "ground-roughness.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_rocks_02/coast_sand_rocks_02_rough_1k.jpg",
+      "sourceMd5": "fe1a6ef27aba14602724b26e549a2a5c",
+      "sourceBytes": 627223,
+      "bytes": 166826,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "sha256": "c33eb0f855c05c15bc0ca8c245a0d21141449883ef1c5b391103e64647fe8be7",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "coast_sand_01",
+      "file": "sand-color.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_01/coast_sand_01_diff_1k.jpg",
+      "sourceMd5": "a1e243fc8635806381505c7dc44b192a",
+      "sourceBytes": 960614,
+      "bytes": 270278,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_01",
+      "sha256": "9e485bc4b190fc20edcb8ef09085b4889cabd19af6f0e78000e1c2a76acc50ec",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "SRGBColorSpace"
+    },
+    {
+      "asset": "coast_sand_01",
+      "file": "sand-normal.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_01/coast_sand_01_nor_gl_1k.jpg",
+      "sourceMd5": "38bbe6863249a3d20d8417c9db207780",
+      "sourceBytes": 1146826,
+      "bytes": 351966,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_01",
+      "sha256": "674f6e571ad1347ba8fe872a40e6ab982f73f970d76113696165fcb69afb4df8",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "coast_sand_01",
+      "file": "sand-roughness.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_01/coast_sand_01_rough_1k.jpg",
+      "sourceMd5": "978aca9e374cf988095392a91d3a4f71",
+      "sourceBytes": 383892,
+      "bytes": 56936,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_01",
+      "sha256": "40b6bc7a64d3b976d53c4d28c0e41092c5d5f0fe6f65c934e693c8bc0e771d2f",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        15,
+        15
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "rock_boulder_dry",
+      "file": "rock-color.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_dry/rock_boulder_dry_diff_1k.jpg",
+      "sourceMd5": "da794cd9be3db91e3160cf081109f322",
+      "sourceBytes": 859211,
+      "bytes": 228253,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/rock_boulder_dry",
+      "sha256": "4b870120cdbb5e8d7fc2251b311a420212fdf5eb1ed16867b8faaff64ff285a6",
+      "authors": [
+        "Dimitrios Savva (Photography)",
+        "Rico Cilliers (Processing)"
+      ],
+      "physicalSizeMetres": [
+        1.8,
+        1.8
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "SRGBColorSpace"
+    },
+    {
+      "asset": "rock_boulder_dry",
+      "file": "rock-normal.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_dry/rock_boulder_dry_nor_gl_1k.jpg",
+      "sourceMd5": "6f1c575ceed560ae253f65518cf748e2",
+      "sourceBytes": 802497,
+      "bytes": 191988,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/rock_boulder_dry",
+      "sha256": "94d16ddf20c53b2e3e331fb456e393afbed812ddb7c40d110e4164e91ba3342a",
+      "authors": [
+        "Dimitrios Savva (Photography)",
+        "Rico Cilliers (Processing)"
+      ],
+      "physicalSizeMetres": [
+        1.8,
+        1.8
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "rock_boulder_dry",
+      "file": "rock-roughness.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_dry/rock_boulder_dry_rough_1k.jpg",
+      "sourceMd5": "0c8b15df3e31c15256da5f8e1b0d0759",
+      "sourceBytes": 668127,
+      "bytes": 183289,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/rock_boulder_dry",
+      "sha256": "08585e9296202c9f2d4f4bc0bdc5bb9ead9d7f2bfa8ecbda6691278a3e32137b",
+      "authors": [
+        "Dimitrios Savva (Photography)",
+        "Rico Cilliers (Processing)"
+      ],
+      "physicalSizeMetres": [
+        1.8,
+        1.8
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "asphalt_02",
+      "file": "road-color.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_diff_1k.jpg",
+      "sourceMd5": "fa19772d4817754c3efab708c651f5a8",
+      "sourceBytes": 731707,
+      "bytes": 392439,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/asphalt_02",
+      "sha256": "28ccf0254044f83e096db02989d3fb3e2f3c2302024ee973bb23a30d07103d28",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        3,
+        3
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "SRGBColorSpace"
+    },
+    {
+      "asset": "asphalt_02",
+      "file": "road-normal.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_nor_gl_1k.jpg",
+      "sourceMd5": "338da8de636ea36133170578cac82e8e",
+      "sourceBytes": 1240122,
+      "bytes": 369165,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/asphalt_02",
+      "sha256": "3e5f7a0a3920719ddf727e1b27b26cb52fe32d65ed05181b42ace2f7915b7421",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        3,
+        3
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "asphalt_02",
+      "file": "road-roughness.jpg",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_rough_1k.jpg",
+      "sourceMd5": "ec80a2929797c1b3ffc121c4f665585a",
+      "sourceBytes": 544032,
+      "bytes": 299045,
+      "resolution": "1024x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/asphalt_02",
+      "sha256": "c4d6d86278ce301514aa59583f25c120aeae20a8645a9d6699bf184eaf9199e0",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "physicalSizeMetres": [
+        3,
+        3
+      ],
+      "processing": "Re-encoded JPEG at original 1k resolution; normal quality 87, other channels quality 82",
+      "colorSpace": "NoColorSpace"
+    },
+    {
+      "asset": "qwantani_sunset_puresky",
+      "file": "sky.hdr",
+      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/qwantani_sunset_puresky_2k.hdr",
+      "sourceMd5": "b918af5fefb341535961ffdad5fab7bc",
+      "sourceBytes": 4171959,
+      "bytes": 4171959,
+      "resolution": "2048x1024",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/qwantani_sunset_puresky",
+      "authors": [
+        "Greg Zaal (Photography)",
+        "Jarod Guest (Processing)"
+      ],
+      "sha256": "d66e08231e9c09ca40c6d035214ae8efb638782745c82addbb2a063fa32cabef",
+      "processing": "Unmodified Radiance HDR; pure sky background without ground objects",
+      "colorSpace": "Linear HDR"
+    },
+    {
+      "asset": "qwantani_sunset_puresky",
+      "file": "sky-mobile.hdr",
+      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_sunset_puresky_1k.hdr",
+      "sourceMd5": "fe79b1b213166a70871eaddf7fce8c4e",
+      "sourceBytes": 1061624,
+      "bytes": 1061624,
+      "resolution": "1024x512",
+      "license": "CC0",
+      "sourcePage": "https://polyhaven.com/a/qwantani_sunset_puresky",
+      "authors": [
+        "Greg Zaal (Photography)",
+        "Jarod Guest (Processing)"
+      ],
+      "sha256": "e90f2130848de0364b76d2b3da7a72ce31bbb95d66bd86d5b4f85f0626421b8d",
+      "processing": "Unmodified Radiance HDR; pure sky background without ground objects",
+      "colorSpace": "Linear HDR"
+    }
+  ],
+  "totalBytes": 14105387,
+  "hdrBrightestDirection": [
+    0.808932,
+    0.061321,
+    0.584695
+  ],
+  "pureSkyBrightestDirection": [
+    0.805789,
+    0.107172,
+    0.582424
+  ],
+  "mobileSky": "sky-mobile.hdr",
+  "desktopSky": "sky.hdr",
+  "notes": "Desktop and mobile sky files are mutually exclusive at runtime; Venice HDR is an optional IBL alternative, not a background.",
+  "runtimeBytes": 8382163
+}

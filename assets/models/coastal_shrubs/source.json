@@ -1,0 +1,75 @@
+{
+  "asset": "wild_rooibos_bush",
+  "page": "https://polyhaven.com/a/wild_rooibos_bush",
+  "license": "CC0-1.0",
+  "authors": {
+    "James Ray Cock": "modeling",
+    "Jenelle van Heerden": "photography"
+  },
+  "sourceFiles": {
+    "wild_rooibos_bush.gltf": {
+      "include": {
+        "textures/wild_rooibos_bush_nor_gl_1k.jpg": {
+          "size": 463170,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_nor_gl_1k.jpg",
+          "md5": "78a6bd59ce4a2e21fb01cadf382a1338"
+        },
+        "textures/wild_rooibos_bush_diff_1k.jpg": {
+          "size": 374003,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_diff_1k.jpg",
+          "md5": "47ee13b7a87d2aff07c0ec708a33f6ab"
+        },
+        "textures/wild_rooibos_bush_arm_1k.jpg": {
+          "size": 367273,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_arm_1k.jpg",
+          "md5": "bd65f1b013b7df7d75ef87d9a66b669c"
+        },
+        "wild_rooibos_bush.bin": {
+          "size": 1236928,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wild_rooibos_bush/wild_rooibos_bush.bin",
+          "md5": "0d6c39ac444bac0381ecdff32a191a9c"
+        }
+      },
+      "size": 23122,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wild_rooibos_bush/wild_rooibos_bush_1k.gltf",
+      "md5": "589911681acc2ebac68ff12ded20460d"
+    },
+    "textures/wild_rooibos_bush_nor_gl_1k.jpg": {
+      "size": 463170,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_nor_gl_1k.jpg",
+      "md5": "78a6bd59ce4a2e21fb01cadf382a1338"
+    },
+    "textures/wild_rooibos_bush_diff_1k.jpg": {
+      "size": 374003,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_diff_1k.jpg",
+      "md5": "47ee13b7a87d2aff07c0ec708a33f6ab"
+    },
+    "textures/wild_rooibos_bush_arm_1k.jpg": {
+      "size": 367273,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_arm_1k.jpg",
+      "md5": "bd65f1b013b7df7d75ef87d9a66b669c"
+    },
+    "wild_rooibos_bush.bin": {
+      "size": 1236928,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wild_rooibos_bush/wild_rooibos_bush.bin",
+      "md5": "0d6c39ac444bac0381ecdff32a191a9c"
+    }
+  },
+  "alpha": {
+    "size": 90888,
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/wild_rooibos_bush/wild_rooibos_bush_alpha_1k.png",
+    "md5": "f58e9c4d8874751b2a02dcc65c11c655"
+  },
+  "conversion": "Official 1k alpha merged losslessly into color; retain smaller d/e variants, add ARM red-channel AO",
+  "variants": [
+    {
+      "name": "Plane.003",
+      "triangles": 2684
+    },
+    {
+      "name": "Plane.014",
+      "triangles": 1193
+    }
+  ],
+  "colorSha256": "be73ad3eac2a1191bb4f7d19988a57c348b31b1ac8924715bfe12b50cbc35bb0"
+}

@@ -1,0 +1,96 @@
+{
+  "asset": "coastal_cliff_01",
+  "license": "CC0-1.0",
+  "page": "https://polyhaven.com/a/coastal_cliff_01",
+  "authors": {
+    "Rob Tuytel": "Photography, processing",
+    "Rico Cilliers": "cleanup"
+  },
+  "sourceFiles": {
+    "coastal_cliff_01.gltf": {
+      "include": {
+        "textures/coastal_cliff_01_diff_1k.jpg": {
+          "size": 699457,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_diff_1k.jpg",
+          "md5": "a43df03bd9b94f0594551a42b7a24f1b"
+        },
+        "coastal_cliff_01.bin": {
+          "size": 13179840,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/coastal_cliff_01/coastal_cliff_01.bin",
+          "md5": "d9f1e368b18c018e158d06ab9d924646"
+        },
+        "textures/coastal_cliff_01_arm_1k.jpg": {
+          "size": 640985,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_arm_1k.jpg",
+          "md5": "ebd8e7dd1877230886bde89da565828e"
+        },
+        "textures/coastal_cliff_01_nor_gl_1k.jpg": {
+          "size": 853524,
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_nor_gl_1k.jpg",
+          "md5": "9257a41db772c4680a8b3cb87d0eaf04"
+        }
+      },
+      "size": 2825,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/coastal_cliff_01/coastal_cliff_01_1k.gltf",
+      "md5": "da3cb728c6ce195ecc0261d976251c40"
+    },
+    "textures/coastal_cliff_01_diff_1k.jpg": {
+      "size": 699457,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_diff_1k.jpg",
+      "md5": "a43df03bd9b94f0594551a42b7a24f1b"
+    },
+    "coastal_cliff_01.bin": {
+      "size": 13179840,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/coastal_cliff_01/coastal_cliff_01.bin",
+      "md5": "d9f1e368b18c018e158d06ab9d924646"
+    },
+    "textures/coastal_cliff_01_arm_1k.jpg": {
+      "size": 640985,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_arm_1k.jpg",
+      "md5": "ebd8e7dd1877230886bde89da565828e"
+    },
+    "textures/coastal_cliff_01_nor_gl_1k.jpg": {
+      "size": 853524,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/coastal_cliff_01/coastal_cliff_01_nor_gl_1k.jpg",
+      "md5": "9257a41db772c4680a8b3cb87d0eaf04"
+    }
+  },
+  "lods": [
+    {
+      "name": "near",
+      "originalTriangles": 461824,
+      "targetTriangles": 24000,
+      "triangles": 29062,
+      "vertices": 17434,
+      "error": 0.0015,
+      "closure": [
+        {
+          "sourceTriangles": 23994,
+          "openPerimeterEdges": 446,
+          "authoredBodyTriangles": 5068,
+          "depthMetres": 18,
+          "stages": 4
+        }
+      ],
+      "sha256": "1a704adfab35a24046486e1d9a9c5d45a886c82b14a513679a56367d51ca0eb0"
+    },
+    {
+      "name": "far",
+      "originalTriangles": 461824,
+      "targetTriangles": 6000,
+      "triangles": 8440,
+      "vertices": 5620,
+      "error": 0.006,
+      "closure": [
+        {
+          "sourceTriangles": 6000,
+          "openPerimeterEdges": 230,
+          "authoredBodyTriangles": 2440,
+          "depthMetres": 18,
+          "stages": 4
+        }
+      ],
+      "sha256": "b53601026558465968dc20fd6946e5eaa948c0897efae7c2c8aae219c58fc939"
+    }
+  ]
+}

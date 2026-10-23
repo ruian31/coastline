@@ -1,0 +1,134 @@
+{
+  "asset": "grass_bermuda_01",
+  "page": "https://polyhaven.com/a/grass_bermuda_01",
+  "license": "CC0-1.0",
+  "authors": {
+    "Rico Cilliers": "All"
+  },
+  "sourceFiles": [
+    {
+      "path": "grass_bermuda_01_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_bermuda_01/grass_bermuda_01_1k.gltf",
+      "md5": "a1bdd74118d2387a42dba4f605226f87",
+      "size": 32912,
+      "include": {
+        "textures/grass_bermuda_01_nor_gl_1k.jpg": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_nor_gl_1k.jpg",
+          "md5": "73a585e0963ff6bf3cefa845cbee0645",
+          "size": 709845
+        },
+        "textures/grass_bermuda_01_diff_1k.jpg": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_diff_1k.jpg",
+          "md5": "234be9f52cfcd3380c7f782baaa841c3",
+          "size": 175425
+        },
+        "textures/grass_bermuda_01_arm_1k.jpg": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_arm_1k.jpg",
+          "md5": "87c58d5d3345d579eab570f7eb446313",
+          "size": 500088
+        },
+        "grass_bermuda_01.bin": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_bermuda_01/grass_bermuda_01.bin",
+          "md5": "2940aa3405004b62983fd70bede8e47f",
+          "size": 32260
+        }
+      },
+      "sha256": "a1e5bb7fcf33721dc4844d7acacab80759fccec659f1ea643f8701afc542e207"
+    },
+    {
+      "path": "grass_bermuda_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_bermuda_01/grass_bermuda_01.bin",
+      "md5": "2940aa3405004b62983fd70bede8e47f",
+      "size": 32260,
+      "sha256": "b98be48b43afb9d57f6c722d918a49996635064b829b16dc14ef4a48c0f04dae"
+    },
+    {
+      "path": "textures/grass_bermuda_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_diff_1k.jpg",
+      "md5": "234be9f52cfcd3380c7f782baaa841c3",
+      "size": 175425,
+      "sha256": "ef202eeb8f8fb3312446009acecc87e5679a7d612e4dee859d8a849e00af5fcb"
+    },
+    {
+      "path": "textures/grass_bermuda_01_alpha_1k.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_bermuda_01/grass_bermuda_01_alpha_1k.png",
+      "md5": "274285abb11b3b7a0fd277b9923d1074",
+      "size": 59564,
+      "sha256": "e58b3052aad2f107cdd763e437f80ed8fb5a31bcc43b44023f7f767cb3d9888e"
+    }
+  ],
+  "conversion": "Official separate alpha losslessly merged into diffuse; no normal/ARM. Remove display-node translations, root each part, compose three multi-directional clumps at 5x width/depth and 4.2x height. Thin open leaf surfaces are intentional; not closed volume models.",
+  "variants": [
+    {
+      "variant": "a",
+      "parts": [
+        "seedling_c",
+        "seedling_a",
+        "medium_b",
+        "small_c",
+        "dead_a",
+        "single_a"
+      ],
+      "triangles": 328,
+      "vertices": 291,
+      "extent": [
+        0.47755829989910126,
+        0.6337230801582336,
+        0.7026299834251404
+      ]
+    },
+    {
+      "variant": "b",
+      "parts": [
+        "seedling_b",
+        "seedling_c",
+        "medium_d",
+        "small_b",
+        "dead_b",
+        "single_a"
+      ],
+      "triangles": 321,
+      "vertices": 280,
+      "extent": [
+        0.5331458896398544,
+        0.6275423169136047,
+        0.6233582198619843
+      ]
+    },
+    {
+      "variant": "c",
+      "parts": [
+        "seedling_a",
+        "seedling_b",
+        "medium_a",
+        "small_e",
+        "dead_a",
+        "single_b"
+      ],
+      "triangles": 341,
+      "vertices": 299,
+      "extent": [
+        0.5477946996688843,
+        0.6337230801582336,
+        0.6166399717330933
+      ]
+    }
+  ],
+  "preparedAssets": [
+    {
+      "path": "grass.gltf",
+      "bytes": 4700,
+      "sha256": "1b26df64a516c6d96392df8bfb16eaad8b0856b5800131f44888f1e1901cceda"
+    },
+    {
+      "path": "grass.bin",
+      "bytes": 33784,
+      "sha256": "2d012fb427f80ca6f31b1ea9897b14c791b26ac3f1bfa53393226f2158ff10c1"
+    },
+    {
+      "path": "grass-color.png",
+      "bytes": 310459,
+      "sha256": "e94f33341c002f51b4e5c5d25fe35de265c4e2ee40a43a67a301ad1f7f17bffd"
+    }
+  ]
+}

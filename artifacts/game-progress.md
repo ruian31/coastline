@@ -179,3 +179,17 @@
 - 恢复后offroad-pine-canopy-restored-phone完成实际双指绕岩/停车环顾/返回，46.5s、离路77.3m、0错误；峰114calls/319619tri/103geo/49tex，仍超300k/40约6.5%/22.5%。与R16轨迹并不完全相同，且多了世界缓存及远岛分批，差额不全归松针。
 - 下一步清单检查、正常dist构建/普通入口烟测及commit。此前coastal_world agent handle已不存在，已确认后用vegetation_audit继续其work/asset-sources/m20-vegetation-audit小型资源调查，不运行GPU/改源码。Bermuda glTF实际21变体仅941tri，有独立alpha未接入，仍是弯折轮廓片，尚未引入运行版。M20聚焦地表/草丛，整体Goal active。
 - 正常dist构建通过，与候选同一CvemNPy4主包，5190已更新。普通无test入口开始/车/缓存/10级mip/shader key均验证，钩子和诊断undefined、0错误，实际GPU仍RTX4050；pine-canopy-release-smoke已存。正式清单10+25=35项检查通过；即将按commit技能提交本步，随后M20资源代表段。
+
+## 2026-10-24 · M20近景低草代表段开始
+- M19已提交9bde254，UTF8已核验，无push，5190/4188当前CvemNPy4；实际IP10.158.204.114，服务8343/54755，独立候选4191为93774、dev5188为67393。整体Goal active，上一目标turn有已提交阶段/新图形与验证证据，属于progress。
+- vegetation_audit已完成，只读主报告work/asset-sources/m20-vegetation-audit/audit-report.md，所有文件在其独占work目录；官方MD5通过，三种候选下载共2.28MB，无GPU/运行代码改动。Bermuda实际21变体941tri，多数薄轮廓片；Shrub03四变体1790–2385tri；Shrub04最左3726tri枝束可安全提取但本轮先不引入第二套纹理。
+- 新scripts/prepare-coastal-grass.mjs从Bermuda原gltf/bin/1kDiffuse/Alpha再次核验MD5和SHA256，移除展示平移、根部重置，七片不同方位组成三个近景丛，199/211/219tri，高约.48m、宽深.36–.53m。共享单RGBA图，原gltf未接alpha的问题已修；不下载normal/ARM，不把薄叶当闭合实体。首次脚本误用了TS非空!，已改正后运行通过。
+- 新资源public/assets/models/coastal_grass（grass.gltf/bin/grass-color.png/source.json）目前未被运行游戏引用；5190继续已提交M19。PNG310459B，其余几何约27KB。work/grass-preview.html是临时独立素材viewer（dev路径/work/grass-preview.html），仅供近景四角度材质检查，不作实际游戏性能证明。coastal-grass-asset-first正在/刚完成12张截图，需主代理查看后决定是否组合更自然，再接一处实际路段。
+- 待实现：复用原草位置/随机消费、近远互斥和迟滞，手机近景数量约48–64/范围约20m先实测，显式ready参与场景加载；其余草保留已有低成本批次。尺寸与远草匹配、切换突变、根部落地/风动、alpha在真实夕阳和侧视、手机成本都尚未验证，不把素材预览当完整M20结果。
+- M20代表段已接入dev并加入scenery.ready，5190仍保持M19。首版实图过小过稀，改成两组弯叶+枯叶/穗梗共六部件的三丛，328/321/341tri，高.628–.634m，宽深.478–.703m；远草缩至1.10×.75m匹配。PNG310459B，共享一张1k RGBA；近景48手机/96桌面，进出20/24与30/35m，使用原始索引/矩阵/颜色，未新增RNG调用。
+- 独立只读审查确认互斥映射和RNG，但指出屏外近草占满cap；已在候选排序前加入保守视锥过滤，并分别记录selected/visible。coastal-grass-asset-dense十二角度无错误，已看前/侧/俯视；实际游戏coastal-grass-game-dense中草仍偏细，旧放射灌木/三角叶蕨和绿地纹理仍主导不自然感，下一步继续处理，不能称整体风景已达标。
+- 当前候选B2Ay5lzT，tsc/独立构建通过。开始三浏览器资源加载、真实质量切换、近远无重叠/无新增位置、资源故障回退及既有摆放fixture检查；斜坡/实际行驶/手机性能未最终验收。
+- 发现原近草最陡坡根部露空20.2/15.1厘米；加每实例局部坡度，GPU压缩时与矩阵/颜色同步拷贝，风动仍锚定原高度。CPU重建桌面4647/手机2713摆放低根均埋入地表，最深8.2/13.9厘米；scripts/check-coastal-grass-ground.mjs保留可重跑的全位置分析和独立实际地形/材质坡地截图。最初final-*截图相机低于陡坡，已保留；最终above-ground-*加相机净空，已查看。
+- 最终主包X9KjVLTb：tsc、独立/正常构建通过。最终三浏览器贴地/切档/互斥/载入回退6项全过；此前三浏览器摆放fixture已过，后续仅改根部贴地shader/属性。初次6失败因测试Float32舍入和离路12米不允许直接巡航，修正测试后全过，失败coastal-grass-regression保留。
+- 正式pass-m20-coastal-grass八机位0错误，桌面130calls/654187tri/107geo/51tex，手机91/251947/98/44。手机横屏真实双指内陆往返65.03米，约22秒0错误，峰109/281578/106/49，近草可见0–13；已看多个时刻。不同于M19绕岩路线，不声称319k高峰已解决。4倍CPU8秒Task2547/Script2169ms vs2460/2072（+3.5%/+4.7%），终点82/218456/97/44。没有新增GPU计时/手机真机数据。
+- 普通dist与候选主包一致，5190普通无query入口实际开始通过，近草ready、组合地形风动shader、一次缓存、RTX4050硬件渲染正常，钩子/诊断undefined，0错误。证据清单8+15=23项通过；来源脚本/四输入MD5-SHA/三输出SHA已保留，资源348943+4318B。即将提交本步后进入M21放射球灌木/三角蕨叶，整体Goal active。

@@ -1,0 +1,261 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 291,
+      "max": [
+        0.21418477594852448,
+        0.6337230801582336,
+        0.4201034605503082
+      ],
+      "min": [
+        -0.2633735239505768,
+        0,
+        -0.28252652287483215
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 291,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 291,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 984,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 963,
+      "bufferView": 1,
+      "byteOffset": 1968
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1023,
+      "bufferView": 1,
+      "byteOffset": 3896
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 280,
+      "max": [
+        0.28957560658454895,
+        0.6275423169136047,
+        0.39567136764526367
+      ],
+      "min": [
+        -0.24357028305530548,
+        0,
+        -0.22768685221672058
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 280,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 280,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 299,
+      "max": [
+        0.21731382608413696,
+        0.6337230801582336,
+        0.30924662947654724
+      ],
+      "min": [
+        -0.3304808735847473,
+        0,
+        -0.307393342256546
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 299,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 299,
+      "bufferView": 3,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 9312,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9312,
+      "byteLength": 5944,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15256,
+      "byteLength": 8960,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 24216,
+      "byteLength": 9568,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "samplers": [
+    {
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "Photographed grass with official alpha",
+      "mimeType": "image/png",
+      "uri": "grass-color.png"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "grass.bin",
+      "byteLength": 33784
+    }
+  ],
+  "materials": [
+    {
+      "name": "Coastal grass cutout",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.43,
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Coastal grass clump a",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Coastal grass clump b",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7,
+            "TEXCOORD_0": 8
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    },
+    {
+      "name": "Coastal grass clump c",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 5
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Coastal grass clump a",
+      "mesh": 0
+    },
+    {
+      "name": "Coastal grass clump b",
+      "mesh": 1
+    },
+    {
+      "name": "Coastal grass clump c",
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Rooted coastal grass clumps",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ]
+}

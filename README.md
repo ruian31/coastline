@@ -38,7 +38,7 @@
 | 工程与构建 | 依赖安装、TypeScript 和生产构建通过 |
 | 车辆、场景、驾驶和界面 | M2 连通区域已实现，继续提高自然景观与镜头效果 |
 | 浏览器测试与性能测量 | 27 项桌面/Android Chrome与WebKit行为测试通过，画面与性能继续测量 |
-| 发布 | 尚未发布 |
+| 发布 | GitHub Pages：https://ryanhotan.github.io/coastline/ |
 
 ## 目录约定
 
@@ -71,3 +71,18 @@ npm run dev -- --host 0.0.0.0
 电脑访问 `http://localhost:5188/`。手机与电脑在同一局域网时使用终端输出的 Network 地址。验证命令：`npm run build`、`npm test`。测试使用已安装的 Chrome；当前开发环境在 Playwright 启动参数中启用硬件 GPU，避免软件渲染误导性能结果。
 
 手机稳定试玩：同一Wi-Fi下打开 `http://192.168.3.10:5190/`（`npm run build` 后以 `npm run preview -- --host 0.0.0.0 --port 5190` 启动）。点击开始自动尝试横屏全屏；手机默认流畅档，设置中可提高画质。一加12 Chrome用户复测已确认明显更流畅与横屏全屏正常，iPhone真机仍待核验。
+
+## GitHub Pages 发布
+
+在线游玩：[逐海 · Golden Coast](https://ryanhotan.github.io/coastline/)。Pages 使用 `gh-pages` 分支根目录中的构建产物。
+
+本机具备 `origin` 仓库推送权限后，运行以下命令发布当前工作区：
+
+```bash
+npm ci
+npm run deploy
+```
+
+`deploy` 先进行 TypeScript 检查，再以 `/coastline/` 为资源前缀构建并推送 `dist/` 到 `gh-pages`。它会包含本地尚未提交的源码改动所生成的页面，但不会提交或切换当前源码分支；源码提交和推送仍单独进行。GitHub 完成 Pages 发布后，线上页面更新。
+
+只检查部署构建可运行 `npm run build:pages`，随后用 `npm run preview -- --base=/coastline/` 预览，访问 `http://127.0.0.1:4188/coastline/`。普通 `npm run build` 和 `npm run dev` 继续使用根路径。

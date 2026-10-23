@@ -60,19 +60,37 @@
       "name": "near",
       "originalTriangles": 461824,
       "targetTriangles": 24000,
-      "triangles": 23994,
-      "vertices": 13914,
+      "triangles": 29062,
+      "vertices": 17434,
       "error": 0.0015,
-      "sha256": "abd6686b79f015c6edd6bc02ef2a2b027e8814c45bce757ef3536797ccf309d1"
+      "closure": [
+        {
+          "sourceTriangles": 23994,
+          "openPerimeterEdges": 446,
+          "authoredBodyTriangles": 5068,
+          "depthMetres": 18,
+          "stages": 4
+        }
+      ],
+      "sha256": "1a704adfab35a24046486e1d9a9c5d45a886c82b14a513679a56367d51ca0eb0"
     },
     {
       "name": "far",
       "originalTriangles": 461824,
       "targetTriangles": 6000,
-      "triangles": 6000,
-      "vertices": 3945,
+      "triangles": 8440,
+      "vertices": 5620,
       "error": 0.006,
-      "sha256": "c1f227302a56781f987f9025cb9ef96f1cdb25a38b711337e487b1755b000beb"
+      "closure": [
+        {
+          "sourceTriangles": 6000,
+          "openPerimeterEdges": 230,
+          "authoredBodyTriangles": 2440,
+          "depthMetres": 18,
+          "stages": 4
+        }
+      ],
+      "sha256": "b53601026558465968dc20fd6946e5eaa948c0897efae7c2c8aae219c58fc939"
     }
   ]
 }

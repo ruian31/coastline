@@ -10,7 +10,8 @@
     "test": "playwright test",
     "verify:visual": "playwright test tests/visual.spec.ts",
     "inspect:canvas": "node scripts/inspect-threejs-canvas.mjs",
-    "test:driving": "node scripts/test-driving.mjs"
+    "test:driving": "node scripts/test-driving.mjs",
+    "test:rocks": "node scripts/validate-coastal-assets.mjs && node scripts/test-rock-surfaces.mjs"
   },
   "dependencies": {
     "lil-gui": "^0.21.0",

@@ -11,6 +11,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   groundHeight: (x:number,z:number) => number;
   terrainHeight: (x:number,z:number) => number;
   terrainMaterial: THREE.Material;
+  rockMaterial: THREE.MeshStandardMaterial;
   blocksCar: (x:number,z:number) => boolean;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setLowDetail:(enabled:boolean)=>void;
@@ -651,6 +652,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     groundHeight:cameraGroundHeight,
     terrainHeight:groundHeight,
     terrainMaterial:groundMaterial,
+    rockMaterial,
     blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
     setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
     setLowDetail(enabled){

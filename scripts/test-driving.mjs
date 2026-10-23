@@ -41,6 +41,8 @@ try {
  for(let i=0;i<120;i++)free.update(1/60,empty);
  const expected=level+(free.position.x-base.x)*.13+(free.position.z-base.z)*.09;
  assert.ok(Math.abs(free.position.y-expected-ROAD_POSITION_CLEARANCE)<.01,'tyres follow the sloped surface');assert.ok(Math.abs(free.pitch)+Math.abs(free.roll)>.1,'body follows terrain pitch and bank');
+ const pose=new THREE.Matrix4().compose(new THREE.Vector3(free.position.x,free.position.y-ROAD_POSITION_CLEARANCE,free.position.z),new THREE.Quaternion().setFromEuler(new THREE.Euler(free.pitch,free.yaw,free.roll,'YXZ')),new THREE.Vector3(1,1,1));
+ for(const x of[-.845,.845])for(const z of[-1.28,1.28]){const foot=new THREE.Vector3(x,0,z).applyMatrix4(pose),land=level+(foot.x-base.x)*.13+(foot.z-base.z)*.09;assert.ok(Math.abs(foot.y-land)<.001,'combined pitch and bank place actual vehicle tyres on the plane');}
  // Stop at physical drops / raised walls, preserving the actual last safe position.
  for(const surface of[4,-4]){
   const obstacle=new Driving();obstacle.position.copy(base);obstacle.yaw=0;obstacle.setTerrain((x,z)=>z<base.z+5?level:level+surface);

@@ -3,6 +3,7 @@ import {readFile,stat,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import{scanTopology}from'./solidify-scan.mjs';
 
 const io=new NodeIO();
 for(const folder of ['coastal_cliff_01','coastal_shrubs','coastal_reef']){
@@ -19,7 +20,9 @@ for(const folder of ['coastal_cliff_01','coastal_shrubs','coastal_reef']){
    assert.ok([...p.getArray(),...n.getArray(),...uv.getArray()].every(Number.isFinite));
    triangles+=indices.getCount()/3;bounds.push({min:p.getMin([]),max:p.getMax([])});
   }
-  assert.ok(triangles>0&&triangles<=24000);models.push({name,triangles,bounds});
+  const topology=folder==='coastal_shrubs'?[]:doc.getRoot().listMeshes().map(scanTopology);
+  for(const result of topology)assert.equal(result.openEdges,0,'rock body must close every open scan boundary');
+  assert.ok(triangles>0&&triangles<=(folder==='coastal_cliff_01'?30000:10000));models.push({name,triangles,bounds,topology});
  }
  const files=[];
  for(const uri of resources){const filename=path.join(root,uri),bytes=await readFile(filename);files.push({uri,bytes:(await stat(filename)).size,sha256:createHash('sha256').update(bytes).digest('hex')});}

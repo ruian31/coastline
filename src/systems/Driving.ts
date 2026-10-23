@@ -17,12 +17,13 @@ export class Driving {
   const forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw),rightX=forwardZ,rightZ=-forwardX;
   const heights:number[]=[];
   // Four tyre patches fit a support plane; road height is used only under the road.
-  for(const longitudinal of[1.2,-1.2])for(const lateral of[-.72,.72]){
+  for(const longitudinal of[1.28,-1.28])for(const lateral of[-.845,.845]){
    const px=x+forwardX*longitudinal+rightX*lateral,pz=z+forwardZ*longitudinal+rightZ*lateral;
    heights.push(roadSurfaceHeight(nearestRoad(px,pz),px,pz,this.ground));
   }
   const front=(heights[0]+heights[1])*.5,rear=(heights[2]+heights[3])*.5,left=(heights[0]+heights[2])*.5,right=(heights[1]+heights[3])*.5;
-  return{heights,height:(front+rear)*.5,pitch:-Math.atan2(front-rear,2.4),roll:Math.atan2(right-left,1.44)};
+  const forwardSlope=(front-rear)/2.56,rightSlope=(right-left)/1.69;
+  return{heights,height:(front+rear)*.5,pitch:-Math.atan(forwardSlope),roll:Math.atan2(rightSlope,Math.sqrt(1+forwardSlope*forwardSlope))};
  }
  update(dt:number,input:DriveIntent){this.hit=false;const previousSpeed=this.speed,oldX=this.position.x,oldZ=this.position.z,oldYaw=this.yaw;
  if(this.automatic){

@@ -61,14 +61,32 @@
       "original": 679936,
       "target": 5000,
       "error": 0.002,
-      "triangles": 6794
+      "triangles": 8274,
+      "closure": [
+        {
+          "sourceTriangles": 6794,
+          "openPerimeterEdges": 110,
+          "authoredBodyTriangles": 1480,
+          "depthMetres": 5,
+          "stages": 4
+        }
+      ]
     },
     {
       "name": "far",
       "original": 679936,
       "target": 1500,
       "error": 0.004,
-      "triangles": 2205
+      "triangles": 3072,
+      "closure": [
+        {
+          "sourceTriangles": 2205,
+          "openPerimeterEdges": 71,
+          "authoredBodyTriangles": 867,
+          "depthMetres": 5,
+          "stages": 4
+        }
+      ]
     }
   ]
 }

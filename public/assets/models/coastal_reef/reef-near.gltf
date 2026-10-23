@@ -12,6 +12,13 @@
       "byteOffset": 0
     },
     {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4440,
+      "bufferView": 0,
+      "byteOffset": 40764
+    },
+    {
       "type": "VEC3",
       "componentType": 5126,
       "count": 4403,
@@ -41,19 +48,60 @@
       "count": 4403,
       "bufferView": 1,
       "byteOffset": 20
+    },
+    {
+      "name": "Rock body positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 988,
+      "max": [
+        27.35528564453125,
+        -0.1803319752216339,
+        15.605423927307129
+      ],
+      "min": [
+        -32.151123046875,
+        -5.1975789070129395,
+        -26.881956100463867
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Rock body normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 988,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Rock body metric UV",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 988,
+      "bufferView": 2,
+      "byteOffset": 24
     }
   ],
   "bufferViews": [
     {
       "buffer": 0,
       "byteOffset": 0,
-      "byteLength": 40764,
+      "byteLength": 49644,
       "target": 34963
     },
     {
       "buffer": 0,
-      "byteOffset": 40764,
+      "byteOffset": 49644,
       "byteLength": 140896,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 190540,
+      "byteLength": 31616,
       "byteStride": 32,
       "target": 34962
     }
@@ -108,13 +156,12 @@
   "buffers": [
     {
       "uri": "reef-near.bin",
-      "byteLength": 181660
+      "byteLength": 222156
     }
   ],
   "materials": [
     {
       "name": "coast_rocks_01",
-      "doubleSided": true,
       "pbrMetallicRoughness": {
         "metallicFactor": 0,
         "baseColorTexture": {
@@ -131,6 +178,12 @@
         "index": 2,
         "strength": 0.85
       }
+    },
+    {
+      "name": "solid-rock-body",
+      "pbrMetallicRoughness": {
+        "roughnessFactor": 0.95
+      }
     }
   ],
   "meshes": [
@@ -139,13 +192,23 @@
       "primitives": [
         {
           "attributes": {
-            "POSITION": 1,
-            "TEXCOORD_0": 2,
-            "NORMAL": 3
+            "POSITION": 2,
+            "TEXCOORD_0": 3,
+            "NORMAL": 4
           },
           "mode": 4,
           "material": 0,
           "indices": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 1
         }
       ]
     }

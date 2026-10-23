@@ -2,7 +2,7 @@
   "models": [
     {
       "name": "cliff-near.gltf",
-      "triangles": 23994,
+      "triangles": 29062,
       "bounds": [
         {
           "min": [
@@ -15,12 +15,31 @@
             9.675003051757812,
             4.760909080505371
           ]
+        },
+        {
+          "min": [
+            -45.055580139160156,
+            -1.72012460231781,
+            -19.594257354736328
+          ],
+          "max": [
+            46.924373626708984,
+            9.619101524353027,
+            4.490321159362793
+          ]
+        }
+      ],
+      "topology": [
+        {
+          "openEdges": 0,
+          "overlapEdges": 33,
+          "degenerateFaces": 0
         }
       ]
     },
     {
       "name": "cliff-far.gltf",
-      "triangles": 6000,
+      "triangles": 8440,
       "bounds": [
         {
           "min": [
@@ -33,6 +52,25 @@
             9.619101524353027,
             4.717966556549072
           ]
+        },
+        {
+          "min": [
+            -45.014381408691406,
+            -1.6931291818618774,
+            -19.58689308166504
+          ],
+          "max": [
+            46.924373626708984,
+            9.619101524353027,
+            4.490321159362793
+          ]
+        }
+      ],
+      "topology": [
+        {
+          "openEdges": 0,
+          "overlapEdges": 8,
+          "degenerateFaces": 0
         }
       ]
     }
@@ -40,13 +78,13 @@
   "files": [
     {
       "uri": "cliff-near.gltf",
-      "bytes": 2948,
-      "sha256": "abd6686b79f015c6edd6bc02ef2a2b027e8814c45bce757ef3536797ccf309d1"
+      "bytes": 4234,
+      "sha256": "1a704adfab35a24046486e1d9a9c5d45a886c82b14a513679a56367d51ca0eb0"
     },
     {
       "uri": "cliff-near-0.bin",
-      "bytes": 589212,
-      "sha256": "579868580c9e71244cd146f369a81ee484778e7383add685159292e218ee9946"
+      "bytes": 732260,
+      "sha256": "6105a28cfd8e8899006c623d778e64c83db19cc3e3fd09cf346daf0a83d896b0"
     },
     {
       "uri": "textures/coastal_cliff_01_nor_gl_1k.jpg",
@@ -65,14 +103,14 @@
     },
     {
       "uri": "cliff-far.gltf",
-      "bytes": 2942,
-      "sha256": "c1f227302a56781f987f9025cb9ef96f1cdb25a38b711337e487b1755b000beb"
+      "bytes": 4226,
+      "sha256": "b53601026558465968dc20fd6946e5eaa948c0897efae7c2c8aae219c58fc939"
     },
     {
       "uri": "cliff-far-0.bin",
-      "bytes": 162240,
-      "sha256": "1da3bc67c93bfae6150bf7a1d304b120026afa968c4c39d4ad4d5ad25adac152"
+      "bytes": 230480,
+      "sha256": "3c885ef5affad028a0b7d3e89a812a058f9424a29429c81f5851d9c578778b77"
     }
   ],
-  "totalBytes": 2951308
+  "totalBytes": 3165166
 }

@@ -3,6 +3,7 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown} from './TreeGeometry';
+import {createCoastalWater} from './CoastalWater';
 
 /** Authored, deterministic coastal landscape. Distances and animation time are in metres / seconds. */
 export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager=THREE.DefaultLoadingManager): {
@@ -15,6 +16,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   blocksCar: (x:number,z:number) => boolean;
   cullForCamera:(camera:THREE.Camera)=>void;
   registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;
+  prepareShore:(sample:(x:number,z:number)=>number)=>void;
+  addShoreWetness:(material:THREE.MeshStandardMaterial)=>void;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -24,6 +27,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   let random = createSeededRandom(864203);
   const time = { value: 0 };
   const sun = new THREE.Vector3(.8058, .1072, .5824).normalize();
+  const water=createCoastalWater(scene,mobile,time,sun);
   const windMaterials: THREE.MeshStandardMaterial[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const textures: THREE.Texture[] = [];
@@ -91,7 +95,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   function peninsulaHeight(x:number,z:number,distance:number,landward:number):number {
     const radius=Math.hypot(x/355,z/292),angle=Math.atan2(z/292,x/355);
     const shift=1+(shoreScale(angle)-1)*THREE.MathUtils.smoothstep(radius,.97,1.08);
-    const coastal=heightAt(x/shift,z/shift);
+    // The old opaque sea concealed a flat floor only 10cm underwater. Real wash
+    // needs a descending seabed so a trough cannot uncover the whole bay.
+    const coastal=heightAt(x/shift,z/shift)-Math.min(35,Math.max(0,radius/shift-1.118)*120);
     const mound=(cx:number,cz:number,rx:number,rz:number)=>Math.exp(-(((x-cx)/rx)**2+((z-cz)/rz)**2));
     const ridge=26*mound(-115,-125,100,83)+24*mound(-30,-100,105,105)
       +25*mound(110,-120,112,88)+23*mound(30,80,135,108)+18*mound(-130,140,95,78);
@@ -191,6 +197,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal=normalize(normal+mat3(viewMatrix)*vec3(mixedGroundNormal.x*.42,0.0,mixedGroundNormal.y*.42));');
   };
   groundMaterial.customProgramCacheKey = () => `coastal-scanned-meadow-rock-v2-${mobile}`;
+  water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
   // The road passes through a continuous headland, with a true arched void at both portals.
@@ -241,8 +248,10 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const rawCapGeometry=new THREE.BufferGeometry();rawCapGeometry.setAttribute('position',new THREE.Float32BufferAttribute(capVertices,3));
   const capGeometry=mergeVertices(rawCapGeometry,.001);rawCapGeometry.dispose();capGeometry.computeVertexNormals();
   const cap=place(capGeometry,groundMaterial,'Eroded headland over the mountain tunnel');cap.castShadow=true;cap.receiveShadow=true;
+  capGeometry.computeBoundingBox();const capBounds=capGeometry.boundingBox!;
   function cameraGroundHeight(x:number,z:number):number {
-    const base=groundHeight(x,z),{point}=closestSurface(x,z);
+    const base=groundHeight(x,z);if(x<capBounds.min.x-2||x>capBounds.max.x+2||z<capBounds.min.z-2||z>capBounds.max.z+2)return base;
+    const{point}=closestSurface(x,z);
     if(point.id!=='coast')return base;
     const offset=(x-point.position.x)*point.right.x+(z-point.position.z)*point.right.z;
     // Preserve the air corridor inside the cave, while preventing an orbit camera entering its solid flanks.
@@ -286,71 +295,6 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   }), 'Golden hour sky and high cirrus');
   sky.frustumCulled = false;
   sky.renderOrder = -10;
-
-  // View-dependent sun glitter, layered wave normals, and distance haze in one draw call.
-  const seaSky={value:null as THREE.Texture|null},hasSeaSky={value:0};
-  const ocean = place(new THREE.PlaneGeometry(9000, 9000, 1, 1), new THREE.ShaderMaterial({
-    uniforms: { uTime: time, uSun: { value: sun },uSkyMap:seaSky,uHasSky:hasSeaSky },
-    vertexShader: `varying vec3 vWorld;
-      void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorld=wp.xyz;gl_Position=projectionMatrix*viewMatrix*wp;}`,
-    fragmentShader: `uniform float uTime,uHasSky;uniform sampler2D uSkyMap;uniform vec3 uSun;varying vec3 vWorld;
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.0),f.x),f.y);}
-      void main(){
-        vec2 p=vWorld.xz;float t=uTime;
-        float warp=noise(p*.025+t*.012)*6.0;
-        float w1=sin(p.x*.17+p.y*.11-t*.73+warp),w2=sin(p.x*-.13+p.y*.23+t*.51+warp*.71);
-        float footprint=max(length(dFdx(p)),length(dFdy(p)));
-        float fineFilter=1.0/(1.0+footprint*.6);
-        float w3=sin(p.x*.51+p.y*-.39-t*1.13+warp*.8)*fineFilter;
-        vec2 fine=(vec2(noise(p*.76+vec2(t*.10,-t*.07)),noise(p.yx*.63+vec2(18.3-t*.08,9.7+t*.11)))-.5)*fineFilter;
-        vec3 n=normalize(vec3(w1*.022+w2*.011+w3*.018+fine.x*.055,1.0,w2*.024-w1*.012-w3*.014+fine.y*.050));
-        vec3 view=normalize(cameraPosition-vWorld);
-        float fres=pow(1.0-max(dot(n,view),0.0),4.0);
-        float shoreDistance=abs(length(p/vec2(355.0,292.0))-1.116)*310.0;
-        vec3 water=mix(vec3(.008,.038,.057),vec3(.018,.105,.105),exp(-shoreDistance*.035));
-        vec3 reflection=vec3(.18,.23,.31);
-        if(uHasSky>.5){
-          vec3 reflected=reflect(-view,n);
-          vec2 skyUv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);
-          reflection=min(texture2D(uSkyMap,skyUv).rgb,vec3(6.0))*.28;
-        }
-        vec3 col=mix(water,reflection,.025+fres*.88);
-        vec3 halfway=normalize(view+uSun);
-        float glitter=pow(max(dot(n,halfway),0.0),220.0);
-        glitter*=.45+noise(p*1.1+t*.14)*.55;
-        col+=vec3(2.5,1.35,.49)*glitter;
-        col+=vec3(.025,.035,.038)*(noise(p*.31+warp*.05)-.5);
-        float dist=length(cameraPosition.xz-p);
-        col=mix(col,vec3(.51,.32,.28),smoothstep(650.0,3800.0,dist)*.72);
-        gl_FragColor=vec4(col,1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  }), 'Sea / wavelets and moving sunset reflections');
-  ocean.rotation.x = -Math.PI / 2;
-  ocean.position.y = -1.5;
-
-  // A narrow irregular wash follows the actual elliptical shoreline, never a giant ocean grid.
-  const foamPositions:number[]=[],foamUvs:number[]=[];
-  const shorePoint=(a:number,band:number)=>[Math.cos(a)*355*(1.116+band*.017)*shoreScale(a),-1.465,Math.sin(a)*292*(1.116+band*.017)*shoreScale(a)];
-  for(let i=0;i<320;i++) {
-    const a=i/320*Math.PI*2,b=(i+1)/320*Math.PI*2;
-    const p=[shorePoint(a,0),shorePoint(a,1),shorePoint(b,0),shorePoint(b,1)],uv=[[i/320,0],[i/320,1],[(i+1)/320,0],[(i+1)/320,1]];
-    for(const index of [0,2,1,1,2,3]){foamPositions.push(...p[index]);foamUvs.push(...uv[index]);}
-  }
-  const foamGeometry=new THREE.BufferGeometry();foamGeometry.setAttribute('position',new THREE.Float32BufferAttribute(foamPositions,3));foamGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(foamUvs,2));
-  place(foamGeometry,new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{uTime:time},
-    vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader:`uniform float uTime;varying vec2 vUv;void main(){
-      float variation=sin(vUv.x*173.0+sin(vUv.x*73.0)*2.0)*.10;
-      float wave=fract(vUv.y*.8-uTime*.075+variation),edge=exp(-pow((wave-.43)*15.0,2.0));
-      float breakup=.5+.5*sin(vUv.x*473.0+sin(vUv.x*187.0)*2.0+uTime*.4);
-      float opacity=edge*.24*breakup*sin(vUv.y*3.14159);
-      gl_FragColor=vec4(.65,.70,.64,opacity);
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
-    }`}), 'Soft receding shoreline wash');
 
   // Geometry assembly helpers keep repeated coastal assets in a handful of draw calls.
   type TreeLod={near:Uint8Array;detail:'near'|'far';anchors:THREE.Vector3[]};
@@ -450,7 +394,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   for(let i=0;i<(mobile?90:145);i++) {
     const a=random()*Math.PI*2,r=.97+random()*.18,x=Math.cos(a)*355*r,z=Math.sin(a)*292*r;
     const y=groundHeight(x,z);
-    if(!naturalVerge(x,z,9) || y<-1.8)continue;
+    if(!naturalVerge(x,z,9))continue;
     const scale=.7+random()*3.4;
     rocks.push(matrix(x,y-.3,z,scale,scale*(.5+random()*.65),scale*(.8+random()*.5)));
     rockColors.push(new THREE.Color('#e4dfd2').multiplyScalar(.88+random()*.22));
@@ -468,6 +412,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const rockMaterial=new THREE.MeshStandardMaterial({color:0xffffff,map:rockMaps.color,normalMap:rockMaps.normal,roughnessMap:rockMaps.roughness,roughness:.95});
   for(const texture of Object.values(rockMaps))texture.repeat.set(2,2);
   rockMaterial.normalScale.set(.72,.72);
+  water.addWetness(rockMaterial);
   batch(rockShape,rockMaterial,rocks,rockColors).name='Coastal limestone boulders';
 
   // Procedural leaf atlases retain fine organic silhouettes without thousands of opaque triangles.
@@ -667,6 +612,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     rockMaterial,
     blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
     registerInstances,
+    prepareShore:sample=>water.prepare(sample,groundHeight),
+    addShoreWetness:water.addWetness,
     cullForCamera(camera){
       camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
       for(const record of visibleBatches){const{mesh,matrices,colors,bounds,slots,limit,lod}=record;let count=0,changed=false;
@@ -679,7 +626,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         mesh.count=count;if(changed){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
       }
     },
-    setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
+    setSkyReflection:texture=>water.setSkyReflection(texture),
     setLowDetail(enabled){
       for(const record of visibleBatches){const child=record.mesh;
         const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:1;
@@ -689,10 +636,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     },
     update(elapsed, carPosition) {
       time.value=elapsed;
+      water.update(carPosition);
       sky.position.set(carPosition.x,0,carPosition.z);
     },
     dispose() {
       disposed = true;
+      water.dispose();
       root.removeFromParent();
       for(const resource of resources)resource.dispose();
       windMaterials.length=0;

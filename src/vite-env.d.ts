@@ -36,6 +36,8 @@ interface ThreeGameTestHooks {
   setPausedForScreenshot(paused: boolean): void | Promise<void>;
   /** Stabilize ambient/idle visuals without requiring an unpaused simulation tick. */
   setReducedMotion(enabled: boolean): void | Promise<void>;
+  /** Freeze simulation at an explicit ambient time for animated-surface verification. */
+  setSceneTime?(seconds: number): void | Promise<void>;
   /** Hide debug UI (lil-gui) before capturing. */
   hideDebugUi?(hidden: boolean): void | Promise<void>;
 }

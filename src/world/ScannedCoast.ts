@@ -24,12 +24,14 @@ export function scanSurface(parts:THREE.BufferGeometry[]){
  }};
 }
 
+type CoastOptions={ground:(x:number,z:number)=>number;mobile:boolean;manager:THREE.LoadingManager;rockMaterial:THREE.MeshStandardMaterial;registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;addWetness:(material:THREE.MeshStandardMaterial)=>void};
 /** Photographed faces plus authored solid rock bodies, overlapping land and extending below the sea. */
-export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=>number,mobile:boolean,manager:THREE.LoadingManager,rockMaterial:THREE.MeshStandardMaterial,registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void){
+export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
+ const{ground,mobile,manager,rockMaterial,registerInstances,addWetness}=options;
  const root=new THREE.Group();root.name='Eroded sandstone headland';scene.add(root);
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();
  const sections:{group:THREE.Group;inverse:THREE.Matrix4;surface:ReturnType<typeof scanSurface>}[]=[];
- const bodyMaterial=rockMaterial.clone();bodyMaterial.name='Metre textured solid sandstone';bodyMaterial.vertexColors=false;bodyMaterial.color.set('#d7cfbc');materials.add(bodyMaterial);
+ const bodyMaterial=rockMaterial.clone();bodyMaterial.name='Metre textured solid sandstone';bodyMaterial.vertexColors=false;bodyMaterial.color.set('#d7cfbc');addWetness(bodyMaterial);materials.add(bodyMaterial);
  const localPoint=new THREE.Vector3();
  let disposed=false;const time={value:0};
  const cliffsReady=new GLTFLoader(manager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_cliff_01/cliff-${mobile?'far':'near'}.gltf`).then(gltf=>{
@@ -39,7 +41,7 @@ export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=
    geometries.add(source.geometry);const material=source.material as THREE.MeshStandardMaterial;materials.add(material);
    if(material.name==='solid-rock-body'){source.material=bodyMaterial;continue;}
    for(const t of[material.map,material.normalMap,material.aoMap,material.roughnessMap,material.metalnessMap])if(t){t.anisotropy=mobile?4:8;textures.add(t);}
-   material.roughness=.94;material.normalScale.set(.75,.75);material.aoMapIntensity=.8;material.side=THREE.FrontSide;
+   material.roughness=.94;material.normalScale.set(.75,.75);material.aoMapIntensity=.8;material.side=THREE.FrontSide;addWetness(material);
   }
   if(!disposed){const surface=scanSurface(sources.map(source=>source.geometry));
    for(const [i,placement]of[{t:.827,shore:false},{t:.875,shore:false},{t:.829,shore:true},{t:.927,shore:true}].entries()){
@@ -81,7 +83,7 @@ export function createScannedCoast(scene:THREE.Scene,ground:(x:number,z:number)=
    geometries.add(source.geometry);const material=source.material as THREE.MeshStandardMaterial;materials.add(material);
    if(material.name==='solid-rock-body'){source.material=bodyMaterial;continue;}
    for(const t of[material.map,material.normalMap,material.aoMap,material.roughnessMap,material.metalnessMap])if(t){t.anisotropy=mobile?4:8;textures.add(t);}
-   material.normalScale.set(.65,.65);material.roughness=.86;material.side=THREE.FrontSide;
+   material.normalScale.set(.65,.65);material.roughness=.86;material.side=THREE.FrontSide;addWetness(material);
   }
   if(!disposed){const surface=scanSurface(sources.map(source=>source.geometry));
    for(const [index,t]of[.826,.929].entries()){

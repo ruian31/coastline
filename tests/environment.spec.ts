@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import * as THREE from 'three';
+import {readFile} from 'node:fs/promises';
 
 test('树木根部落在实际绘制的地形网格上',async({page})=>{
  await page.addInitScript(()=>{
@@ -54,4 +55,37 @@ test('实体岩岸背部埋入实际地形，礁石基座深入海面',async({pa
   expect(contacts).toBeGreaterThanOrEqual(6);
  }
  resources.forEach(g=>g.dispose());material.dispose();
+});
+
+test('离岸岩岛具有闭合厚度和海下基座，三种山脊保持绘制预算',async({page},info)=>{
+ const fixture=JSON.parse(await readFile(new URL('./fixtures/environment-placements.json',import.meta.url),'utf8')),baseline=fixture.platforms[info.project.name.includes('mobile')?'mobile':'desktop'];
+ await page.addInitScript(()=>{const w=window as unknown as {coastObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.coastObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.coastObjects.push((e as CustomEvent).detail));});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('tree-shadow'));
+ const variants=await page.evaluate(()=>{
+  const scene=(window as unknown as {coastObjects:THREE.Scene[]}).coastObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!;
+  return[0,1,2].map(variant=>{const mesh=scene.getObjectByName(`Weathered offshore rock ridge ${variant}`) as THREE.InstancedMesh,p=mesh.geometry.getAttribute('position');return{positions:Array.from({length:p.count},(_,i)=>[p.getX(i),p.getY(i),p.getZ(i)]),indices:Array.from(mesh.geometry.index!.array),matrices:(mesh.userData.authoredInstances as THREE.Matrix4[]).map(m=>m.toArray())};});
+ });
+ expect(new Set(variants.map(v=>JSON.stringify(v.positions))).size).toBe(3);let instances=0,triangles=0;
+ for(const variant of variants){
+  const vertices=variant.positions.map(p=>new THREE.Vector3(...p)),edges=new Map<string,{count:number;balance:number}>();let volume=0;
+  for(let i=0;i<variant.indices.length;i+=3){
+   const [a,b,c]=variant.indices.slice(i,i+3),normal=vertices[b].clone().sub(vertices[a]).cross(vertices[c].clone().sub(vertices[a]));expect(normal.lengthSq()).toBeGreaterThan(1e-10);volume+=vertices[a].dot(vertices[b].clone().cross(vertices[c]))/6;
+   for(const [u,v]of[[a,b],[b,c],[c,a]]){const key=[Math.min(u,v),Math.max(u,v)].join(','),edge=edges.get(key)??{count:0,balance:0};edge.count++;edge.balance+=u<v?1:-1;edges.set(key,edge);}
+  }
+  for(const edge of edges.values()){expect(edge.count).toBe(2);expect(edge.balance).toBe(0);}expect(volume).toBeGreaterThan(.2);
+  for(const values of variant.matrices){const matrix=new THREE.Matrix4().fromArray(values),points=vertices.map(p=>p.clone().applyMatrix4(matrix));expect(points.every(p=>[p.x,p.y,p.z].every(Number.isFinite))).toBe(true);expect(Math.min(...points.map(p=>p.y))).toBeLessThan(-10);expect(Math.max(...points.map(p=>p.y))).toBeGreaterThan(1);instances++;}
+  triangles+=variant.indices.length/3*variant.matrices.length;
+ }
+ expect(instances).toBe(20);expect(triangles).toBeLessThanOrEqual(10560);
+ const placement=await page.evaluate((names:string[])=>{
+  const scene=(window as unknown as {coastObjects:THREE.Scene[]}).coastObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,batches:Record<string,number[][]>={},islands:number[][]=[];
+  for(let variant=0;variant<3;variant++){const mesh=scene.getObjectByName(`Weathered offshore rock ridge ${variant}`) as THREE.InstancedMesh;(mesh.userData.authoredInstances as THREE.Matrix4[]).forEach((matrix,index)=>{islands[index*3+variant]=matrix.toArray();});}
+  for(const name of names)batches[name]=name==='Hazy offshore islets'?islands:((scene.getObjectByName(name) as THREE.Mesh).userData.authoredInstances as THREE.Matrix4[]).map(m=>m.toArray());
+  return{batches,width:scene.userData.sunShadows.projectedWidth,height:scene.userData.sunShadows.projectedHeight};
+ },Object.keys(baseline.batches));
+ expect(placement.width).toBeCloseTo(baseline.projectedWidth,5);expect(placement.height).toBeCloseTo(baseline.projectedHeight,5);
+ for(const name of Object.keys(baseline.batches)){
+  const expected=baseline.batches[name];expect(placement.batches[name].length,name+' count').toBe(expected.count);
+  for(const sample of expected.samples)for(let i=0;i<16;i++)expect(placement.batches[name][sample.index][i],name+' original transform '+sample.index).toBeCloseTo(sample.matrix[i],4);
+ }
 });

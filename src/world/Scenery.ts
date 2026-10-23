@@ -4,6 +4,27 @@ import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
+import offshoreHeightsText from './offshore-heights.json?raw';
+
+/** Sampled from the existing photographed CC0 reef; the underwater edge and
+ * bottom form a closed body. Different crops retain broken natural ridges. */
+const offshoreHeights=JSON.parse(offshoreHeightsText) as {width:number;height:number;variants:number[][]};
+function offshoreRockGeometry(variant:number):THREE.BufferGeometry {
+  const {width,height}=offshoreHeights,positions:number[]=[],colors:number[]=[],indices:number[]=[],boundary:number[][]=[];
+  const vertex=(x:number,y:number,z:number)=>{
+    positions.push(x,y,z);const strata=.025*Math.sin(y*38+x*4+variant*1.71),shade=.79+Math.min(.18,Math.max(0,y)*.2)+strata;
+    colors.push(shade,shade*.99,shade*(.92+Math.min(.06,Math.max(0,.25-y)*.15)));
+  };
+  for(let row=0;row<height;row++)for(let column=0;column<width;column++)vertex(column/(width-1)*2-1,offshoreHeights.variants[variant][row*width+column],row/(height-1)*2-1);
+  const edgeCounts=new Map<string,{a:number;b:number;count:number}>();
+  for(let row=0;row<height-1;row++)for(let column=0;column<width-1;column++){
+    const a=row*width+column,b=a+1,c=a+width,d=c+1;
+    for(const triangle of[[a,c,b],[b,c,d]]){indices.push(...triangle);for(let i=0;i<3;i++){const a=triangle[i],b=triangle[(i+1)%3],key=Math.min(a,b)+','+Math.max(a,b),edge=edgeCounts.get(key)??{a,b,count:0};edge.count++;edgeCounts.set(key,edge);}}
+  }
+  for(const edge of edgeCounts.values())if(edge.count===1)boundary.push([edge.a,edge.b]);
+  const bottom=positions.length/3;vertex(0,-1.05,0);for(const [a,b]of boundary)indices.push(bottom,b,a);
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}
 
 /** Authored, deterministic coastal landscape. Distances and animation time are in metres / seconds. */
 export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager=THREE.DefaultLoadingManager): {
@@ -366,23 +387,18 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     return result;
   }
 
-  // Pale offshore stacks and two distant silhouettes establish the scale of the bay.
-  const islandMatrices: THREE.Matrix4[] = [];
-  const islandColors: THREE.Color[] = [];
+  // Rotate three distinct ridges while preserving the existing random sequence,
+  // so changing distant geology does not rearrange nearby rocks or plants.
+  const islandMatrices: THREE.Matrix4[][] = [[],[],[]];
+  const islandColors: THREE.Color[][] = [[],[],[]];
   for(let i=0;i<20;i++) {
     const angle=i/20*Math.PI*2+.1;
     const distance=760+random()*480;
-    islandMatrices.push(matrix(Math.cos(angle)*distance,-6,Math.sin(angle)*distance,65+random()*90,17+random()*47,38+random()*70));
-    islandColors.push(new THREE.Color('#8b9b94').multiplyScalar(.75+random()*.15));
+    islandMatrices[i%3].push(matrix(Math.cos(angle)*distance,-6,Math.sin(angle)*distance,65+random()*90,17+random()*47,38+random()*70));
+    islandColors[i%3].push(new THREE.Color('#94978d').multiplyScalar(.75+random()*.15));
   }
-  const islandShape = new THREE.SphereGeometry(1,24,12);
-  const islandPosition=islandShape.getAttribute('position');
-  for(let i=0;i<islandPosition.count;i++) {
-    const y=islandPosition.getY(i);
-    islandPosition.setY(i,y>0?y*(.65+.18*Math.sin(islandPosition.getX(i)*5)):y);
-  }
-  islandShape.computeVertexNormals();
-  batch(islandShape,new THREE.MeshStandardMaterial({color:0xffffff,roughness:1}),islandMatrices,islandColors).name='Hazy offshore islets';
+  const islandMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,vertexColors:true});
+  for(let variant=0;variant<3;variant++)batch(offshoreRockGeometry(variant),islandMaterial,islandMatrices[variant],islandColors[variant]).name=`Weathered offshore rock ridge ${variant}`;
 
   // Rocks are rounded limestone with deformed facets, never identical spheres.
   const rockShape = new THREE.SphereGeometry(1,12,8);

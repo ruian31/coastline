@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><link rel="icon" href="data:,"><title>Coastal fern geometry inspection</title><style>html,body{margin:0;background:#bdb6a7}canvas{display:block}</style><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#bdb6a7');scene.add(new THREE.HemisphereLight('#bbc9dd','#8f7960',.9));const sun=new THREE.DirectionalLight('#ffd8af',2.5);sun.position.set(4,2,3);scene.add(sun);
+const pmrem=new THREE.PMREMGenerator(renderer),room=new RoomEnvironment();scene.environment=pmrem.fromScene(room,.05).texture;scene.environmentIntensity=.62;room.dispose();pmrem.dispose();
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:'#a79f87',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.025;scene.add(floor);
+const camera=new THREE.PerspectiveCamera(37,innerWidth/innerHeight,.01,40),loader=new GLTFLoader();
+const [derived,original]=await Promise.all([loader.loadAsync('/assets/models/coastal_ferns/ferns.gltf'),loader.loadAsync('/assets/models/fern_02/fern_02_browser.gltf')]);
+let template;original.scene.traverse(o=>{if(o.isMesh&&!template)template=o.material;});template.alphaTest=.45;template.alphaToCoverage=true;template.transparent=false;template.side=THREE.DoubleSide;template.roughness=.85;template.metalness=0;template.normalScale.set(.6,.6);
+const sources=[];derived.scene.traverse(o=>{if(o.isMesh){o.material=template;o.visible=false;sources.push(o);}});scene.add(derived.scene);
+window.fernPreview={select(variant,lod,view){const name=`Coastal_fern_${variant}_${lod}`,source=sources.find(o=>o.name===name);if(!source)throw Error('Unknown '+name);sources.forEach(o=>o.visible=o===source);const eye={front:[1.5,.8,1.8],side:[-1.9,.65,.35],above:[.7,2.4,.8]}[view];camera.position.set(...eye);camera.lookAt(0,.22,0);renderer.render(scene,camera);const p=source.geometry.getAttribute('position');return{name,triangles:source.geometry.index.count/3,vertices:p.count,maps:[template.map,template.normalMap,template.roughnessMap].map(t=>({uuid:t.uuid,width:t.image.width,height:t.image.height})),render:renderer.info.render};}};
+window.fernReady=true;
+</script></html>

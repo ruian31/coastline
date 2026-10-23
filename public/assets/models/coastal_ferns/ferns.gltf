@@ -1,0 +1,302 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 544,
+      "max": [
+        0.5795376300811768,
+        0.6883285045623779,
+        0.6440921425819397
+      ],
+      "min": [
+        -0.5795376300811768,
+        0,
+        -0.6440921425819397
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 544,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 544,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2352,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 594,
+      "bufferView": 1,
+      "byteOffset": 4704
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2448,
+      "bufferView": 1,
+      "byteOffset": 5892
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 591,
+      "bufferView": 1,
+      "byteOffset": 10788
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 175,
+      "max": [
+        0.5795376300811768,
+        0.6881265640258789,
+        0.6440921425819397
+      ],
+      "min": [
+        -0.5795376300811768,
+        0,
+        -0.6440921425819397
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 175,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 175,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 565,
+      "max": [
+        0.6014212965965271,
+        0.511410117149353,
+        0.6229422092437744
+      ],
+      "min": [
+        -0.6014212965965271,
+        0,
+        -0.6229422092437744
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 565,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 565,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 175,
+      "max": [
+        0.6014212965965271,
+        0.511410117149353,
+        0.6229422092437744
+      ],
+      "min": [
+        -0.6014212965965271,
+        0,
+        -0.6229422092437744
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 175,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 175,
+      "bufferView": 4,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 17408,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 17408,
+      "byteLength": 11972,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 29380,
+      "byteLength": 5600,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 34980,
+      "byteLength": 18080,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 53060,
+      "byteLength": 5600,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "ferns.bin",
+      "byteLength": 58660
+    }
+  ],
+  "materials": [
+    {
+      "name": "Borrow existing Fern 02 material at runtime",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "roughnessFactor": 0.85
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Coastal fern 0 near",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Coastal fern 0 far",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 7,
+            "NORMAL": 8,
+            "TEXCOORD_0": 9
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    },
+    {
+      "name": "Coastal fern 1 near",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 10,
+            "NORMAL": 11,
+            "TEXCOORD_0": 12
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 5
+        }
+      ]
+    },
+    {
+      "name": "Coastal fern 1 far",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 6
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Coastal fern 0 near",
+      "mesh": 0
+    },
+    {
+      "name": "Coastal fern 0 far",
+      "mesh": 1
+    },
+    {
+      "name": "Coastal fern 1 near",
+      "mesh": 2
+    },
+    {
+      "name": "Coastal fern 1 far",
+      "mesh": 3
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Rooted curved coastal ferns",
+      "nodes": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ]
+}

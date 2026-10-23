@@ -1,0 +1,131 @@
+{
+  "asset": "fern_02",
+  "page": "https://polyhaven.com/a/fern_02",
+  "license": "CC0-1.0",
+  "authors": {
+    "Rob Tuytel": "scanning",
+    "Rico Cilliers": "modeling"
+  },
+  "inputs": [
+    {
+      "path": "fern_02_browser.gltf",
+      "bytes": 4246,
+      "sha256": "b87a5714ec32e966147a7c818fcb4c3cc476f7fa8fd2cd1a9b65ebfbf6ca4310"
+    },
+    {
+      "path": "fern_02.bin",
+      "bytes": 176176,
+      "sha256": "fe1abb762bcbbc7ad9e86925c8080437a62add257d9280e9142fdc85c226e64c"
+    },
+    {
+      "path": "textures/fern_02_basecolor_rgba_1k.png",
+      "bytes": 847517,
+      "sha256": "e3a10714b30d95a7aae660614d5b3ecaffcade7c3a959d17ba9f38af2fc53a57"
+    },
+    {
+      "path": "textures/fern_02_nor_gl_1k.jpg",
+      "bytes": 367222,
+      "sha256": "45bce132c6e96a0864bc89ab5da51361ab3f4afa83a6669ae499ab5ca811f621"
+    },
+    {
+      "path": "textures/fern_02_arm_1k.jpg",
+      "bytes": 280359,
+      "sha256": "ebfb5d76ce9cbdaec20bcd22dce9b755f0b1b8650ef29ca13555e3e6961025d7"
+    }
+  ],
+  "conversion": "Reuse two smaller full Fern 02 plants. Preserve every connected curved frond in both LODs, simplify far fronds independently, keep original UVs and normals with inverse-scale correction, root at original minimum Y. Geometry-only glTF; runtime must borrow the already loaded Fern 02 material and its three textures. No new bitmap.",
+  "variants": [
+    {
+      "variant": 0,
+      "lod": "near",
+      "sourceMesh": "Plane.006",
+      "sourceTriangles": 784,
+      "fronds": 7,
+      "triangles": 784,
+      "vertices": 544,
+      "maxError": 0,
+      "root": [
+        -0.021686822175979614,
+        -0.028773518279194832,
+        -0.004557520151138306
+      ],
+      "scale": [
+        2.1,
+        2.4,
+        2.1
+      ]
+    },
+    {
+      "variant": 0,
+      "lod": "far",
+      "sourceMesh": "Plane.006",
+      "sourceTriangles": 784,
+      "fronds": 7,
+      "triangles": 198,
+      "vertices": 175,
+      "maxError": 0.03497587889432907,
+      "root": [
+        -0.021686822175979614,
+        -0.028773518279194832,
+        -0.004557520151138306
+      ],
+      "scale": [
+        2.1,
+        2.4,
+        2.1
+      ]
+    },
+    {
+      "variant": 1,
+      "lod": "near",
+      "sourceMesh": "Plane.059",
+      "sourceTriangles": 816,
+      "fronds": 7,
+      "triangles": 816,
+      "vertices": 565,
+      "maxError": 0,
+      "root": [
+        -0.004389122128486633,
+        -0.013578944839537144,
+        -0.05549749732017517
+      ],
+      "scale": [
+        2.1,
+        2.4,
+        2.1
+      ]
+    },
+    {
+      "variant": 1,
+      "lod": "far",
+      "sourceMesh": "Plane.059",
+      "sourceTriangles": 816,
+      "fronds": 7,
+      "triangles": 197,
+      "vertices": 175,
+      "maxError": 0.03487522900104523,
+      "root": [
+        -0.004389122128486633,
+        -0.013578944839537144,
+        -0.05549749732017517
+      ],
+      "scale": [
+        2.1,
+        2.4,
+        2.1
+      ]
+    }
+  ],
+  "preparedAssets": [
+    {
+      "path": "ferns.gltf",
+      "bytes": 5518,
+      "sha256": "ce175223100a9043b28e175c10dc769b229eb69448cca7e5843dd447af33613a"
+    },
+    {
+      "path": "ferns.bin",
+      "bytes": 58660,
+      "sha256": "9621bdb9528ae5a84934764c1eda609c88fb30b79c82267a71f6bb18492cb260"
+    }
+  ]
+}

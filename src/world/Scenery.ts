@@ -9,6 +9,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
+  terrainHeight: (x:number,z:number) => number;
+  terrainMaterial: THREE.Material;
+  blocksCar: (x:number,z:number) => boolean;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -139,6 +142,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   terrain.setAttribute('color', new THREE.Float32BufferAttribute(terrainColors, 3));
   terrain.computeVertexNormals();
   sampledTerrain=(x,z)=>{
+    if(Math.abs(x)>530||Math.abs(z)>470)return -4;
     const gx=THREE.MathUtils.clamp((x+530)/1060*subdivisions,0,subdivisions),gz=THREE.MathUtils.clamp((z+470)/940*subdivisions,0,subdivisions);
     const ix=Math.min(subdivisions-1,Math.floor(gx)),iz=Math.min(subdivisions-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(subdivisions+1)+ix,b=a+subdivisions+1,d=a+1,c=b+1;
     return u+v<=1?tp.getY(a)*(1-u-v)+tp.getY(d)*u+tp.getY(b)*v:tp.getY(c)*(u+v-1)+tp.getY(b)*(1-u)+tp.getY(d)*(1-v);
@@ -638,8 +642,16 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   root.userData.routeIds = roads.map(r=>r.id);
   let instancedBatches=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)instancedBatches++;});
   root.userData.sceneryBudget = { tier:mobile?'mobile':'desktop', instancedBatches, terrainTriangles:subdivisions*subdivisions*2 };
+  const obstacles=[
+    ...palms.map(m=>({x:m.elements[12],z:m.elements[14],radius:.25*Math.hypot(m.elements[0],m.elements[2])+.78})),
+    ...pines.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.hypot(m.elements[0],m.elements[2])+.78})),
+    ...rocks.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.max(Math.hypot(m.elements[0],m.elements[2]),Math.hypot(m.elements[8],m.elements[10]))*.85+.78})),
+  ];
   return {
     groundHeight:cameraGroundHeight,
+    terrainHeight:groundHeight,
+    terrainMaterial:groundMaterial,
+    blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
     setSkyReflection(texture){seaSky.value=texture;hasSeaSky.value=1;},
     setLowDetail(enabled){
       for(const child of root.children){

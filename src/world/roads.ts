@@ -17,6 +17,24 @@ export const hill=makeRoute('hill','山间支线',inland,false,7.6);
 export const roads=[coast,hill];
 const tables=roads.map(route=>{const count=Math.ceil(route.length/3);return{route,points:Array.from({length:count+1},(_,i)=>route.sample(i/count).position),count};});
 export type RoadLocation={route:RoadRoute;t:number;sample:RoadSample;distance:number;offset:number};
+export const SHOULDER_WIDTH=1.15,VERGE_WIDTH=4.4;
+export const guardrailSpans:Array<[number,number]>=[[.055,.16],[.20,.32],[.43,.665],[.745,.85],[.91,.995]];
+/** The same graded shoulder is used by the visible mesh and tyre support. */
+export function vergeHeight(sample:RoadSample,width:number,offset:number,ground:(x:number,z:number)=>number):number {
+ const edge=width/2+SHOULDER_WIDTH,outer=edge+VERGE_WIDTH;
+ const end=ground(sample.position.x+sample.right.x*Math.sign(offset)*outer,sample.position.z+sample.right.z*Math.sign(offset)*outer);
+ return THREE.MathUtils.lerp(sample.position.y-.055,end,THREE.MathUtils.smoothstep(Math.abs(offset),edge,outer));
+}
+export function roadSurfaceHeight(location:RoadLocation,x:number,z:number,ground:(x:number,z:number)=>number):number {
+ const base=ground(x,z),half=location.route.width/2;
+ if(location.distance<=half)return Math.max(base,location.sample.position.y);
+ if(location.distance<=half+SHOULDER_WIDTH)return Math.max(base,location.sample.position.y-.055);
+ if(location.distance<half+SHOULDER_WIDTH+VERGE_WIDTH)return Math.max(base,vergeHeight(location.sample,location.route.width,location.offset,ground));
+ return base;
+}
+export function touchesGuardrail(location:RoadLocation):boolean {
+ return location.route===coast&&Math.abs(location.offset-(coast.width/2+.65))<.88&&guardrailSpans.some(([start,end])=>location.t>=start&&location.t<=end);
+}
 export function nearestRoad(x:number,z:number,only?:RoadRoute):RoadLocation {
  let distance=Infinity,found=coast,u=0;
  for(const table of tables){if(only&&table.route!==only)continue;const{points,count,route}=table;

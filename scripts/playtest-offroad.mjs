@@ -1,0 +1,30 @@
+// Keyboard and Android multi-touch drive from the road onto real rendered terrain and back.
+import{chromium,devices}from'@playwright/test';
+import{createServer}from'vite';
+import{mkdir,writeFile}from'node:fs/promises';
+const dir='artifacts/offroad-drive';await mkdir(dir,{recursive:true});
+const server=await createServer({server:{middlewareMode:true},appType:'custom'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts');
+const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
+const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:[false,true])){
+ const name=mobile?'android-touch':'desktop-keyboard',context=await browser.newContext({...mobile?devices['Pixel 7']:{},viewport:mobile?{width:844,height:390}:{width:1280,height:720},recordVideo:{dir,size:mobile?{width:844,height:390}:{width:1280,height:720}}}),page=await context.newPage(),errors=[],samples=[];
+ page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{window.__coastObserved=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',e=>window.__coastObserved.push(e.detail));});
+ await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:4188')+'/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__.setState('offroad-start'));
+ const cdp=mobile?await context.newCDPSession(page):null,buttons={};if(mobile)for(const action of['throttle','brake','left','right']){const box=await page.locator(`[data-drive="${action}"]`).boundingBox();buttons[action]={x:box.x+box.width/2,y:box.y+box.height/2};}
+ let held=new Set(),touchHeld=[];const setInput=async desired=>{if(mobile){const points=actions=>actions.map(action=>({...buttons[action],id:['throttle','brake','left','right'].indexOf(action)+1}));if(desired.join(',')!==touchHeld.join(',')){if(touchHeld.length)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});if(desired.length)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(desired)});}touchHeld=desired;}else{const mapping={throttle:'KeyW',brake:'KeyS',left:'KeyA',right:'KeyD'},next=new Set(desired.map(a=>mapping[a]));for(const key of held)if(!next.has(key))await page.keyboard.up(key);for(const key of next)if(!held.has(key))await page.keyboard.down(key);held=next;}};
+ const start=coast.sample(.12),out={x:start.position.x-start.right.x*65+start.tangent.x*24,z:start.position.z-start.right.z*65+start.tangent.z*24};let target=out,phase='leave-road',maxDistance=0,finished=false,lastCapture=0;const started=Date.now();
+ while(Date.now()-started<65000){
+  const sample=await page.evaluate(()=>{const d=window.__THREE_GAME_DIAGNOSTICS__,scene=window.__coastObserved.find(s=>s.isScene&&s.getObjectByName('road-network')),car=scene.getObjectByName('convertible-'+d.state.car);return{d,yaw:car.rotation.y};});
+  const{d,yaw}=sample,p=d.player.position,speed=d.player.speed;maxDistance=Math.max(maxDistance,d.state.roadDistance);
+  if(phase==='leave-road'&&Math.hypot(p.x-out.x,p.z-out.z)<7){await setInput([]);await page.screenshot({path:`${dir}/${name}-inland.png`});phase='return';const back=coast.sample(.155);target={x:back.position.x-back.right.x*1.7,z:back.position.z-back.right.z*1.7};}
+  if(phase==='return'&&d.state.roadDistance<3.4){finished=true;await setInput(['brake']);await page.waitForTimeout(600);await setInput([]);await page.screenshot({path:`${dir}/${name}-returned.png`});break;}
+  const error=wrap(Math.atan2(target.x-p.x,target.z-p.z)-yaw),targetSpeed=Math.abs(error)>.65?4.5:8;
+  const desired=[];if(error>.045)desired.push('left');if(error<-.045)desired.push('right');if(speed<targetSpeed-.15)desired.push('throttle');if(speed>targetSpeed+1.1)desired.push('brake');await setInput(desired);
+  samples.push({seconds:(Date.now()-started)/1000,phase,position:p,speed,roadDistance:d.state.roadDistance,pitch:d.state.groundPitch,roll:d.state.groundRoll,hit:d.state.hit,renderer:d.renderer,pressed:await page.locator('[data-drive].held').evaluateAll(elements=>elements.map(el=>el.dataset.drive))});
+  if(Date.now()-lastCapture>7000){lastCapture=Date.now();await page.screenshot({path:`${dir}/${name}-${samples.length}.png`});console.log(JSON.stringify({name,phase,seconds:Math.round((Date.now()-started)/1000),roadDistance:d.state.roadDistance,speed}));}
+  await page.waitForTimeout(90);
+ }
+ await setInput([]);await page.screenshot({path:`${dir}/${name}-last.png`});const video=page.video();await context.close();await video.saveAs(`${dir}/${name}.webm`);
+ await writeFile(`${dir}/${name}.json`,JSON.stringify({finished,maxDistance,errors,samples},null,2));
+ if(!finished||maxDistance<30||errors.length)throw Error(`${name}: off-road drive incomplete; see evidence`);
+}}finally{await browser.close();await server.close();}

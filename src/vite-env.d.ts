@@ -17,7 +17,7 @@ interface ThreeGameDiagnostics {
     geometries: number;
     textures: number;
   };
-  state?: {running:boolean;paused:boolean;automatic:boolean;camera:number;car:number;road:string;progress:number;steer:number;distance:number;preferHill:boolean;music:boolean;muted:boolean;audioState:string;fps:number;quality:string;renderTier:string};
+  state?: {running:boolean;paused:boolean;automatic:boolean;camera:number;car:number;road:string;progress:number;steer:number;offroad:boolean;roadDistance:number;groundPitch:number;groundRoll:number;hit:boolean;distance:number;preferHill:boolean;music:boolean;muted:boolean;audioState:string;fps:number;quality:string;renderTier:string};
   canvas: {
     clientWidth: number;
     clientHeight: number;

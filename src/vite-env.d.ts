@@ -11,11 +11,14 @@ interface ThreeGameDiagnostics {
     speed: number;
   };
   cameraRig?: {cockpitEyeError:number|null};
+  lighting?: {ready:boolean;mode:string;bakes:number;bakeDraws:number;localPasses:number;localDraws:number;localTriangles:number;mapSize:number;projectedWidth:number;projectedHeight:number;casters:number};
   renderer: {
     calls: number;
     triangles: number;
     geometries: number;
     textures: number;
+    mainCalls?:number;
+    mainTriangles?:number;
   };
   state?: {running:boolean;paused:boolean;automatic:boolean;camera:number;car:number;road:string;progress:number;steer:number;offroad:boolean;roadDistance:number;groundPitch:number;groundRoll:number;hit:boolean;distance:number;preferHill:boolean;music:boolean;muted:boolean;audioState:string;fps:number;quality:string;renderTier:string};
   canvas: {

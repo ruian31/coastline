@@ -18,6 +18,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;
   prepareShore:(sample:(x:number,z:number)=>number)=>void;
   addShoreWetness:(material:THREE.MeshStandardMaterial)=>void;
+  createShadowCasters:()=>THREE.Group;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -310,6 +311,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   }
   function batch(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], colors?: THREE.Color[],lod?:TreeLod): THREE.InstancedMesh {
     const mesh = new THREE.InstancedMesh(keep(geometry), keep(material), matrices.length);
+    mesh.receiveShadow=true;
     matrices.forEach((matrix, i) => { mesh.setMatrixAt(i, matrix); if (colors) mesh.setColorAt(i, colors[i]); });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -614,6 +616,21 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     registerInstances,
     prepareShore:sample=>water.prepare(sample,groundHeight),
     addShoreWetness:water.addWetness,
+    createShadowCasters(){
+      const group=new THREE.Group();root.updateMatrixWorld(true);
+      for(const name of['Limestone headland and grassy interior','Eroded headland over the mountain tunnel']){
+        const source=root.getObjectByName(name) as THREE.Mesh;const mesh=new THREE.Mesh(source.geometry,source.material);mesh.name=name;mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);mesh.castShadow=true;group.add(mesh);
+        const materials=Array.isArray(source.material)?source.material:[source.material];for(const material of materials)material.shadowSide=THREE.FrontSide;
+      }
+      for(const record of visibleBatches){
+        if(record.lod?.detail==='near')continue;
+        const name=record.mesh.parent?.name??'',isTree=/palm|pine/.test(name);
+        if(!isTree&&record.mesh.name!=='Coastal limestone boulders')continue;
+        const mesh=new THREE.InstancedMesh(record.mesh.geometry,record.mesh.material,record.matrices.length);mesh.name=name||record.mesh.name;
+        record.matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.matrixAutoUpdate=false;mesh.matrix.copy(record.mesh.matrixWorld);mesh.castShadow=true;group.add(mesh);
+      }
+      return group;
+    },
     cullForCamera(camera){
       camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
       for(const record of visibleBatches){const{mesh,matrices,colors,bounds,slots,limit,lod}=record;let count=0,changed=false;

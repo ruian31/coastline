@@ -161,3 +161,21 @@
 - 独立生产index-BevlEjQa.js：tsc/build通过，三浏览器环境/材质专项11通过1跳过。pass-m18-offshore-relief八机位+14文件共22证据检查通过，桌面127calls/644467tri/103geo/45tex，手机91/251593/101/42，纹理超40仍记录。
 - 正常手机视口巡航18.527s/210m，按钮切镜、无错误；4倍CPU Task2592/Script2172ms，前阶段2664/2237ms，终点79calls/215900tri/42tex，不宣称手机FPS提升。最终前后树影/侧岸已目视，摄影裁片优于重复圆丘，但只是局部改进。
 - 正常dist/5190已更新同一BevlEjQa主包，普通无test入口实际开始、三个岩岛批次/车辆/一次缓存均正常，无钩子/诊断暴露、0错误，offshore-release-smoke保留。接下来按commit技能提交；随后处理松树冠的多面体团块，尚未实施，整体Goal继续active。
+
+## 2026-10-23 · M19松树冠开发与验证中
+- M18已提交8b6bbd9，UTF8已核验，无push，5190仍为BevlEjQa。当前未提交松树替换原5个Icosahedron为7组上升枝条、39个针叶簇，近580/远184tri（原400/100），同一512²本地atlas兼用木枝实色角，增加1纹理约1.33MiB含mip，无外部请求。
+- 独立只读审查指出全部竖卡导致顶部星形空洞、冠体法线被DoubleSide翻转、细针alpha在mip7低于.38/.5阈值。已加入倾斜/近水平卡，远LOD保留同方向子集；叶片取消背面法线翻转而木枝保持；逐tile自制10级mip链，精确2×2预乘alpha平均后按.5覆盖率校正。
+- 独立生产4191最新index-DNvV2Z6v.js，tsc/build通过。playtest-pine-canopy脚本提供真实模型四角度、近远LOD、130/300/700m、atlas/mip统计和针叶透空GPU掩码。早期first-new-fixed与committed-before的隔离不完整（visible为undefined），已修为Boolean；old模型有效isolated-before。tilted-mips-staged/phone侧顶图已看，明显优于圆团，但仍是程序化枝簇，非照片级；其初版mask包含木枝，正在needles-only-phone重跑排除。
+- 各needle tile mip0–7的.5覆盖率约25%，mip8每tile仅1像素，量化为一个保留样本；不是声称极小mip仍精确25%。手机/桌面全冠130–700m有实际像素，但严格针叶独立结果待确认。
+- static-sun-pine-canopy-phone通过：200帧0重绘、单束光、视锥外树20、车身树影3.72%像素/建筑7.84%/岩背55.8%，高低切档纹理不持续增长（累计50）。新树比旧实心团冠透光，不能引用旧46%作为当前树影比例。
+- 下一步：针叶独立远距结果，桌面实际缓存/树影，三浏览器环境/材质/太阳专项，正式m19机位及正常行驶/CPU/GPU/离路性能。未验证完成前不覆盖5190，之后提交并继续地表/植被层次。正式manifest artifacts/evidence-pine-canopy.json已建，尚未采完，不声称通过。
+
+## 2026-10-24 · M19阶段验证完成，准备提交
+- 新缓存采用完整近冠，最终候选index-CvemNPy4.js，789.52kB/gzip217.88kB，实际行驶近远LOD不变。static-sun-pine-full-final-phone/desktop均通过200帧0重绘/同缓存切档，完整近冠20包围盒在视锥外，车身树影手机36.9%/桌面42.1%。早期只用远冠的3.7%/25%比例已被取代，不作最终结论。
+- 三浏览器首轮13有效通过2平台跳过，3例旧缓存尺寸断言失败：树冠使高度175.639→175.613m。保留failed trace于pine-first-framing-regression；移除与旧几何绑定的范围尺寸比较，保留矩阵断言精度，从已提交Bevl包实际补捕松干/冠的原始fixture（pine-placement-baseline），3例重跑全过，累计16有效专项通过。运行源码未为测试改回旧包围盒。
+- 正式pass-m19-pine-canopy十机位均无错误：桌面127calls/645439tri/104geo/50tex，手机91/251953/101/43。同机位调用不变，纹理只+1，50的峰值来自新增电影机位。最终桌面针叶专用预览pine-canopy-final-desktop、手机needles-only-phone均排除木枝并通过130/300/700m实际像素；近20m空隙桌面41.8%/手机43.3%。
+- 手机实际按钮巡航/切镜18.563s/210m，桌面18.95s/215m，0错误；已看多个时刻。4倍CPU8秒Task2460/Script2072ms，对照2592/2172；终点79calls/215900tri，纹理42→43，heap18.23→20.83MiB。只作桌面模拟比较，不声称手机FPS改善。没有新GPU计时，不把M17计时当新松针测量。
+- 跨日后原服务session均已消失（write_stdin明确Unknown process、ss确认端口关闭），恢复5190(session8343)、4191(93774)、4188(54755)、5188(67393)。主机当前IP10.158.204.114，旧192.168.3.10无效；README/doc09/最新证据已更新。首次offroad-pine-canopy-phone连接拒绝留存，非游戏失败。
+- 恢复后offroad-pine-canopy-restored-phone完成实际双指绕岩/停车环顾/返回，46.5s、离路77.3m、0错误；峰114calls/319619tri/103geo/49tex，仍超300k/40约6.5%/22.5%。与R16轨迹并不完全相同，且多了世界缓存及远岛分批，差额不全归松针。
+- 下一步清单检查、正常dist构建/普通入口烟测及commit。此前coastal_world agent handle已不存在，已确认后用vegetation_audit继续其work/asset-sources/m20-vegetation-audit小型资源调查，不运行GPU/改源码。Bermuda glTF实际21变体仅941tri，有独立alpha未接入，仍是弯折轮廓片，尚未引入运行版。M20聚焦地表/草丛，整体Goal active。
+- 正常dist构建通过，与候选同一CvemNPy4主包，5190已更新。普通无test入口开始/车/缓存/10级mip/shader key均验证，钩子和诊断undefined、0错误，实际GPU仍RTX4050；pine-canopy-release-smoke已存。正式清单10+25=35项检查通过；即将按commit技能提交本步，随后M20资源代表段。

@@ -25,7 +25,7 @@ try{
   let offscreenCaster=null;
   if(state==='tree-shadow'){
    offscreenCaster=await page.evaluate(()=>{
-    const scene=window.sunObjects.find(o=>o.isScene&&o.userData.sunShadows),tree=scene.getObjectByName('Sheltered stone pine boughs').children.find(o=>o.name==='Visible distant trees'),matrix=tree.userData.authoredInstances[20].clone().premultiply(tree.matrixWorld);
+    const scene=window.sunObjects.find(o=>o.isScene&&o.userData.sunShadows),tree=scene.getObjectByName('Sheltered stone pine boughs').children.find(o=>o.name==='Visible detailed trees'),matrix=tree.userData.authoredInstances[20].clone().premultiply(tree.matrixWorld);
     tree.geometry.computeBoundingBox();const box=tree.geometry.boundingBox,corners=[];
     for(const x of[box.min.x,box.max.x])for(const y of[box.min.y,box.max.y])for(const z of[box.min.z,box.max.z])corners.push(tree.position.clone().set(x,y,z).applyMatrix4(matrix).project(window.sunCamera));
     return{name:tree.name,instance:20,outside:corners.every(p=>p.x<-1)||corners.every(p=>p.x>1)||corners.every(p=>p.y<-1)||corners.every(p=>p.y>1)||corners.every(p=>p.z>1),clip:corners.map(p=>p.toArray())};

@@ -80,10 +80,15 @@ test('离岸岩岛具有闭合厚度和海下基座，三种山脊保持绘制�
  const placement=await page.evaluate((names:string[])=>{
   const scene=(window as unknown as {coastObjects:THREE.Scene[]}).coastObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,batches:Record<string,number[][]>={},islands:number[][]=[];
   for(let variant=0;variant<3;variant++){const mesh=scene.getObjectByName(`Weathered offshore rock ridge ${variant}`) as THREE.InstancedMesh;(mesh.userData.authoredInstances as THREE.Matrix4[]).forEach((matrix,index)=>{islands[index*3+variant]=matrix.toArray();});}
-  for(const name of names)batches[name]=name==='Hazy offshore islets'?islands:((scene.getObjectByName(name) as THREE.Mesh).userData.authoredInstances as THREE.Matrix4[]).map(m=>m.toArray());
-  return{batches,width:scene.userData.sunShadows.projectedWidth,height:scene.userData.sunShadows.projectedHeight};
+  for(const name of names){
+   if(name==='Hazy offshore islets'){batches[name]=islands;continue;}
+   const object=scene.getObjectByName(name)!,mesh=(object as THREE.InstancedMesh).isInstancedMesh?object:object.children.find(child=>child.name==='Visible detailed trees')!;
+   batches[name]=(mesh.userData.authoredInstances as THREE.Matrix4[]).map(m=>m.toArray());
+  }
+  return{batches};
  },Object.keys(baseline.batches));
- expect(placement.width).toBeCloseTo(baseline.projectedWidth,5);expect(placement.height).toBeCloseTo(baseline.projectedHeight,5);
+ // Shadow framing follows current crown geometry; compare placement directly.
+ // Cache stability and actual receiving surfaces have dedicated sun checks.
  for(const name of Object.keys(baseline.batches)){
   const expected=baseline.batches[name];expect(placement.batches[name].length,name+' count').toBe(expected.count);
   for(const sample of expected.samples)for(let i=0;i<16;i++)expect(placement.batches[name][sample.index][i],name+' original transform '+sample.index).toBeCloseTo(sample.matrix[i],4);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
-import {createPalmCrown,createPineCrown} from './TreeGeometry';
+import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
@@ -591,11 +591,23 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const size=.8+random()*.8;
     pines.push(matrix(x,y,z,.18*size,5*size,.18*size,0));
     pineCrowns.push(matrix(x,y+4.7*size,z,3.8*size,1.8*size,3*size));
-    pineColors.push(new THREE.Color().setHSL(.23,.23,.36+random()*.12));
+    pineColors.push(new THREE.Color().setHSL(.23,.10,.72+random()*.12));
   }
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
   treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
-  const pineMaterial=wind(0x899968,.01);pineMaterial.vertexColors=true;
+  const pineMaterial=wind(0xffffff,.01);pineMaterial.vertexColors=true;
+  const pineAtlas=createPineNeedleAtlas();textures.push(pineAtlas);pineMaterial.map=pineAtlas;pineMaterial.alphaTest=.38;pineMaterial.alphaToCoverage=true;
+  const pineWind=pineMaterial.onBeforeCompile,pineWindKey=pineMaterial.customProgramCacheKey;
+  pineMaterial.onBeforeCompile=(shader,renderer)=>{
+    pineWind(shader,renderer);
+    // Needle cards use canopy-volume normals, identical on both faces. Undo
+    // the stock back-face flip only for foliage; wood keeps its surface normal.
+    shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_begin>',`#include <normal_fragment_begin>
+      #if defined(DOUBLE_SIDED) && defined(USE_MAP)
+        if(vMapUv.x<.5||vMapUv.y>.5){normal*=faceDirection;nonPerturbedNormal=normal;}
+      #endif`);
+  };
+  pineMaterial.customProgramCacheKey=()=>pineWindKey()+'-pine-volume-normal-v1';
   treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors,createPineCrown(true)).name='Sheltered stone pine boughs';
 
   // Baked contact occlusion grounds static props even when mobile sun shadows are disabled.
@@ -639,7 +651,10 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         const materials=Array.isArray(source.material)?source.material:[source.material];for(const material of materials)material.shadowSide=THREE.FrontSide;
       }
       for(const record of visibleBatches){
-        if(record.lod?.detail==='near')continue;
+        // Pine needle gaps are finer than the world cache's texels. Bake the
+        // full authored crown once; only the visible color pass uses far LOD.
+        const pineCrown=record.mesh.parent?.name==='Sheltered stone pine boughs';
+        if(record.lod?.detail===(pineCrown?'far':'near'))continue;
         const name=record.mesh.parent?.name??'',isTree=/palm|pine/.test(name);
         if(!isTree&&record.mesh.name!=='Coastal limestone boulders')continue;
         const mesh=new THREE.InstancedMesh(record.mesh.geometry,record.mesh.material,record.matrices.length);mesh.name=name||record.mesh.name;

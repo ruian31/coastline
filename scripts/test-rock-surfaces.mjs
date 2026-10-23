@@ -26,5 +26,5 @@ try{
   }
   assert.ok(volumeProbes>=6);reports.push({type,lod,supported,volumeProbes,maximumHeightError:maximumError,topology:meshes.map(scanTopology)});geometries.forEach(g=>g.dispose());material.dispose();
  }
- await writeFile('artifacts/solid-rock-surface-checks.json',JSON.stringify(reports,null,2));console.log(JSON.stringify(reports,null,2));
+ const label=process.env.ROCK_CHECK_LABEL??String(Date.now());assert.match(label,/^[a-z0-9-]+$/);const output='artifacts/solid-rock-surface-checks-'+label+'.json';await writeFile(output,JSON.stringify(reports,null,2),{flag:'wx'});console.log(JSON.stringify({output,reports},null,2));
 }finally{await server.close();}

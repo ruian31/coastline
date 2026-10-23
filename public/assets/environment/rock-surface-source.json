@@ -1,0 +1,28 @@
+{
+  "license": "CC0-1.0",
+  "source": "Existing local rock maps; original source and author in docs/06-资源来源.md",
+  "inputs": [
+    {
+      "path": "rock-normal.jpg",
+      "bytes": 191988,
+      "sha256": "94d16ddf20c53b2e3e331fb456e393afbed812ddb7c40d110e4164e91ba3342a"
+    },
+    {
+      "path": "rock-roughness.jpg",
+      "bytes": 183289,
+      "sha256": "08585e9296202c9f2d4f4bc0bdc5bb9ead9d7f2bfa8ecbda6691278a3e32137b"
+    }
+  ],
+  "packing": "RGB = original decoded OpenGL normal; A = original decoded grayscale roughness. No resampling or lossy encoding. Original JPEG files retained for reproducibility.",
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "normalMaxByteError": 0,
+  "roughnessMaxByteError": 0,
+  "output": {
+    "path": "rock-surface.png",
+    "bytes": 2064790,
+    "sha256": "7719a7f08965d9a70fa1c46b0a27d54ec3b1a9c46602bf03369ccc3015709d5b"
+  }
+}

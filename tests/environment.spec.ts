@@ -2,6 +2,34 @@ import {test,expect} from '@playwright/test';
 import * as THREE from 'three';
 import {readFile} from 'node:fs/promises';
 
+test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>{
+ await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{
+  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));
+  const w=window as unknown as {rootObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.rootObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.rootObjects.push((e as CustomEvent).detail));
+ });
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const data=await page.evaluate(()=>{
+  const scene=(window as unknown as {rootObjects:THREE.Scene[]}).rootObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,land=scene.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh,road=scene.getObjectByName('road-network')!,verges=road.children.filter(o=>o.name.startsWith('Graded ')) as THREE.Mesh[];
+  const samples:{x:number;y:number;z:number;gx:number;gz:number;lift:number}[]=[],raised:typeof samples=[],plain:typeof samples=[];
+  for(const name of ['Layered wind moving grass clusters',...Array.from({length:3},(_,i)=>'Photographed low coastal grass '+i)]){
+   const mesh=scene.getObjectByName(name) as THREE.InstancedMesh,slope=mesh.geometry.getAttribute('instanceGroundSlope');
+   for(let i=0;i<mesh.count;i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const p={x:m.elements[12],y:m.elements[13],z:m.elements[14],gx:slope.getX(i),gz:slope.getY(i),lift:slope.getZ(i)};(p.lift>.01?raised:plain).push(p);}
+  }
+  samples.push(...raised.slice(0,12),...plain.slice(0,6));
+  return{parts:[land,...verges].map(m=>({positions:Array.from(m.geometry.getAttribute('position').array as ArrayLike<number>),indices:Array.from(m.geometry.index!.array)})),verges:verges.length,samples,raised:raised.length};
+ });
+ expect(data.verges).toBe(4);expect(data.raised,'test must cover visible grass above raised shoulder geometry').toBeGreaterThan(0);
+ const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),meshes=data.parts.map(part=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(part.positions,3));g.setIndex(part.indices);return new THREE.Mesh(g,material);}),ray=new THREE.Raycaster();
+ const height=(x:number,z:number)=>{ray.set(new THREE.Vector3(x,120,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(meshes)[0];expect(hit).toBeDefined();return hit.point.y;};
+ for(const p of data.samples){
+  expect(height(p.x,p.z)-(p.y+p.lift),'root is buried only 5cm below the visible top surface').toBeCloseTo(.05,3);
+  expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);
+  expect(p.gz).toBeCloseTo((height(p.x,p.z+.15)-height(p.x,p.z-.15))/.3,2);
+ }
+ meshes.forEach(m=>m.geometry.dispose());material.dispose();
+});
+
 test('摄影低草可见、近远互斥，切换质量后保留原始摆放与资源',async({page},info)=>{
  await page.addInitScript(()=>{
   localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));
@@ -12,26 +40,24 @@ test('摄影低草可见、近远互斥，切换质量后保留原始摆放与�
  const inspect=()=>page.evaluate(()=>{
   const scene=(window as unknown as {grassObjects:THREE.Scene[]}).grassObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,far=root.getObjectByName('Layered wind moving grass clusters') as THREE.InstancedMesh;
   const near=[0,1,2].map(i=>root.getObjectByName('Photographed low coastal grass '+i) as THREE.InstancedMesh),original=far.userData.authoredInstances as THREE.Matrix4[];
-  const land=root.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh,geometry=land.geometry as THREE.PlaneGeometry,n=geometry.parameters.widthSegments,p=geometry.getAttribute('position');
-  const height=(x:number,z:number)=>{const gx=Math.max(0,Math.min(n,(x+530)/1060*n)),gz=Math.max(0,Math.min(n,(z+470)/940*n)),ix=Math.min(n-1,Math.floor(gx)),iz=Math.min(n-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(n+1)+ix,b=a+n+1,d=a+1,c=b+1;return u+v<=1?p.getY(a)*(1-u-v)+p.getY(d)*u+p.getY(b)*v:p.getY(d)*(1-v)+p.getY(b)*(1-u)+p.getY(c)*(u+v-1);};
-  let slopeError=0;
+  let slopesFinite=true;
   const key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),authored=new Set(original.map(key)),farKeys=new Set<string>(),nearKeys=new Set<string>(),unknown:string[]=[];let duplicates=0;
   for(const mesh of [far,...near])for(let i=0;i<mesh.count;i++){
    const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m);if(!authored.has(k))unknown.push(k);if(farKeys.has(k)||nearKeys.has(k))duplicates++;(mesh===far?farKeys:nearKeys).add(k);
-   if(mesh!==far){const slope=mesh.geometry.getAttribute('instanceGroundSlope'),x=m.elements[12],z=m.elements[14];slopeError=Math.max(slopeError,Math.abs(slope.getX(i)-(height(x+.15,z)-height(x-.15,z))/.3),Math.abs(slope.getY(i)-(height(x,z+.15)-height(x,z-.15))/.3));}
+   if(mesh!==far){const slope=mesh.geometry.getAttribute('instanceGroundSlope');slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);}
   }
   const material=near[0].material as THREE.MeshStandardMaterial,image=material.map!.image as {width:number;height:number};
-  return{detail:root.userData.grassDetail,near:near.map(m=>m.count),far:far.count,duplicates,unknown,slopeError,texture:material.map!.uuid,dimensions:[image.width,image.height],alpha:material.alphaTest,doubleSided:material.side===2,shared:near.every(m=>(m.material as THREE.MeshStandardMaterial).map===material.map),triangles:near.map(m=>m.geometry.index!.count/3),grounded:near.every(m=>{m.geometry.computeBoundingBox();return Math.abs(m.geometry.boundingBox!.min.y)<.001;}),memory:window.__THREE_GAME_DIAGNOSTICS__!.renderer};
+  return{detail:root.userData.grassDetail,near:near.map(m=>m.count),far:far.count,duplicates,unknown,slopesFinite,texture:material.map!.uuid,dimensions:[image.width,image.height],alpha:material.alphaTest,doubleSided:material.side===2,shared:near.every(m=>(m.material as THREE.MeshStandardMaterial).map===material.map),triangles:near.map(m=>m.geometry.index!.count/3),grounded:near.every(m=>{m.geometry.computeBoundingBox();return Math.abs(m.geometry.boundingBox!.min.y)<.001;}),memory:window.__THREE_GAME_DIAGNOSTICS__!.renderer};
  });
  const low=await inspect(),limit=info.project.name.includes('mobile')?48:96;
  expect(low.detail.ready).toBe(true);expect(low.near.reduce((a,b)=>a+b,0)).toBeGreaterThan(0);expect(low.detail.selected).toBeLessThanOrEqual(limit);expect(low.detail.visible).toBe(low.near.reduce((a,b)=>a+b,0));
- expect(low.duplicates).toBe(0);expect(low.unknown).toEqual([]);expect(low.slopeError).toBeLessThan(.001);expect(low.shared).toBe(true);expect(low.dimensions).toEqual([1024,1024]);expect(low.alpha).toBeGreaterThan(.4);expect(low.doubleSided).toBe(true);expect(low.grounded).toBe(true);expect(low.triangles.every(n=>n<350)).toBe(true);
+ expect(low.duplicates).toBe(0);expect(low.unknown).toEqual([]);expect(low.slopesFinite).toBe(true);expect(low.shared).toBe(true);expect(low.dimensions).toEqual([1024,1024]);expect(low.alpha).toBeGreaterThan(.4);expect(low.doubleSided).toBe(true);expect(low.grounded).toBe(true);expect(low.triangles.every(n=>n<350)).toBe(true);
  // Use the real settings control; all quality tiers must reuse the atlas and
  // retain disjoint near/far sets when the low-density prefix changes.
  for(const quality of ['high','low','high','low']){
   await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');
   await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
-  const current=await inspect();expect(current.texture).toBe(low.texture);expect(current.detail.selected).toBeLessThanOrEqual(limit);expect(current.duplicates).toBe(0);expect(current.unknown).toEqual([]);expect(current.slopeError).toBeLessThan(.001);
+  const current=await inspect();expect(current.texture).toBe(low.texture);expect(current.detail.selected).toBeLessThanOrEqual(limit);expect(current.duplicates).toBe(0);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);
  }
  expect(errors).toEqual([]);
 });

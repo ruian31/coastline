@@ -217,3 +217,27 @@
 - 最终三LOD绕岩行程45.8秒、离路76.53m、0错误，峰115calls/319877tri/112geo/51tex；已看停车环顾/回路帧。优化前373169来自离路88m，轨迹不同，不能全归因LOD；本次与M19约77m范围接近，峰319619也并非逐帧同路径。仍超300k/40约6.6%/27.5%，未称预算全过。
 - 最终CPU标签coastal-scrub-impostor-manual：Task2732/Script2326ms vsM20 2547/2169（+7.3%/+7.2%）；前BPd2751/2323，远距优化CPU未明显下降。相同终点83/218536/103/45，旧BPd233647tri；heap20.46MiB仅记录，不用单次GC差异宣称内存下降。
 - npm run build正常dist与候选同Bz0T4lOs，5190已更新，普通无query入口实际开始/三级准备/1024+512图/旧图null/10tri/一次缓存正常、钩子诊断undefined、0错误，coastal-scrub-release-smoke留存。新清单8+22=30项检查通过；即将提交M21，随后M22干燥地表/路肩与尖片蕨叶，整体Goal active。
+
+## 2026-10-24 · M22干燥地表与路肩开发中
+
+- M21已提交c418e1e，UTF8核验通过，无push；5190/4188稳定Bz0T4lOs，整体Goal active。当前目标turn已完成两个已提交步骤15fe191/c418e1e，不属于blocked。
+- 实际图的主要弱点转到地面：均匀绿色覆盖了扫描细节，15m重复纹理显平；道路边缘单色gravel变亮白带，旧尖三角蕨叶仍突兀。先复用已有九张地表纹理，不加资源/实例，不改实际地形或驾驶。
+- 将独立地表shader职责提取到src/world/GroundMaterial.ts，纹理所有权仍Scenery，terrain/洞顶/graded verge/路肩共享。原83%平色meadow覆盖换成仅对摄影苔绿的暖干草混色，保留原摄影亮度细节；soil尺度15→7.5m，复用已有宏观噪声轻微连续扭曲UV。法线由世界XYZ直接叠加改为以实际坡面法线建立TBN，再转view空间，strength .62。岩石normal仍沿原XZ UV采样，是后续三向法线的近似限制。
+- RoadMesh的外缘条带改用已有terrainMaterial，纹理与路肩/地面坐标连续，车道沥青/标线保持。程序化单色gravel保留作没有terrainMaterial时的回退。新shader key dry-soil-v3，尚未构建生产或更新5190。
+- 当前tsc+dev实际grass-verge采集artifacts/dry-ground-first正在运行，需看图再决定配色/纹理尺度。未验证手机/GPU成本、湿润效果/材质回归；旧蕨叶尚未改，不把本次shader改动写成完成。
+- 实际路肩根部检查发现已证实的问题：verge-roots-before用独立Raycaster穿过实际terrain+4个Graded网格，当前可见37株近草中4株中心埋深>20cm，最深49.3cm。M20原全株检查仅对底层terrain，未覆盖RoadMesh抬高的路肩；不能继续当作所有绘制表面贴地的证明。
+- 已将现有scanSurface纯三角分桶职责提取到SurfaceHeight.ts供岩岸/路肩实际复用，ScannedCoast保留旧export兼容脚本。RoadMesh显式返回4个vergeGeometries，OceanDrive同步prepareVerge后才等异步植被。近草/灌木及低成本远草共用实际terrain与graded最大高度、坡度及垂直抬升，instanceGroundSlope从vec2改vec3，压缩同步XYZ，原摆放矩阵仍不改。
+- 原远草先按底层初始化，prepareVerge复用属性缓冲重算并使slots失效，避免Buffer泄漏或旧槽位。逐实例球从原几何重建，中心加lift、半径含坡度，防重复prepare累积放大；法线/风动仍用原高度锚定。新ground-plane-v2 key。相关测试/脚本需更新到vec3和实际graded，尚未最终验证，不发布M22。
+- 远草原卡片也已接入相同贴地/lift，避免手机20米外仍埋于graded。prepareVerge复用已有BufferAttribute并重置slots；半径从原几何重建、中心加lift，不累计膨胀。新增独立Raycaster测试选择实际可见且lift>0的草，验证根部仅埋5cm、坡度与真实terrain+4个graded三角形一致；旧切档测试保留有限值/原矩阵/互斥，真实几何正确性交给独立射线。
+- test-rock-surfaces脚本的固定历史输出被本次运行复写（算法提取未改，四模型1294高度样本+42厚度探针通过）；本轮另存artifacts/m22-rock-surface-checks.json，已改脚本默认唯一时间戳/可选ROCK_CHECK_LABEL和wx防覆盖，后续不再重写历史路径。不能把这次路径复写当作新的旧版证据。
+- check-coastal-grass-ground.mjs更新到三分量坡度/lift，CPU重建包含实际graded网格，并明确不是GPU像素测量；控制对照脚本复制属性时使用实际itemSize，兼容新vec3。正在3浏览器独立路肩射线专项，尚未跑全共享回归/正式图。
+- 独立只读M22审查指出原岩石颜色三向投影、normal/roughness仍XZ的不一致；最终v4同时三向采样normal/roughness，各方向先与真实坡面合成再混合，平法线仍返回几何法线，去除陡壁不对应条纹。其余扫描提取、同步初始化、vec3换算、slots与bounds路径未发现新缺陷；不递归寻求背书。
+- 候选CJCfsuAm，tsc/build通过；三浏览器environment/materials/shore/sun共40项通过、2平台跳过。全4647桌面低根CPU检查包含实际graded，最高露空7.85cm、最深埋8.80cm，无>12cm露空，孤立坡地三角度0错误。首次graded-desktop只有截图未完整result，保留但不作为通过证据；最终graded-ground-v4-desktop完整result有效。
+- ROCK_CHECK_LABEL=m22-height-extraction-final独立重跑新唯一路径逻辑，1294高度/42厚度样本通过，全部4岩体闭合。新profile-ground-gpu在实际冻结三视图各90个硬件计时查询；新旧各两轮正在测量，首轮岸面中位差大、重复旧包本身也明显波动，必须一起报告，不单挑低耗样本作提速依据。尚未发布M22。
+- v4硬件GPU两轮（每状态90次）近岸P50 2.42–2.58ms，M21 1.40–1.92ms；草地/隧道新旧有波动重叠，但近岸额外成本明确，未直接发布。改为v5：pack-rock-surface.mjs无损把原normalRGB/roughness灰度合成RGBA，共用1024²/2064790B；逐字节验证解码误差0，SHA元数据齐全。地表从9→8纹理、GPU估算-5.33MiB，下载净+1689513B；三向每像素由6次normal/rough读取降至3次，相比M21净+1次。标准岩块和克隆实体背壳显式读A粗糙度（clone不继承onBeforeCompile）。
+- 最终候选CKmKV6_p tsc/build通过。打包影响的三浏览器根部/草灌切档/树根/材质/海岸/冷缓存21项中20通过1平台跳过，保留前v4的40项完整逻辑检查。GPU重测、正式截图、海水实际像素、手机离路和发布烟测尚未完成。
+- 最终CKmKV6_p十二正式视图0错误，桌面峰135/666521/113/51、手机92/251959/104/44（calls/tri/geo/tex）。新旧/未打包各2轮硬件GPU全部保留，最终路肩P50 2.21–3.42、隧道2.39–3.02、岸面2.00–2.81ms；M21为1.79–3.21/2.83–3.71/1.40–1.92。波动明显且岸面仍贵，不宣称打包已降低GPU时间或真机FPS。文档09给完整P95/范围，纹理确少1张。
+- 横屏实际双指绕岩/停车环顾/返回46.23s，离路87.74m，0错误，峰115/319877/112/50，仍超300k/40约6.6%/25%。M21离路76.53m，非相同轨迹。CPU4倍8s Task2665/Script2282 vs2732/2326，小幅差异不作提速宣称；同终点83/218542/103/44，heap20.66MiB。
+- 横屏海水实际深度水线四测线两个周期往返1.23–2.62m，地面材质8个湿润点变化/4干地不变；实际动画17.93s、0错误。最终手机全2713摆放低根通过，最高仍埋2.34cm、最深13.86cm、无>12cm露空；桌面v4同几何/贴地shader4647数据仍有效。
+- npm run build正常dist与候选同CKmKV6_p，5190已更新；普通无query入口点击开始前进8.45m，6路肩共享材质、岩块/背壳共用打包图且A粗糙度hook恢复、坡度vec3、植物ready/一次缓存正常、测试钩子和诊断undefined，0错误。evidence-dry-ground清单12+23=35项检查通过，实际草地/海岸/隧道/手机与绕岩环顾图已看。
+- M22准备按commit技能提交，无push，整体Goal active。实际图仍明显有尖三角蕨叶、离路山坡空旷和隧道山体直切边；M23先复用已加载Fern02纹理/完整叶束处理假叶，随后自然斑块扩展可驶达植被，不将本次地表局部修正当接近满分。源四植株20/19/7/7连通叶束只读CPU检查已完成，尚无M23运行改动。

@@ -286,3 +286,10 @@
 - 另做持续巡航8秒M23控制2669/2324→M24 2877/2538ms（Task/Script），约+7.8%/+9.2%；终点均约108m且仍巡航，位置差.21m，非逐帧同路径。手动8秒后段碰岩停车，所以不把手动较低差额当持续驾驶表现。两个新巡航原始文件保留。
 - 五机位原“差异0”指RGB差>8阈值；补充新pixel-precision.json对原图逐字节核算，三机位完全相同，rock-back/cinematic各10/7像素差1byte，最大1/255。旧result/原图未改，新增输入SHA。脚本未来报告更严指标并断言最大差≤1，没有重跑或重标原截图。
 - 正常npm run build与候选同DNiaziFM，5190普通入口开始前进8.30m，共用材质/图、独立坡度、field4991/150m、一次缓存正常，钩子诊断undefined、0错误。证据清单16+25=41项核对，准备按commit技能提交，无push、Goal active。
+
+## 2026-10-24 · M25A干草地表素材准备
+
+- M24已提交66125e0、立即核验中文UTF8、删除临时消息、无push；5190/4188稳定DNiaziFM，4191候选同包，4192保留优化前BrB对照。42项/16视图/横屏全程及CPU工作均终止完成，没有当前GPU任务，Goal active。
+- scripts/prepare-dry-field-surfaces.mjs核对官方Withered Grass三输入MD5/bytes，旧ground/sand四输入SHA，借Pillow合并normal RGB/roughness A。新四文件（3张1024²无损WebP+JPEG88颜色）8,157,525B，输出全部SHA再次核对，三surface解码通道误差0。作者Charlotte Baglioni、CC0、2m，来源与处理存dry-field-source.json，已看Diffuse实图。
+- 原型PNG9.28MB；有损WebP字段法线P95约7.3–7.6°，放弃。无损WebP保留所有解码数据；首次下载相对旧未合并图会增加，不能把纹理槽减少说成文件下载减少。原始图留工作缓存和官方URL/哈希，旧地面/砂地JPEG保留作重建。
+- 本步没有任何运行引用/地面shader改动，5190仍M24。素材验证完成后按commit技能提交；下一步实际内陆干草分区与地面/砂地合并采样，保持总纹理数/物理地形/路肩连续，实际浏览器与GPU解码另验，尚不声称风景或手机达标。

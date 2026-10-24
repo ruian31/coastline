@@ -1,0 +1,140 @@
+{
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "sourcePage": "https://polyhaven.com/a/withered_grass",
+  "asset": "withered_grass",
+  "authors": [
+    "Charlotte Baglioni"
+  ],
+  "physicalSizeMetres": [
+    2,
+    2
+  ],
+  "apiInfo": "https://api.polyhaven.com/info/withered_grass",
+  "apiFiles": "https://api.polyhaven.com/files/withered_grass",
+  "packing": "All *-surface.webp: RGB = decoded OpenGL normal, A = decoded grayscale roughness. No resizing or lossy encoding of those four channels. Existing coast/sand color maps remain unchanged.",
+  "originals": [
+    {
+      "role": "color",
+      "kind": "diff",
+      "bytes": 1138384,
+      "md5": "a6e00946839a9ab1975457ae4a39823b",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/withered_grass/withered_grass_diff_1k.jpg",
+      "path": "work/withered-grass-source/color.jpg",
+      "sha256": "8bebfb639ef74f651bc445526c46c845beee52a86d831848b82eb2bbbf2d98ee"
+    },
+    {
+      "role": "normal",
+      "kind": "nor_gl",
+      "bytes": 1472149,
+      "md5": "1d86c19a4dd4826eeb6db9653f8736bb",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/withered_grass/withered_grass_nor_gl_1k.jpg",
+      "path": "work/withered-grass-source/normal.jpg",
+      "sha256": "5afc122862b4c91fa5fc4d4290e1b61d5abfdfa36a2ae05b754b5a8e32e9a110"
+    },
+    {
+      "role": "roughness",
+      "kind": "rough",
+      "bytes": 824502,
+      "md5": "bd4219a20ed41f88098166497cdbc05d",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/withered_grass/withered_grass_rough_1k.jpg",
+      "path": "work/withered-grass-source/roughness.jpg",
+      "sha256": "81057bab0a684eed0ea2189ee522d4a982f65eec5a40b4b8762a28d217c1ac75"
+    }
+  ],
+  "existing": [
+    {
+      "file": "ground-normal.jpg",
+      "bytes": 425638,
+      "sha256": "d4654a33a81ddaf4222803cf87f58583c84488c0058eeb456ea4687cbc96518b",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_rocks_02/coast_sand_rocks_02_nor_gl_1k.jpg",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "authors": [
+        "Rob Tuytel"
+      ]
+    },
+    {
+      "file": "ground-roughness.jpg",
+      "bytes": 166826,
+      "sha256": "c33eb0f855c05c15bc0ca8c245a0d21141449883ef1c5b391103e64647fe8be7",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_rocks_02/coast_sand_rocks_02_rough_1k.jpg",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "authors": [
+        "Rob Tuytel"
+      ]
+    },
+    {
+      "file": "sand-normal.jpg",
+      "bytes": 351966,
+      "sha256": "674f6e571ad1347ba8fe872a40e6ab982f73f970d76113696165fcb69afb4df8",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_01/coast_sand_01_nor_gl_1k.jpg",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_01",
+      "authors": [
+        "Rob Tuytel"
+      ]
+    },
+    {
+      "file": "sand-roughness.jpg",
+      "bytes": 56936,
+      "sha256": "40b6bc7a64d3b976d53c4d28c0e41092c5d5f0fe6f65c934e693c8bc0e771d2f",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_01/coast_sand_01_rough_1k.jpg",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_01",
+      "authors": [
+        "Rob Tuytel"
+      ]
+    }
+  ],
+  "pillowVersion": "12.1.1",
+  "checks": [
+    {
+      "file": "ground-surface.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "normalMaxByteError": 0,
+      "roughnessMaxByteError": 0
+    },
+    {
+      "file": "sand-surface.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "normalMaxByteError": 0,
+      "roughnessMaxByteError": 0
+    },
+    {
+      "file": "field-surface.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "normalMaxByteError": 0,
+      "roughnessMaxByteError": 0
+    }
+  ],
+  "colorProcessing": "JPEG quality88 / subsampling0 / 1024 square; no resampling",
+  "outputs": [
+    {
+      "file": "ground-surface.webp",
+      "bytes": 2514230,
+      "sha256": "31d1e86428b3fe13e205db9f6ab1959801953b5960461626206483aa22760153"
+    },
+    {
+      "file": "sand-surface.webp",
+      "bytes": 2067420,
+      "sha256": "f0f604d785bda774b3031faf9c2b3dc34125f320b09fa4b99166b9317a855e62"
+    },
+    {
+      "file": "field-surface.webp",
+      "bytes": 3064392,
+      "sha256": "9e7426544a07b373da5f0f556929cac7a910b6ccd5f88eb4badd2c1553523786"
+    },
+    {
+      "file": "field-color.jpg",
+      "bytes": 511483,
+      "sha256": "3dfddd657c4bff92899b0bf778a2179813a5cfa6441b13069afd10cee831371a"
+    }
+  ]
+}

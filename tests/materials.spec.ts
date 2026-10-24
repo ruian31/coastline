@@ -55,6 +55,19 @@ const region=(buffer:Buffer,box:[number,number,number,number])=>{
  return sum.map(value=>value/count);
 };
 
+test('手机离路环顾的连续帧保留蓝色车漆',async({page},info)=>{
+ test.skip(!info.project.name.includes('mobile'),'复查横屏手机首次出现的部分车身缺失');
+ await page.setViewportSize({width:844,height:390});await page.addInitScript(()=>localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true})));
+ await page.goto('/?test=1');await page.evaluate(async()=>{const h=window.__THREE_GAME_TEST_HOOKS__!;await h.setState('field-verge');h.setPausedForScreenshot(true);h.setReducedMotion(true);});
+ await page.mouse.move(844*.85,390*.43);await page.mouse.down();await page.mouse.move(844*.85-Math.PI/.005,390*.43,{steps:50});await page.mouse.up();await page.waitForTimeout(700);
+ for(let frame=0;frame<4;frame++){
+  const png=PNG.sync.read(await page.screenshot({scale:'css'}));let cyan=0,total=0;
+  // Hood inside the actual fixed 844×390 reverse driving camera.
+  for(let y=200;y<224;y++)for(let x=392;x<444;x++){const i=(y*png.width+x)*4,r=png.data[i],g=png.data[i+1],b=png.data[i+2];if(g-r>8&&b-r>8)cyan++;total++;}
+  expect(cyan/total,'hood paint must cover the soil in every captured frame').toBeGreaterThan(.3);await page.waitForTimeout(100);
+ }
+});
+
 test('冷加载后车漆与沥青保持各自材质',async({page},info)=>{
  test.skip(!info.project.name.includes('mobile'),'保护曾出现异常的手机构图');
  await page.setViewportSize({width:390,height:664});await page.goto('/?test=1');

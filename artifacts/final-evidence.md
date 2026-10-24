@@ -1,3 +1,27 @@
+# M29 · 内陆灰绿群落与手机选择成本
+
+2026-10-24，**index-D_jyuSBA.js**，811.39kB/gzip224.74kB，已更新5190。复用已有实拍Shrub04枝叶/两图，在海岸内陆形成112个有疏密与高度变化的群落，手机1285/桌面2115作者摆放，避开道路/洞口/陡坡/小镇建筑带；原世界作者矩阵和低档前缀保持。新旧近景合用8/16总名额，内陆三层LOD/32m单元限制额外成本，无新图片。**整体自然风景仍未达标，Goal active**；大片平整地面、山坡大面、稀疏株型仍需修整。
+
+一次只读审查发现失败回退缺少范围、正常代理alpha-test前渐隐提前消失；修复后未递归审查。实际相机/已绘实例距离检查回退，实际代理材质在零samples目标恒定投影尺寸验证覆盖：Chrome110/130/140/144/145/150m为1595/789/115/8/0/0像素，WebKit1605/772/113/8/0/0。旧版140m已经0，初修145m尚有1–2残点的失败原图均保留；最终稳定像素阈值与极小覆盖epsilon兼容无MSAA手机。这不是整体画质或真机FPS证明。
+
+聚集分布版受影响三浏览器 **28通过/2平台跳过**，覆盖原世界fixture、根部/路肩独立射线、近草共享、旧新灌丛与车漆/首帧缓存；边界修复版14通过/1跳过，最后空间优化版 **9项全过**，加入实际三层距离带检查。不是将三次运行相加为独立用例。一次手机候选反向图车漆部分缺失，同bundle重采、两浏览器连续四帧与最终转身未复现，尚无根因，保留为未复现问题而非宣称已修复。
+
+最终 **artifacts/evidence-inland-colonies.json**（pass-m29-inland-near-pool）十六机位0错误，桌面各项峰143calls/635309tri/128geo/53tex，手机96/248160/125/46。已看正常驾驶原野、侧向、完整转身及近群落；四个正常手机固定图优化前后阈值>8变化0，scrub-field2086像素变化，未声称全部图一致。校准后的世界层次仍1.5/3，空地构图不足的自动失败仍成立，不把专项通过当高级画质完成。
+
+4倍CPU暖机1.5秒后默认巡航8秒，M28控制Task2934/Script2582ms，群落初版3301/2942；近景只扫退出距离、远/代理在绘制候选上维护迟滞后为 **3104/2741ms**，相对初版约-6.0%/-6.8%，相对M28仍+5.8%/+6.2%，同终点108.29m。单轮主机比较不能替代一加12/iPhone帧率，heap差仅GC状态，无新整帧GPU计时。
+
+最终横屏真实双指离路76.19m、四角环顾并返回50.08秒、0错误，近草共用峰36≤48；整程119calls/337515tri/127geo/52tex，仍超300k/40约12.5%/30%。初版77.09m与M28的88.02m轨迹不同，不能按面数差额伪称同比提速。
+
+- [实际原野驾驶](/home/ryan/workspace/coastline/artifacts/pass-m29-inland-near-pool/desktop-field-verge.png)
+- [正常侧向群落](/home/ryan/workspace/coastline/artifacts/inland-scrub-colonies-near-pool-desktop/field-verge-inland.png)
+- [手机完整转身](/home/ryan/workspace/coastline/artifacts/inland-scrub-colonies-near-pool-phone/field-verge-reverse.png)
+- [实际离路记录](/home/ryan/workspace/coastline/artifacts/offroad-inland-near-pool-phone/android-touch.json)
+- [实际离路视频](/home/ryan/workspace/coastline/artifacts/offroad-inland-near-pool-phone/android-touch.webm)
+
+正常dist与候选同D_jyuSBA；普通入口开始前进8.30m，新群落ready/共享图/独立坡度与145m范围、原植物/岩体及一次缓存1/43正常，钩子与诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。继续分析坡地与道路外地面过渡，整体目标未完成。
+
+---
+
 # M28 · 实拍棕榈树干与连续驾驶
 
 2026-10-24，**index-B8t9kL2e.js**，808.52kB/gzip223.83kB，已更新5190。均匀程序环纹换为实拍日晒纤维/损伤，512×1024颜色和normal RGB/roughness A共享表面按生长方向/约1.3m尺度映射，三路实例phase对齐。原位置、弯曲、树根/碰撞及共享随机流保持。**整体自然风景仍未达标，Goal active**；离路群落稀疏、地形表面均匀、硬折小叶和树皮周期仍需改进。

@@ -230,7 +230,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   sky.renderOrder = -10;
 
   // Geometry assembly helpers keep repeated coastal assets in a handful of draw calls.
-  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number};
+  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number;impostorRange?:number};
   type InstanceBatch={mesh:THREE.InstancedMesh;matrices:THREE.Matrix4[];colors?:THREE.Color[];bounds:THREE.Sphere[];slots:Int32Array;limit:number;lod?:InstanceLod;groundSlopes?:{source:Float32Array;attribute:THREE.InstancedBufferAttribute};spatial?:{cells:{bounds:THREE.Sphere;indices:number[]}[];candidates:number[]}};
   const visibleBatches:InstanceBatch[]=[];
   type FoliageDetail={key:string;near:Uint8Array;anchors:THREE.Vector3[];source:typeof visibleBatches[number];enter:number;exit:number;cap:number;visible:number;budget?:string;distant?:Uint8Array;impostorRange?:number};
@@ -536,6 +536,28 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     bushColors.push(new THREE.Color().setHSL(.19+random()*.07,.12,.72+random()*.19));
   }
   const bushMesh=batch(bushGeometry,bushMaterial,bushes,bushColors);bushMesh.name='Fine leaf coastal maquis clusters';
+  // Separate random stream and source record preserve all established roadside
+  // placements, including the low-quality prefix, while adding inland colonies.
+  const scrubRandom=createSeededRandom(864229),fieldBushes:THREE.Matrix4[]=[],fieldBushColors:THREE.Color[]=[];
+  for(let patch=0;patch<112;patch++) {
+    const s=coast.sample((patch+.25+scrubRandom()*.5)/112),offset=20+scrubRandom()**2*95;
+    const cx=s.position.x-s.right.x*offset,cz=s.position.z-s.right.z*offset,rx=5+scrubRandom()*8,rz=4+scrubRandom()*7,angle=scrubRandom()*Math.PI*2;
+    for(let plant=0;plant<(mobile?14:22);plant++) {
+      const a=scrubRandom()*Math.PI*2,r=scrubRandom()**1.1,dx=Math.cos(a)*r*rx,dz=Math.sin(a)*r*rz,x=cx+dx*Math.cos(angle)-dz*Math.sin(angle),z=cz+dx*Math.sin(angle)+dz*Math.cos(angle),y=groundHeight(x,z);
+      if(y<1.8||!naturalVerge(x,z,13.5))continue;
+      const nearest=closestSurface(x,z);if(nearest.point.id==='coast'&&nearest.point.t>.328&&nearest.point.t<.423&&nearest.distance<48)continue;
+      const slope=Math.hypot((groundHeight(x+.3,z)-groundHeight(x-.3,z))/.6,(groundHeight(x,z+.3)-groundHeight(x,z-.3))/.6);if(slope>.65)continue;
+      const size=1.2+scrubRandom()*.9;
+      fieldBushes.push(matrix(x,y-.04,z,size,size*(.55+scrubRandom()*.3),size,scrubRandom()*Math.PI*2));
+      fieldBushColors.push(new THREE.Color().setHSL(.18+scrubRandom()*.04,.1,.72+scrubRandom()*.16));
+    }
+  }
+  for(let i=fieldBushes.length-1;i>0;i--){const j=Math.floor(scrubRandom()*(i+1));[fieldBushes[i],fieldBushes[j]]=[fieldBushes[j],fieldBushes[i]];[fieldBushColors[i],fieldBushColors[j]]=[fieldBushColors[j],fieldBushColors[i]];}
+  const fieldScrubRange=mobile?145:240,fieldBushMaterial=wind(0xffffff,.035);fieldBushMaterial.copy(bushMaterial);groundFollowing(fieldBushMaterial);
+  const fieldBushMesh=batch(bushGeometry.clone(),fieldBushMaterial,fieldBushes,fieldBushColors);fieldBushMesh.name='Inland grey green maquis colonies';groundSlopes(fieldBushMesh,fieldBushes);partitionField(fieldBushMesh);
+  const fieldScrubNear=new Uint8Array(fieldBushes.length),fieldBushRecord=visibleBatches.find(record=>record.mesh===fieldBushMesh)!;
+  fieldBushRecord.lod={near:fieldScrubNear,detail:'far',range:fieldScrubRange};
+  root.userData.fieldScrubDetail={ready:false,placements:fieldBushes.length,range:fieldScrubRange,nearLimit:mobile?8:16,budget:'photographedScrub',selected:0,visible:0};
   function scrubImpostorGeometry(geometry:THREE.BufferGeometry,variant:number){
     geometry.computeBoundingBox();const box=geometry.boundingBox!,w=2*Math.max(Math.abs(box.min.x),Math.abs(box.max.x),Math.abs(box.min.z),Math.abs(box.max.z))+.1,h=box.max.y;
     const positions:number[]=[],uvs:number[]=[],indices:number[]=[];
@@ -562,22 +584,37 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const proxyMaterial=wind(0xffffff,.045);proxyMaterial.name='Distant photographed scrub volume';proxyMaterial.map=proxyMap;proxyMaterial.alphaTest=.12;proxyMaterial.alphaToCoverage=true;proxyMaterial.side=THREE.FrontSide;groundFollowing(proxyMaterial);
     const compileProxy=proxyMaterial.onBeforeCompile,proxyKey=proxyMaterial.customProgramCacheKey();
     proxyMaterial.onBeforeCompile=(shader,renderer)=>{compileProxy(shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\nnormal=normalize(mat3(viewMatrix)*vec3(0.0,1.0,0.0));');};proxyMaterial.customProgramCacheKey=()=>proxyKey+'-scrub-impostor-up';
-    const sourceRecord=visibleBatches.find(record=>record.mesh===bushMesh)!,near=new Uint8Array(bushes.length),distant=new Uint8Array(bushes.length);
+    const sourceRecord=visibleBatches.find(record=>record.mesh===bushMesh)!;
     const variantFor=(index:number)=>(Math.imul(index+1,2654435761)>>>16)&1;
-    for(const source of sources){
-      const match=/Coastal_scrub_([01])_(near|far)$/.exec(source.name);if(!match)throw Error('Unknown scrub variant '+source.name);
-      const variant=Number(match[1]),detail=match[2] as 'near'|'far',indices=Array.from({length:bushes.length},(_,i)=>i).filter(i=>variantFor(i)===variant),matrices=indices.map(i=>bushes[i]),colors=indices.map(i=>bushColors[i]);
-      const mesh=batch(source.geometry,material,matrices,colors,{near,detail,indices,source:sourceRecord,distant});mesh.name=`Grey green coastal scrub ${detail} ${variant}`;groundSlopes(mesh,matrices);
-      if(detail==='near'){const proxy=batch(scrubImpostorGeometry(source.geometry,variant),proxyMaterial,matrices,colors,{near,detail:'impostor',indices,source:sourceRecord,distant});proxy.name=`Grey green coastal scrub impostor ${variant}`;groundSlopes(proxy,matrices);}
+    function rangeMaterial(source:THREE.MeshStandardMaterial){
+      const limited=source.clone(),compile=source.onBeforeCompile,key=source.customProgramCacheKey();
+      limited.onBeforeCompile=(shader,renderer)=>{compile(shader,renderer);shader.vertexShader='varying float vScrubDistance;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>\nvScrubDistance=length((modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xz-cameraPosition.xz);`);shader.fragmentShader='varying float vScrubDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
+        // Coverage also fades on single-sample mobile targets, without blending.
+        float scrubCoverage=1.0-smoothstep(${fieldScrubRange-30}.0,${fieldScrubRange}.0,vScrubDistance);
+        float scrubThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
+        if(scrubCoverage<.00001||scrubCoverage<=scrubThreshold)discard;`);};
+      limited.customProgramCacheKey=()=>`${key}-scrub-coverage-v1-range-${fieldScrubRange}`;return limited;
     }
-    bushMesh.visible=false;sourceMaterials.forEach(material=>material.dispose());
+    const fieldMaterial=rangeMaterial(material),fieldProxyMaterial=rangeMaterial(proxyMaterial);
+    for(const field of [false,true]){
+      const placements=field?fieldBushes:bushes,tints=field?fieldBushColors:bushColors,source=field?fieldBushRecord:sourceRecord,near=field?fieldScrubNear:new Uint8Array(placements.length),distant=new Uint8Array(placements.length),range=field?fieldScrubRange:undefined,label=field?'Inland grey green scrub':'Grey green coastal scrub';
+      const key=field?'fieldScrubDetail':'scrubDetail',enter=field?(mobile?22:32):(mobile?30:45),exit=field?(mobile?28:40):(mobile?36:53),impostorRange=field?(mobile?40:75):(mobile?60:110);
+      for(const model of sources){
+        const match=/Coastal_scrub_([01])_(near|far)$/.exec(model.name);if(!match)throw Error('Unknown scrub variant '+model.name);
+        const variant=Number(match[1]),detail=match[2] as 'near'|'far',indices=Array.from({length:placements.length},(_,i)=>i).filter(i=>variantFor(i)===variant),matrices=indices.map(i=>placements[i]),colors=indices.map(i=>tints[i]);
+        const mesh=batch(field?model.geometry.clone():model.geometry,field?fieldMaterial:material,matrices,colors,{near,detail,indices,source,distant,range:field&&detail==='near'?exit:range,impostorRange:field?impostorRange:undefined});mesh.name=`${label} ${detail} ${variant}`;groundSlopes(mesh,matrices);if(field)partitionField(mesh);
+        if(detail==='near'){const proxy=batch(scrubImpostorGeometry(model.geometry,variant),field?fieldProxyMaterial:proxyMaterial,matrices,colors,{near,detail:'impostor',indices,source,distant,range,impostorRange:field?impostorRange:undefined});proxy.name=`${label} impostor ${variant}`;groundSlopes(proxy,matrices);if(field)partitionField(proxy);}
+      }
+      foliageDetails.push({key,near,source,anchors:placements.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter,exit,cap:mobile?8:16,visible:0,budget:'photographedScrub',distant,impostorRange});
+      root.userData[key]={...root.userData[key],ready:true,nearLimit:mobile?8:16,enterRange:enter,exitRange:exit,impostorRange,budget:'photographedScrub',selected:0,visible:0};
+    }
+    bushMesh.visible=fieldBushMesh.visible=false;sourceMaterials.forEach(material=>material.dispose());
     // The procedural atlas is only a loading/failure fallback. Once both real
     // LOD pairs are valid, release it instead of retaining an unused GPU map.
     const fallbackMap=bushMaterial.map!;bushMaterial.map=null;fallbackMap.dispose();textures.splice(textures.indexOf(fallbackMap),1);
     bushMaterial.dispose();resources.delete(bushMaterial);windMaterials.splice(windMaterials.indexOf(bushMaterial),1);
-    foliageDetails.push({key:'scrubDetail',near,source:sourceRecord,anchors:bushes.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?30:45,exit:mobile?36:53,cap:mobile?8:16,visible:0,distant,impostorRange:mobile?60:110});
-    root.userData.scrubDetail={ready:true,nearLimit:mobile?8:16,enterRange:mobile?30:45,exitRange:mobile?36:53,impostorRange:mobile?60:110,selected:0,visible:0};
-  }).catch(error=>{root.userData.scrubDetail={ready:false,fallback:true,error:String(error)};});
+    fieldBushMaterial.map=null;fieldBushMaterial.dispose();resources.delete(fieldBushMaterial);windMaterials.splice(windMaterials.indexOf(fieldBushMaterial),1);
+  }).catch(error=>{root.userData.scrubDetail={ready:false,fallback:true,error:String(error)};root.userData.fieldScrubDetail={...root.userData.fieldScrubDetail,ready:false,fallback:true};});
 
   // Sculpted low fern rosettes provide a second silhouette between the fine grasses and shrubs.
   const fernVertices:number[]=[],fernColors:number[]=[];
@@ -807,7 +844,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         for(let slot=0;slot<(sourceCandidates?.length??detail.source.limit);slot++){
           const i=sourceCandidates?.[slot]??slot;
           const distance=detail.anchors[i].distanceToSquared(viewPosition);
-          if(detail.distant){const range=detail.impostorRange!;if(distance>(range+6)**2)detail.distant[i]=1;else if(distance<(range-6)**2)detail.distant[i]=0;}
+          if(detail.distant&&!detail.source.spatial){const range=detail.impostorRange!;if(distance>(range+6)**2)detail.distant[i]=1;else if(distance<(range-6)**2)detail.distant[i]=0;}
           // Distance is much cheaper than six frustum planes. Far-away field
           // tufts cannot enter this small near pool even when facing them.
           if(distance>=(detail.near[i]?exit:enter)**2)continue;
@@ -830,7 +867,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         for(let slot=0;slot<(candidates?.length??limit);slot++){
           const i=candidates?.[slot]??slot;
           if(lod?.range&&((matrices[i].elements[12]-viewPosition.x)**2+(matrices[i].elements[14]-viewPosition.z)**2)>lod.range**2)continue;
-          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=mobile?130:200;if(distance<(range-12)**2)lod.near[index]=1;else if(distance>(range+12)**2)lod.near[index]=0;}const near=Boolean(lod.near[index]);if(lod.detail==='near'?!near:near||Boolean(lod.distant?.[index])!==(lod.detail==='impostor'))continue;}
+          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=mobile?130:200;if(distance<(range-12)**2)lod.near[index]=1;else if(distance>(range+12)**2)lod.near[index]=0;}
+            // Spatial colonies update their far/proxy state only among actual
+            // draw candidates; selecting a near bush need not scan the horizon.
+            if(lod.impostorRange&&lod.distant){const e=matrices[i].elements,distance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2,range=lod.impostorRange;if(distance>(range+6)**2)lod.distant[index]=1;else if(distance<(range-6)**2)lod.distant[index]=0;}
+            const near=Boolean(lod.near[index]);if(lod.detail==='near'?!near:near||Boolean(lod.distant?.[index])!==(lod.detail==='impostor'))continue;}
           // Retain off-screen casters if a later lighting pass enables their shadows.
           if(!mesh.castShadow&&!viewFrustum.intersectsSphere(bounds[i]))continue;
           if(slots[count]!==i){mesh.setMatrixAt(count,matrices[i]);if(colors)mesh.setColorAt(count,colors[i]);if(groundSlopes)groundSlopes.attribute.setXYZ(count,groundSlopes.source[i*3],groundSlopes.source[i*3+1],groundSlopes.source[i*3+2]);slots[count]=i;changed=true;}count++;
@@ -843,7 +884,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setLowDetail(enabled){
       for(const record of visibleBatches){const child=record.mesh;
-        const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:child.parent?.name==='Scanned coastal ferns'?.5:1;
+        const factor=child.name.includes('grass clusters')?.55:/maquis/i.test(child.name)?.65:child.name.includes('fern rosettes')?.6:child.parent?.name==='Scanned coastal ferns'?.5:1;
         const full=record.matrices.length;child.userData.fullCount=full;
         record.limit=enabled?Math.min(full,Math.max(1,Math.floor(full*factor))):full;
       }

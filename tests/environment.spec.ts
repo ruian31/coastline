@@ -154,12 +154,43 @@ test('灰绿灌木近远互斥且遵守低档原始前缀，切档复用图集',
  expect(errors).toEqual([]);
 });
 
+test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥并贴地',async({page},info)=>{
+ await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/coastal_scrub/')&&r.url().endsWith('.png'))requests.push(r.url());});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
+ const inspect=()=>page.evaluate(async()=>{
+  const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,source=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh,authors=source.userData.authoredInstances as THREE.Matrix4[],low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low',limit=low?Math.floor(authors.length*.65):authors.length;
+  scene.onAfterRender=(_r,_s,c)=>{scene.userData.scrubCamera=c.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
+  const camera=scene.userData.scrubCamera as number[],key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),lookup=new Map(authors.map((m,i)=>[key(m),i])),seen=new Set<string>(),unknown:string[]=[],outside:number[]=[],textures:string[]=[],wrongLod:number[]=[],samples:{x:number;y:number;z:number;gx:number;gz:number;lift:number}[]=[];let near=0,far=0,impostor=0,duplicates=0,maxDistance=0,ownAttributes=true,shared=true;
+  for(const detail of ['near','far','impostor'])for(let variant=0;variant<2;variant++){
+   const mesh=root.getObjectByName(`Inland grey green scrub ${detail} ${variant}`) as THREE.InstancedMesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>,road=root.getObjectByName(`Grey green coastal scrub ${detail} ${variant}`) as typeof mesh,slope=mesh.geometry.getAttribute('instanceGroundSlope');shared&&=mesh.material.map===road.material.map;ownAttributes&&=slope!==road.geometry.getAttribute('instanceGroundSlope');textures.push(mesh.material.map!.uuid);
+   if(detail==='near')near+=mesh.count;else if(detail==='far')far+=mesh.count;else impostor+=mesh.count;
+   for(let i=0;i<mesh.count;i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);if(seen.has(k))duplicates++;seen.add(k);maxDistance=Math.max(maxDistance,Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));const distance=Math.hypot(m.elements[12]-camera[0],m.elements[13]-camera[1],m.elements[14]-camera[2]),config=root.userData.fieldScrubDetail;if(detail==='near'&&distance>config.exitRange+.001||detail==='far'&&distance>config.impostorRange+6+.001||detail==='impostor'&&distance<config.impostorRange-6-.001)wrongLod.push(distance);if(samples.length<18)samples.push({x:m.elements[12],y:m.elements[13],z:m.elements[14],gx:slope.getX(i),gz:slope.getY(i),lift:slope.getZ(i)});}
+  }
+  const land=root.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh,verges=scene.getObjectByName('road-network')!.children.filter(o=>o.name.startsWith('Graded ')) as THREE.Mesh[];
+  return{road:{...root.userData.scrubDetail},field:{...root.userData.fieldScrubDetail},authors:authors.map(m=>m.toArray()),near,far,impostor,unknown,outside,duplicates,maxDistance,shared,ownAttributes,textures,wrongLod,samples,parts:[land,...verges].map(m=>({positions:Array.from(m.geometry.getAttribute('position').array as ArrayLike<number>),indices:Array.from(m.geometry.index!.array)}))};
+ });
+ const initial=await inspect(),cap=info.project.name.includes('mobile')?8:16;expect(initial.field.ready).toBe(true);expect(initial.field.placements).toBeGreaterThan(500);expect(initial.near).toBeGreaterThan(0);expect(initial.far+initial.impostor).toBeGreaterThan(0);
+ const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),surfaces=initial.parts.map(p=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p.positions,3));g.setIndex(p.indices);return new THREE.Mesh(g,material);}),ray=new THREE.Raycaster(),height=(x:number,z:number)=>{ray.set(new THREE.Vector3(x,120,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(surfaces)[0];expect(hit).toBeDefined();return hit.point.y;};
+ for(const s of initial.samples){expect(height(s.x,s.z)-(s.y+s.lift)).toBeCloseTo(.04,3);expect(s.gx).toBeCloseTo((height(s.x+.15,s.z)-height(s.x-.15,s.z))/.3,2);expect(s.gz).toBeCloseTo((height(s.x,s.z+.15)-height(s.x,s.z-.15))/.3,2);}
+ surfaces.forEach(m=>m.geometry.dispose());material.dispose();
+ for(const quality of ['high','low','high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');
+  for(const state of ['field-verge','rock-back']){
+   await page.evaluate(state=>window.__THREE_GAME_TEST_HOOKS__!.setState(state),state);const current=await inspect();expect(current.near+current.road.visible).toBeLessThanOrEqual(cap);expect(current.field.selected+current.road.selected).toBeLessThanOrEqual(cap);expect(current.field.visible).toBe(current.near);expect(current.unknown).toEqual([]);expect(current.outside).toEqual([]);expect(current.duplicates).toBe(0);expect(current.wrongLod).toEqual([]);expect(current.maxDistance).toBeLessThanOrEqual(current.field.range+.001);expect(current.shared&&current.ownAttributes).toBe(true);expect(current.textures).toEqual(initial.textures);expect(current.authors).toEqual(initial.authors);
+  }
+ }
+ expect(requests).toHaveLength(2);expect(new Set(requests).size).toBe(2);expect(errors).toEqual([]);
+});
+
 for(const resource of ['scrub.gltf','scrub-impostors.png'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page})=>{
+ await page.setViewportSize({width:844,height:390});
  await page.route('**/assets/models/coastal_scrub/'+resource,route=>route.abort());
  await page.addInitScript(()=>{const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
- await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
- const result=await page.evaluate(()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh;return{fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
- expect(result).toEqual({fallback:true,original:true,loaded:false,running:true});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('scrub-field'));
+ const result=await page.evaluate(async()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh,field=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh;scene.onAfterRender=(_r,_s,c)=>{scene.userData.fallbackCamera=c.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));const camera=scene.userData.fallbackCamera as number[];let maxDistance=0;for(let i=0;i<field.count;i++){const m=field.matrix.clone();field.getMatrixAt(i,m);maxDistance=Math.max(maxDistance,Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));}return{fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,field:field.visible&&root.userData.fieldScrubDetail.fallback,count:field.count,maxDistance,range:root.userData.fieldScrubDetail.range,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
+ expect(result.fallback&&result.original&&result.field&&result.running).toBe(true);expect(result.loaded).toBe(false);expect(result.count).toBeGreaterThan(0);expect(result.maxDistance).toBeLessThanOrEqual(result.range+.001);
 });
 
 test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前缀',async({page},info)=>{

@@ -1,28 +1,41 @@
 import * as THREE from 'three';
 import {createSeededRandom} from '../utils/random';
 
-/** Feathered pinnate leaves: thin curved leaflets rather than broad triangular fans. */
+/** Staggered young/old fronds form a crown volume, not one umbrella of lines.
+ * Both LODs keep the same rachis scaffold; nearby leaflets have a folded ridge. */
 export function createPalmCrown(mobile:boolean,distant=false):THREE.BufferGeometry {
  const random=createSeededRandom(864212),positions:number[]=[],colors:number[]=[];
- const crown=new THREE.Vector3(.65,7.8,0),fronds=distant?7:mobile?9:14,leaflets=distant?8:mobile?18:30;
- function triangle(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3,tint:number){
-  for(const v of[a,b,c]){positions.push(v.x,v.y,v.z);colors.push(.42*tint,.60*tint,.23*tint);}
+ const crown=new THREE.Vector3(.65,7.8,0),fronds=mobile?14:18,leaflets=distant?(mobile?5:8):mobile?9:17;
+ function triangle(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3,tint:number,dry=0){
+  for(const v of[a,b,c]){positions.push(v.x,v.y,v.z);colors.push((.39+dry*.15)*tint,(.53-dry*.10)*tint,(.22-dry*.035)*tint);}
  }
  for(let frond=0;frond<fronds;frond++){
-  const angle=frond*Math.PI*2/fronds+random()*.23,dir=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)),side=new THREE.Vector3(-dir.z,0,dir.x);
-  const length=3.6+random()*1.2,arch=.8+random()*.75,droop=1.25+random()*1.45;
-  const center=(t:number)=>crown.clone().addScaledVector(dir,t*length).add(new THREE.Vector3(0,Math.sin(t*Math.PI)*arch-t*t*droop,0));
+  // Phyllotaxis and different ages break the repeated, evenly spaced curtain.
+  // This stream authors fronds only; leaflet detail cannot move the far crown.
+  const tier=frond%3,angle=frond*2.399963+random()*.21,dir=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)),side=new THREE.Vector3(-dir.z,0,dir.x);
+  const length=[4.25,3.95,3.1][tier]+random()*.55,arch=[.55,.7,.75][tier]+random()*.3,droop=[2.4,1.35,.6][tier]+random()*.4,sweep=(random()-.5)*.65,dry=tier===0?.30+random()*.28:random()*.1;
+  const leafRandom=createSeededRandom(864213+frond*73);
+  // Every petiole grows from the actual trunk tip. Younger fronds rise while
+  // old outer fronds hang down, rather than raising disconnected tier roots.
+  const center=(t:number)=>crown.clone().addScaledVector(dir,t*length).addScaledVector(side,Math.sin(t*Math.PI)*sweep).add(new THREE.Vector3(0,Math.sin(t*Math.PI)*arch+t*[0,.6,1.8][tier]-t*t*droop,0));
+  for(let segment=0;segment<(distant?4:6);segment++){
+   const t=segment/(distant?4:6),u=(segment+1)/(distant?4:6),a=center(t),b=center(u),width=.052*(1-t)*.9+.006,tipWidth=.052*(1-u)*.9+.006;
+   const left=a.clone().addScaledVector(side,width),right=a.clone().addScaledVector(side,-width),endLeft=b.clone().addScaledVector(side,tipWidth),endRight=b.clone().addScaledVector(side,-tipWidth);
+   triangle(left,right,endLeft,.82,dry);triangle(right,endRight,endLeft,.82,dry);
+  }
   for(let leaf=0;leaf<leaflets;leaf++){
-   const t=.045+leaf/leaflets*.91,a=center(t),b=center(t+.92/leaflets),rib=.017*(1-t*.8);
-   triangle(a.clone().addScaledVector(side,rib),a.clone().addScaledVector(side,-rib),b,.74);
-   triangle(b.clone().addScaledVector(side,rib*.7),a.clone().addScaledVector(side,rib),b,.74);
-   const span=Math.pow(Math.sin(t*Math.PI),.65)*(.73+random()*.23);
+   const t=.13+(leaf+(leafRandom()-.5)*.25)/leaflets*.79,span=Math.pow(Math.sin(t*Math.PI),.65)*(.78+leafRandom()*.26);
    for(const sign of[-1,1]){
-    const tip=center(Math.min(1,t+.09+t*.10)).addScaledVector(side,sign*span);tip.y-=.17+span*.30;
-    const middle=a.clone().lerp(tip,.49);middle.y+=.045;
-    const blade=.029+Math.sin(t*Math.PI)*.015,tint=.72+random()*.32;
+    const a=center(t+sign*.012),tip=center(Math.min(1,t+.07+t*.12)).addScaledVector(side,sign*span);tip.y-=.12+span*(.24+leafRandom()*.25);
+    const middle=a.clone().lerp(tip,.52);middle.y+=.11+leafRandom()*.07;
+    const blade=(.04+Math.sin(t*Math.PI)*.035)*(distant?1.3:1),tint=.76+leafRandom()*.24;
     const left=middle.clone().addScaledVector(dir,blade),right=middle.clone().addScaledVector(dir,-blade);
-    triangle(a,left,right,tint);triangle(left,tip,right,tint*.9);
+    if(distant){triangle(a,left,right,tint,dry);triangle(left,tip,right,tint*.94,dry);}
+    else{
+     const ridge=middle.clone();ridge.y+=.027;
+     triangle(a,left,ridge,tint,dry);triangle(a,ridge,right,tint*.94,dry);
+     triangle(left,tip,ridge,tint,dry);triangle(ridge,tip,right,tint*.94,dry);
+    }
    }
   }
  }
@@ -30,7 +43,8 @@ export function createPalmCrown(mobile:boolean,distant=false):THREE.BufferGeomet
  for(let spear=0;spear<3;spear++){
   const a=spear*2.399,side=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
   const tip=crown.clone().addScaledVector(side,.55).add(new THREE.Vector3(0,1.8+spear*.12,0));
-  triangle(crown.clone().addScaledVector(side,.07),crown.clone().addScaledVector(side,-.07),tip,.86);
+  const left=crown.clone().addScaledVector(side,.07),right=crown.clone().addScaledVector(side,-.07),ridge=crown.clone().lerp(tip,.5).add(new THREE.Vector3(-side.z*.07,0,side.x*.07));
+  triangle(left,right,ridge,.86);triangle(left,ridge,tip,.86);triangle(ridge,right,tip,.8);
  }
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.computeVertexNormals();return geometry;
 }

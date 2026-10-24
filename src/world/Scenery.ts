@@ -720,7 +720,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   };
   trunkMaterial.customProgramCacheKey=()=>'coast-palm-trunk-rings';
   const frondGeometry=createPalmCrown(mobile);
-  const frondMaterial=wind(0x9cae72,.014,true);frondMaterial.vertexColors=true;
+  const frondMaterial=wind(0xd3d5ad,.014,true);frondMaterial.vertexColors=true;
   random=createSeededRandom(864208);
   const palms:THREE.Matrix4[]=[],palmColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?48:82);i++) {

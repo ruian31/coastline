@@ -1,3 +1,24 @@
+# M26 · 分龄棕榈冠与远叶覆盖
+
+2026-10-24，**index-Ot5MRk8T.js**，807.66kB/gzip223.54kB，已更新5190。原单层细线冠改为14/18片按年龄展开的叶轴：下层老叶垂落、中层展开、年轻叶向上；黄金角错落、局部扫弯、错位小叶及折脊增加体积。所有叶轴从实际干顶生长，独立随机流不改变原世界作者矩阵/树根/碰撞，无新增图片。**整体自然风景仍未达标，Goal active**；硬折小叶、均匀环状树干、隧道山体直切仍需改。
+
+手机近1185/远401tri（旧975/339），桌面2673/729（旧2523/339）。一次只读审查发现初版桌面远冠太稀：CPU正侧背顶覆盖约50–53%，实际130m像素near748/far474。桌面far由5对补到8对后630像素（约84%），250m211/193（约91%）；手机153/122、43/33。像素是与中性背景差>8计数，不证明轮廓完全相同。原始缺陷图保留，修改后未递归审查，以新距离原图验证；固定阴影仍只烘焙一次远冠，新增叶片也会改变缓存叶影覆盖。
+
+TypeScript/生产构建通过。三浏览器根部/原世界摆放fixture/首帧缓存/手机降级 **11通过、1平台跳过**。最终四档几何0退化面/异常值，法线误差max4.14e-8；这些数据不能替代美术观察。模型正/侧/背/顶、实际正常原野/路边/电影图与3.25/3.33秒不暂停风动留存。正式 **artifacts/evidence-layered-palms.json** 八机位0错误，桌面各项峰139calls/621710tri/121geo/51tex，手机94/247180/112/44；同机位调用/几何/纹理数保持，面数增加如文档09。
+
+横屏实际双指离路、四角环顾并返回 **49.21秒/87.91米/0错误**，峰116calls/326407tri/120geo/50tex，仍超300k/40约8.8%/25%。4倍CPU持续巡航8秒Task2977/Script2625ms，M25 2944/2597，约+1.1%/+1.1%，同终点108.92m仍巡航；不称真机FPS不变。手机行程/CPU在ensIaI2k完成，最后仅桌面far分支补叶，手机代码几何不变；最终Ot5MRk8T手机正式图与普通入口另验。未新增GPU耗时测量，真实一加12/iPhone仍待反馈。
+
+- [实际驾驶原野](/home/ryan/workspace/coastline/artifacts/pass-m26-layered-palms/desktop-field-verge.png)
+- [实际手机原野](/home/ryan/workspace/coastline/artifacts/pass-m26-layered-palms/mobile-field-verge.png)
+- [真实模型侧面](/home/ryan/workspace/coastline/artifacts/palm-crown-layered-final-desktop/near-side.png)
+- [真实模型顶部](/home/ryan/workspace/coastline/artifacts/palm-crown-layered-final-desktop/near-above.png)
+- [远距像素记录](/home/ryan/workspace/coastline/artifacts/palm-crown-layered-final-desktop/result.json)
+- [手机离路行驶](/home/ryan/workspace/coastline/artifacts/offroad-layered-palm-phone/android-touch.webm)
+
+普通dist与候选同Ot5MRk8T；5190无query入口前进8.30m，实际手机近远1185/401面、一次缓存1/43、植物准备正常，钩子和诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。继续修整山体形态，未宣布自然景观验收完成。
+
+---
+
 # M25 · 连续干草地、海砂与岩岸
 
 2026-10-24，生产包 **index-BXrxtmQy.js**，807.13kB/gzip223.33kB，已更新5190。内陆真实枯草与褐土按海拔、坡面及宏观噪声形成连续斑块，约2.5m摄影尺度；海砂与三向岩面保留。地形、六路肩、洞顶共用材质，实际物理表面不变。原野近草改暖干色，仍借用路边图集并合用48/96总名额。**整体自然风景仍不达标，Goal active**：棕榈细线冠、简单树干和山体直切轮廓仍需改进。

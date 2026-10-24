@@ -1,3 +1,28 @@
+# M32 · 干燥细针叶灌丛与真实横屏验证
+
+2026-10-24，**index-DJ93ttqD.js**，814.48kB/gzip225.76kB，已更新5190。完整扫描细针叶d/e接入道路与内陆群落，两族共享两图/8手机16桌面近景总额，原作者矩阵、颜色与质量前缀保持。原图分区覆盖mip、线性光平均和中心化裁切保留细叶；纹理所属加载者在成功转移或失败清理时关闭原ImageBitmap。**自然风景仍未达标，Goal active**；草丛细杆、空旷地表和坡面形态继续处理。
+
+CSw全距离版三浏览器21项通过，涵盖LOD/实际根部/前缀/共享、三种下载失败和16px损坏图、位图释放及实际GPU所有program的LINK_STATUS；稍早手机代理版DJ93再通过9项相关复核，不相加为30个独立用例。手机内陆34±6m/道路52±6m转代理，近景距离不变，桌面75±6/110±6保持。
+
+最终16个正式机位全部0错误，桌面1280×720峰143calls/656633tri/128geo/53tex，手机844×390峰107/274836/127/50。首次误传不支持的seed参数、后续仍沿用竖屏设备视口的旧报告都保留；最终本地inspector明确横屏，不伪改旧报告。旧竖屏统计不能与新横屏峰值直接比较。
+
+实际横屏双指驶离公路75.93m、四角环顾并返回49.84秒，0错误，近草峰36；整程119/342446/127/52，仍超初始300k/40预算约14.1%/30%。M29同脚本76.19m/337515面不是同一逐帧路线。CPU近似巡航Task3170→3170ms、Script2812→2822ms；90个GPU样本P50原野/近群落M29=1.835/1.891ms、初候选=2.116/2.084ms、手机距离优化后=1.745/2.009ms，主机频率/采样波动保留，不称真实手机或全部场景同比提速。
+
+Chrome实际代理材质110/120/130/140/144/145/150m覆盖992/936/526/69/5/0/0，WebKit为1019/946/522/78/5/0/0，单samples目标中末段持续至144m，145m与150m均0。普通无query的5190入口开始后8.60m，四个新文件各请求一次、旧灌木路径0请求，11级Canvas mip/共享图/缓存1次43draw正确，测试钩子/诊断undefined，0错误。
+
+- [正式16图与27辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-fineleaf-world.json)
+- [桌面实际原野](/home/ryan/workspace/coastline/artifacts/pass-m32-fineleaf-landscape/desktop-field-verge.png)
+- [横屏手机电影驾驶](/home/ryan/workspace/coastline/artifacts/pass-m32-fineleaf-landscape/mobile-cinematic.png)
+- [真实离路与完整环顾](/home/ryan/workspace/coastline/artifacts/offroad-fineleaf-distance-phone/android-touch.webm)
+- [完整行程/成本记录](/home/ryan/workspace/coastline/artifacts/offroad-fineleaf-distance-phone/android-touch.json)
+- [距离优化GPU计时](/home/ryan/workspace/coastline/artifacts/ground-gpu-rooibos-distance/result.json)
+- [WebKit末段覆盖](/home/ryan/workspace/coastline/artifacts/scrub-fade-rooibos-final-webkit/result.json)
+- [正常发布入口](/home/ryan/workspace/coastline/artifacts/fineleaf-release-smoke/result.json)
+
+清单43项核对通过。重新查看三张技能校准图与最终实际画面，世界层次本轮仍1.5→1.5，空地构图自动失败保留；其余九类未重评，不推导整体均分。真实一加12/iPhone新美术FPS仍待复核。
+
+---
+
 # M29 · 内陆灰绿群落与手机选择成本
 
 2026-10-24，**index-D_jyuSBA.js**，811.39kB/gzip224.74kB，已更新5190。复用已有实拍Shrub04枝叶/两图，在海岸内陆形成112个有疏密与高度变化的群落，手机1285/桌面2115作者摆放，避开道路/洞口/陡坡/小镇建筑带；原世界作者矩阵和低档前缀保持。新旧近景合用8/16总名额，内陆三层LOD/32m单元限制额外成本，无新图片。**整体自然风景仍未达标，Goal active**；大片平整地面、山坡大面、稀疏株型仍需修整。

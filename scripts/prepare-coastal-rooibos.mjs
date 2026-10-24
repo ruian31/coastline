@@ -1,6 +1,6 @@
 // Keep every photographed leaf, twig and woody component in both LODs.
 // Simplify within each component; never join or randomly discard branches.
-// Preparation only: the game keeps its existing scrub until separately tested.
+// Rebuilding is separate from runtime loading; verify gameplay before publishing.
 import assert from 'node:assert/strict';
 import {Document,NodeIO} from '@gltf-transform/core';
 import {MeshoptSimplifier} from 'meshoptimizer';

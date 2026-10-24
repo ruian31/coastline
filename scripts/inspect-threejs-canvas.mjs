@@ -517,8 +517,10 @@ export async function inspectPage(page, args) {
 }
 
 function contextOptions(devices, mobile) {
+  // This game's mobile target is landscape; retain touch/device emulation
+  // while inspecting the same aspect used by real driving and GPU profiles.
   return mobile
-    ? { ...devices['iPhone 13'], userAgent: undefined }
+    ? { ...devices['iPhone 13'], viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 }, userAgent: undefined }
     : { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 };
 }
 

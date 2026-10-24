@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import * as THREE from 'three';
 import {readFile} from 'node:fs/promises';
+import {PNG} from 'pngjs';
 
 test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>{
  await page.setViewportSize({width:844,height:390});
@@ -157,7 +158,7 @@ test('灰绿灌木近远互斥且遵守低档原始前缀，切档复用图集',
 test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥并贴地',async({page},info)=>{
  await page.setViewportSize({width:844,height:390});
  await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
- const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/coastal_scrub/')&&r.url().endsWith('.png'))requests.push(r.url());});
+ const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/coastal_rooibos/')&&r.url().endsWith('.png'))requests.push(r.url());});
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
  const inspect=()=>page.evaluate(async()=>{
   const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,source=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh,authors=source.userData.authoredInstances as THREE.Matrix4[],low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low',limit=low?Math.floor(authors.length*.65):authors.length;
@@ -184,13 +185,17 @@ test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥�
  expect(requests).toHaveLength(2);expect(new Set(requests).size).toBe(2);expect(errors).toEqual([]);
 });
 
-for(const resource of ['scrub.gltf','scrub-impostors.png'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page})=>{
+for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','invalid-atlas-size'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page},info)=>{
  await page.setViewportSize({width:844,height:390});
- await page.route('**/assets/models/coastal_scrub/'+resource,route=>route.abort());
- await page.addInitScript(()=>{const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
+ if(resource==='invalid-atlas-size'){
+  const image=new PNG({width:16,height:16});image.data.fill(255);
+  await page.route('**/assets/models/coastal_rooibos/scrub-color.png',route=>route.fulfill({body:PNG.sync.write(image),contentType:'image/png'}));
+ }else await page.route('**/assets/models/coastal_rooibos/'+resource,route=>route.abort());
+ await page.addInitScript(()=>{const w=window as unknown as {scrubObjects:unknown[];closedScrubBitmaps:number[][];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.closedScrubBitmaps=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));if(typeof ImageBitmap!=='undefined'){const close=ImageBitmap.prototype.close;ImageBitmap.prototype.close=function(this:ImageBitmap){w.closedScrubBitmaps.push([this.width,this.height]);close.call(this);};}});
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('scrub-field'));
- const result=await page.evaluate(async()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh,field=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh;scene.onAfterRender=(_r,_s,c)=>{scene.userData.fallbackCamera=c.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));const camera=scene.userData.fallbackCamera as number[];let maxDistance=0;for(let i=0;i<field.count;i++){const m=field.matrix.clone();field.getMatrixAt(i,m);maxDistance=Math.max(maxDistance,Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));}return{fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,field:field.visible&&root.userData.fieldScrubDetail.fallback,count:field.count,maxDistance,range:root.userData.fieldScrubDetail.range,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
+ const result=await page.evaluate(async()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh,field=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh;scene.onAfterRender=(_r,_s,c)=>{scene.userData.fallbackCamera=c.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));const camera=scene.userData.fallbackCamera as number[];let maxDistance=0;for(let i=0;i<field.count;i++){const m=field.matrix.clone();field.getMatrixAt(i,m);maxDistance=Math.max(maxDistance,Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));}return{closed:(window as unknown as {closedScrubBitmaps:number[][]}).closedScrubBitmaps,fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,field:field.visible&&root.userData.fieldScrubDetail.fallback,count:field.count,maxDistance,range:root.userData.fieldScrubDetail.range,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
  expect(result.fallback&&result.original&&result.field&&result.running).toBe(true);expect(result.loaded).toBe(false);expect(result.count).toBeGreaterThan(0);expect(result.maxDistance).toBeLessThanOrEqual(result.range+.001);
+ if(info.project.name.includes('chrome')&&(resource==='scrub-impostors.png'||resource==='invalid-atlas-size'))expect(result.closed).toEqual([resource==='invalid-atlas-size'?[16,16]:[1024,1024]]);
 });
 
 test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前缀',async({page},info)=>{

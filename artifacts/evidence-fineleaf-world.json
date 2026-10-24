@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "runId": "pass-m32-fineleaf-landscape",
+  "captures": [
+    {
+      "mode": "desktop",
+      "state": "active-play",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-active-play.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "field-verge",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-field-verge.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "scrub-field",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-scrub-field.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "grass-verge",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-grass-verge.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "cinematic",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-cinematic.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "rock-back",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-rock-back.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "tree-shadow",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-tree-shadow.json"
+    },
+    {
+      "mode": "desktop",
+      "state": "tunnel-exit",
+      "report": "artifacts/pass-m32-fineleaf-landscape/desktop-tunnel-exit.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "active-play",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-active-play.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "field-verge",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-field-verge.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "scrub-field",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-scrub-field.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "grass-verge",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-grass-verge.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "cinematic",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-cinematic.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "rock-back",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-rock-back.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "tree-shadow",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-tree-shadow.json"
+    },
+    {
+      "mode": "mobile",
+      "state": "tunnel-exit",
+      "report": "artifacts/pass-m32-fineleaf-landscape/mobile-tunnel-exit.json"
+    }
+  ],
+  "artifacts": [
+    "public/assets/models/coastal_rooibos/source.json",
+    "public/assets/models/coastal_rooibos/impostor-source.json",
+    "artifacts/coastal-rooibos-validation-runtime-guard/result.json",
+    "artifacts/rooibos-final-three-browsers/.last-run.json",
+    "artifacts/rooibos-distance-three-browsers/.last-run.json",
+    "artifacts/rooibos-first-phone-pose-cost.json",
+    "artifacts/rooibos-distance-pose-cost.json",
+    "artifacts/mobile-performance/rooibos-m29-control.json",
+    "artifacts/mobile-performance/rooibos-runtime-cruise.json",
+    "artifacts/ground-gpu-rooibos-control/result.json",
+    "artifacts/ground-gpu-rooibos-candidate/result.json",
+    "artifacts/ground-gpu-rooibos-distance/result.json",
+    "artifacts/scrub-fade-rooibos-final-chrome/result.json",
+    "artifacts/scrub-fade-rooibos-final-webkit/result.json",
+    "artifacts/inland-scrub-rooibos-distance-phone/result.json",
+    "artifacts/inland-scrub-rooibos-distance-phone/field-verge-reverse.png",
+    "artifacts/inland-scrub-rooibos-distance-phone/scrub-field.png",
+    "artifacts/offroad-fineleaf-distance-phone/android-touch.json",
+    "artifacts/offroad-fineleaf-distance-phone/android-touch.webm",
+    "artifacts/offroad-fineleaf-distance-phone/android-touch-orbit-0.png",
+    "artifacts/offroad-fineleaf-distance-phone/android-touch-orbit-2.png",
+    "artifacts/offroad-fineleaf-distance-phone/android-touch-returned.png",
+    "artifacts/fineleaf-candidate-smoke/result.json",
+    "artifacts/fineleaf-candidate-smoke/normal.png",
+    "artifacts/fineleaf-release-smoke/result.json",
+    "artifacts/fineleaf-release-smoke/normal.png",
+    "artifacts/fineleaf-landscape-captures.log"
+  ]
+}

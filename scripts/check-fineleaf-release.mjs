@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import {chromium,devices} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+const label=process.env.FINELEAF_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);const out='artifacts/fineleaf-'+label;await mkdir(out);
+const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),page=await browser.newPage({...devices['Pixel 7'],viewport:{width:844,height:390}}),errors=[],requests=[],oldRequests=[];
+page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(r.url().includes('/models/coastal_rooibos/'))requests.push(new URL(r.url()).pathname.split('/').at(-1));if(r.url().includes('/models/coastal_scrub/'))oldRequests.push(r.url());});
+await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));window.releaseObjects=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',e=>releaseObjects.push(e.detail));});
+try{
+ await page.goto(process.env.TEST_BASE_URL??'http://127.0.0.1:5190/');await page.click('#start-button');
+ const start=await page.evaluate(()=>releaseObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')).getObjectByName('convertible-0').position.toArray());
+ await page.keyboard.down('KeyW');await page.waitForTimeout(1800);await page.keyboard.up('KeyW');
+ const result=await page.evaluate(()=>{
+  const scene=releaseObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')),root=scene.getObjectByName('Coastal landscape'),m=root.getObjectByName('Grey green coastal scrub near 0').material,field=root.getObjectByName('Inland grey green scrub near 0').material,proxy=root.getObjectByName('Grey green coastal scrub impostor 0').material;
+  return{hooks:typeof window.__THREE_GAME_TEST_HOOKS__,diagnostics:typeof window.__THREE_GAME_DIAGNOSTICS__,field:root.userData.fieldScrubDetail,road:root.userData.scrubDetail,shared:m.map===field.map,canvas:m.map.image instanceof HTMLCanvasElement,mips:m.map.mipmaps.length,coverage:m.map.userData.alphaCoverage,keys:[m,field].map(m=>m.customProgramCacheKey()),proxySize:[proxy.map.image.width,proxy.map.image.height],triangles:['near','far'].flatMap(d=>[0,1].map(v=>root.getObjectByName(`Grey green coastal scrub ${d} ${v}`).geometry.index.count/3)),position:scene.getObjectByName('convertible-0').position.toArray(),sun:scene.userData.sunShadows};
+ });
+ result.distance=Math.hypot(result.position[0]-start[0],result.position[2]-start[2]);result.bundle=await page.locator('script[type=module][src]').getAttribute('src');result.errors=errors;result.requests=requests;result.oldRequests=oldRequests;
+ await page.screenshot({path:out+'/normal.png',scale:'css'});await writeFile(out+'/result.json',JSON.stringify(result,null,2),{flag:'wx'});
+ assert.ok(result.field.ready&&result.road.ready&&result.shared&&result.canvas);assert.equal(result.mips,11);assert.equal(result.field.nearLimit,8);assert.equal(result.field.range,145);assert.ok(result.keys.every(k=>k.includes('plant-centered-alpha-v1')));assert.deepEqual(result.triangles,[2344,1058,1541,736]);assert.deepEqual(result.proxySize,[512,512]);assert.deepEqual(requests.sort(),['scrub.bin','scrub.gltf','scrub-color.png','scrub-impostors.png'].sort());assert.deepEqual(oldRequests,[]);assert.equal(result.hooks,'undefined');assert.equal(result.diagnostics,'undefined');assert.equal(result.sun.bakes,1);assert.equal(result.sun.bakeDraws,43);assert.ok(result.distance>2);assert.deepEqual(errors,[]);console.log(JSON.stringify({out,...result}));
+}finally{await browser.close();}

@@ -7,6 +7,7 @@ import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
+import {preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
 /** Sampled from the existing photographed CC0 reef; the underwater edge and
@@ -569,15 +570,21 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }
     const proxy=new THREE.BufferGeometry();proxy.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));proxy.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));proxy.setIndex(indices);proxy.computeVertexNormals();return proxy;
   }
-  const scrubReady=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_scrub/scrub.gltf`).then(async gltf=>{
+  const scrubReady=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_rooibos/scrub.gltf`).then(async gltf=>{
     const sources:THREE.Mesh[]=[];gltf.scene.traverse(object=>{if((object as THREE.Mesh).isMesh)sources.push(object as THREE.Mesh);});
     const sourceMaterials=new Set(sources.map(mesh=>mesh.material as THREE.MeshStandardMaterial)),map=(sources[0]?.material as THREE.MeshStandardMaterial|undefined)?.map;
+    // This fresh loader owns the decoded atlas; replacing its image with Canvas
+    // must also release the original ImageBitmap, which Texture.dispose omits.
+    const decodedImage:unknown=map?.image;let decodedImageReleased=false;
+    const releaseDecodedImage=()=>{if(!decodedImageReleased&&typeof ImageBitmap!=='undefined'&&decodedImage instanceof ImageBitmap){decodedImage.close();decodedImageReleased=true;}};
+    const discard=(proxy?:THREE.Texture)=>{sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map?.dispose();releaseDecodedImage();proxy?.dispose();};
     const expectedNames=new Set(['Coastal_scrub_0_near','Coastal_scrub_0_far','Coastal_scrub_1_near','Coastal_scrub_1_far']);
-    if(disposed||sources.length!==4||!map||sources.some(mesh=>!expectedNames.delete(mesh.name)||!mesh.geometry.getAttribute('uv'))){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map?.dispose();if(!disposed)throw Error('Coastal scrub needs two near/far pairs and its alpha atlas');return;}
+    if(disposed||sources.length!==4||!map||sources.some(mesh=>!expectedNames.delete(mesh.name)||!mesh.geometry.getAttribute('uv'))){discard();if(!disposed)throw Error('Coastal scrub needs two near/far pairs and its alpha atlas');return;}
     let proxyMap:THREE.Texture;
-    try{proxyMap=await textureLoader.loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_scrub/scrub-impostors.png`);}
-    catch(error){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map.dispose();throw error;}
-    if(disposed){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map.dispose();proxyMap.dispose();return;}
+    try{proxyMap=await textureLoader.loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_rooibos/scrub-impostors.png`);}
+    catch(error){discard();throw error;}
+    if(disposed){discard(proxyMap);return;}
+    try{preserveRooibosCutoutMips(map);releaseDecodedImage();}catch(error){discard(proxyMap);throw error;}
     proxyMap.colorSpace=THREE.SRGBColorSpace;proxyMap.anisotropy=mobile?4:8;textures.push(proxyMap);
     textures.push(map);map.anisotropy=mobile?4:8;
     const material=wind(0xffffff,.045);material.name='Photographed grey-green coastal scrub';material.map=map;material.alphaTest=.45;material.alphaToCoverage=true;groundFollowing(material);
@@ -596,9 +603,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       limited.customProgramCacheKey=()=>`${key}-scrub-coverage-v1-range-${fieldScrubRange}`;return limited;
     }
     const fieldMaterial=rangeMaterial(material),fieldProxyMaterial=rangeMaterial(proxyMaterial);
+    // Apply after the range callback has inserted its coverage code; resolving
+    // the alpha chunk earlier would swallow that insertion point in the clone.
+    centerPlantAlphaCoverage(material);centerPlantAlphaCoverage(fieldMaterial);
     for(const field of [false,true]){
       const placements=field?fieldBushes:bushes,tints=field?fieldBushColors:bushColors,source=field?fieldBushRecord:sourceRecord,near=field?fieldScrubNear:new Uint8Array(placements.length),distant=new Uint8Array(placements.length),range=field?fieldScrubRange:undefined,label=field?'Inland grey green scrub':'Grey green coastal scrub';
-      const key=field?'fieldScrubDetail':'scrubDetail',enter=field?(mobile?22:32):(mobile?30:45),exit=field?(mobile?28:40):(mobile?36:53),impostorRange=field?(mobile?40:75):(mobile?60:110);
+      const key=field?'fieldScrubDetail':'scrubDetail',enter=field?(mobile?22:32):(mobile?30:45),exit=field?(mobile?28:40):(mobile?36:53),impostorRange=field?(mobile?34:75):(mobile?52:110);
       for(const model of sources){
         const match=/Coastal_scrub_([01])_(near|far)$/.exec(model.name);if(!match)throw Error('Unknown scrub variant '+model.name);
         const variant=Number(match[1]),detail=match[2] as 'near'|'far',indices=Array.from({length:placements.length},(_,i)=>i).filter(i=>variantFor(i)===variant),matrices=indices.map(i=>placements[i]),colors=indices.map(i=>tints[i]);

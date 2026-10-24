@@ -2,6 +2,24 @@ import {test,expect} from '@playwright/test';
 import {PNG} from 'pngjs';
 import type * as THREE from 'three';
 
+test('细针叶保留分区mip，中心裁切与内陆覆盖同时编译',async({page},info)=>{
+ await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {plantObjects:unknown[];plantClosedBitmaps:number[][];__THREE_DEVTOOLS__:EventTarget};w.plantObjects=[];w.plantClosedBitmaps=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.plantObjects.push((e as CustomEvent).detail));if(typeof ImageBitmap!=='undefined'){const close=ImageBitmap.prototype.close;ImageBitmap.prototype.close=function(this:ImageBitmap){w.plantClosedBitmaps.push([this.width,this.height]);close.call(this);};}});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const report=await page.evaluate(async()=>{
+  const scene=(window as unknown as {plantObjects:THREE.Scene[]}).plantObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,names=['Grey green coastal scrub near 0','Inland grey green scrub near 0'],meshes=names.map(n=>root.getObjectByName(n) as THREE.InstancedMesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);
+  for(const [i,mesh]of meshes.entries()){
+   const m=mesh.material,compile=m.onBeforeCompile,key=m.customProgramCacheKey();m.onBeforeCompile=(shader,renderer)=>{compile(shader,renderer);m.userData.checkedFragment=shader.fragmentShader;};m.customProgramCacheKey=()=>key+'-qa-plant-'+i;m.needsUpdate=true;
+  }
+  await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
+  const map=meshes[0].material.map!,proxy=(root.getObjectByName('Inland grey green scrub impostor 0') as typeof meshes[0]).material.map!;
+  const renderer=(window as unknown as {plantObjects:(THREE.WebGLRenderer&{isWebGLRenderer:boolean})[]}).plantObjects.find(o=>o.isWebGLRenderer)!,gl=renderer.getContext(),linked=(renderer.info.programs??[]).map(p=>gl.getProgramParameter((p as unknown as {program:WebGLProgram}).program,gl.LINK_STATUS) as boolean);
+  return{linked,closedBitmaps:(window as unknown as {plantClosedBitmaps:number[][]}).plantClosedBitmaps,shared:meshes[1].material.map===map,canvas:map.image instanceof HTMLCanvasElement,baseIsImage:map.mipmaps[0]===map.image,generateMipmaps:map.generateMipmaps,mips:(map.mipmaps as HTMLCanvasElement[]).map(m=>[m.width,m.height]),coverage:map.userData.alphaCoverage,colorSpace:map.colorSpace,proxySize:[(proxy.image as HTMLImageElement).width,(proxy.image as HTMLImageElement).height],materials:meshes.map(mesh=>{const m=mesh.material,fragment=m.userData.checkedFragment as string|undefined;return{callbackCalled:!!fragment,centered:fragment?.includes('alphaTest - fwidth( diffuseColor.a ) * .5'),range:fragment?.includes('float scrubCoverage=1.0-smoothstep('),key:m.customProgramCacheKey()};}),triangles:['near','far'].flatMap(lod=>[0,1].map(v=>(root.getObjectByName(`Grey green coastal scrub ${lod} ${v}`) as THREE.Mesh).geometry.index!.count/3))};
+ });
+ expect(report.shared&&report.canvas&&report.baseIsImage).toBe(true);expect(report.generateMipmaps).toBe(false);expect(report.colorSpace).toBe('srgb');expect(report.proxySize).toEqual([512,512]);expect(report.mips).toEqual(Array.from({length:11},(_,i)=>[1024/2**i,1024/2**i]));expect(report.coverage.regions).toEqual([[0,0,662,160],[0,160,662,864]]);expect(report.coverage.averaging).toBe('linear-light alpha-weighted sRGB');expect(report.materials.every(m=>m.callbackCalled&&m.centered&&m.key.includes('plant-centered-alpha-v1'))).toBe(true);expect(report.materials.map(m=>m.range)).toEqual([false,true]);expect(report.triangles).toEqual([2344,1058,1541,736]);expect(report.linked.length).toBeGreaterThan(0);expect(report.linked.every(Boolean)).toBe(true);expect(report.closedBitmaps.length).toBeLessThanOrEqual(1);if(info.project.name.includes('chrome'))expect(report.closedBitmaps).toEqual([[1024,1024]]);expect(errors).toEqual([]);
+});
+
 test('实拍棕榈树皮共享表面纹理、正确读取A粗糙度并复用切档资源',async({page})=>{
  await page.setViewportSize({width:844,height:390});
  await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {barkObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.barkObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.barkObjects.push((e as CustomEvent).detail));});

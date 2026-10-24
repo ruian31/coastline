@@ -45,6 +45,8 @@ export function preservePlantCutoutMips(texture:THREE.Texture,regions:readonly (
 // Rooibos: fine leaf fans at the top left, twig cutouts below; the right-hand
 // opaque bark strip is deliberately excluded from both coverage targets.
 export function preserveRooibosCutoutMips(texture:THREE.Texture):void {
+ const image=texture.image as {width:number;height:number};
+ if(image.width!==1024||image.height!==1024)throw Error('Rooibos cutouts require the authored 1024-square atlas');
  preservePlantCutoutMips(texture,[[0,0,662,160],[0,160,662,864]]);
 }
 

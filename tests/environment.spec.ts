@@ -35,6 +35,16 @@ test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>
   expect(p.y+p.lift,'fern crown anchor follows the actual top surface; geometry supplies the burial').toBeCloseTo(height(p.x,p.z),3);
   expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);expect(p.gz).toBeCloseTo((height(p.x,p.z+.15)-height(p.x,p.z-.15))/.3,2);
  }
+ await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
+ const fieldSamples=await page.evaluate(()=>{
+  const scene=(window as unknown as {rootObjects:THREE.Scene[]}).rootObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,samples:{x:number;y:number;z:number;gx:number;gz:number;lift:number}[]=[];let near=0;
+  for(const name of ['Dry inland patch grass clusters',...Array.from({length:3},(_,i)=>'Photographed dry inland grass '+i)]){
+   const mesh=scene.getObjectByName(name) as THREE.InstancedMesh,slope=mesh.geometry.getAttribute('instanceGroundSlope');if(name.startsWith('Photographed'))near+=mesh.count;
+   for(let i=0;i<Math.min(mesh.count,6);i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);samples.push({x:m.elements[12],y:m.elements[13],z:m.elements[14],gx:slope.getX(i),gz:slope.getY(i),lift:slope.getZ(i)});}
+  }return{near,samples};
+ });
+ expect(fieldSamples.near,'check actual fine field grass on independently raycast soil').toBeGreaterThan(0);
+ for(const p of fieldSamples.samples){expect(height(p.x,p.z)-(p.y+p.lift)).toBeCloseTo(.05,3);expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);expect(p.gz).toBeCloseTo((height(p.x,p.z+.15)-height(p.x,p.z-.15))/.3,2);}
  for(const p of data.samples){
   expect(height(p.x,p.z)-(p.y+p.lift),'root is buried only 5cm below the visible top surface').toBeCloseTo(.05,3);
   expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);
@@ -75,6 +85,33 @@ test('摄影低草可见、近远互斥，切换质量后保留原始摆放与�
  expect(errors).toEqual([]);
 });
 
+test('原野与路边共用摄影近草总限额，保留前缀、距离裁剪和独立属性',async({page},info)=>{
+ await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {fieldObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fieldObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fieldObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/models/coastal_grass/')&&r.url().endsWith('.png'))requests.push(r.url());});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
+ const inspect=()=>page.evaluate(async()=>{
+  const scene=(window as unknown as {fieldObjects:THREE.Scene[]}).fieldObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!;
+  scene.onAfterRender=(_renderer,_scene,camera)=>{scene.userData.fieldCamera=camera.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
+  const camera=scene.userData.fieldCamera as number[],low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low',nearMeshes=[0,1,2].map(i=>root.getObjectByName('Photographed dry inland grass '+i) as THREE.InstancedMesh),roadside=[0,1,2].map(i=>root.getObjectByName('Photographed low coastal grass '+i) as THREE.InstancedMesh),far=root.getObjectByName('Dry inland patch grass clusters') as THREE.InstancedMesh,authors=far.userData.authoredInstances as THREE.Matrix4[],limit=low?Math.floor(authors.length*.55):authors.length,key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),lookup=new Map(authors.map((m,i)=>[key(m),i])),seen=new Set<string>(),outside:number[]=[],unknown:string[]=[],farDistances:number[]=[];let duplicates=0,slopesFinite=true;
+  for(const mesh of [far,...nearMeshes])for(let i=0;i<mesh.count;i++){
+   const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);if(seen.has(k))duplicates++;seen.add(k);const slope=mesh.geometry.getAttribute('instanceGroundSlope');slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);if(mesh===far)farDistances.push(Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));
+  }
+  const material=nearMeshes[0].material as THREE.MeshStandardMaterial,roadMap=(roadside[0].material as THREE.MeshStandardMaterial).map;
+  return{field:{...root.userData.fieldGrassDetail},road:{...root.userData.grassDetail},near:nearMeshes.reduce((n,m)=>n+m.count,0),roadNear:roadside.reduce((n,m)=>n+m.count,0),far:far.count,duplicates,outside,unknown,slopesFinite,texture:material.map!.uuid,shared:nearMeshes.every(m=>m.material===material)&&material.map===roadMap&&(far.material as THREE.MeshStandardMaterial).map===(root.getObjectByName('Layered wind moving grass clusters') as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>).material.map,ownAttributes:nearMeshes.every((m,i)=>m.geometry.getAttribute('instanceGroundSlope')!==roadside[i].geometry.getAttribute('instanceGroundSlope')),maxFarDistance:Math.max(0,...farDistances),authors:authors.map(m=>m.toArray())};
+ });
+ const first=await inspect(),cap=info.project.name.includes('mobile')?48:96;expect(first.field.ready).toBe(true);expect(first.near).toBeGreaterThan(0);expect(first.far).toBeGreaterThan(0);expect(first.field.placements).toBeGreaterThan(1000);
+ let roadVisible=0,fieldVisible=0;
+ for(const quality of ['high','low','high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');
+  for(const state of ['grass-verge','field-verge','rock-back']){
+   await page.evaluate(state=>window.__THREE_GAME_TEST_HOOKS__!.setState(state),state);const current=await inspect();roadVisible+=current.roadNear;fieldVisible+=current.near;
+   expect(current.near+current.roadNear).toBeLessThanOrEqual(cap);expect(current.field.selected+current.road.selected).toBeLessThanOrEqual(cap);expect(current.field.visible).toBe(current.near);expect(current.road.visible).toBe(current.roadNear);expect(current.duplicates).toBe(0);expect(current.outside).toEqual([]);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);expect(current.shared).toBe(true);expect(current.ownAttributes).toBe(true);expect(current.texture).toBe(first.texture);expect(current.maxFarDistance).toBeLessThanOrEqual(current.field.range+.001);expect(current.authors).toEqual(first.authors);
+  }
+ }
+ expect(roadVisible).toBeGreaterThan(0);expect(fieldVisible).toBeGreaterThan(0);expect(requests.length).toBe(1);expect(errors).toEqual([]);
+});
+
 test('低草资源失效仍能开始和行驶，保留完整远景草',async({page})=>{
  await page.route('**/assets/models/coastal_grass/grass.gltf',route=>route.abort());
  await page.addInitScript(()=>{const w=window as unknown as {grassObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.grassObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.grassObjects.push((e as CustomEvent).detail));});
@@ -84,6 +121,9 @@ test('低草资源失效仍能开始和行驶，保留完整远景草',async({pa
   return{detail:root.userData.grassDetail,visible:far.count,near:Boolean(root.getObjectByName('Photographed low coastal grass 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};
  });
  expect(fallback.detail.fallback).toBe(true);expect(fallback.visible).toBeGreaterThan(0);expect(fallback.near).toBe(false);expect(fallback.running).toBe(true);
+ await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
+ const fieldFallback=await page.evaluate(()=>{const scene=(window as unknown as {grassObjects:THREE.Scene[]}).grassObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!;return{fallback:root.userData.fieldGrassDetail.fallback,count:(root.getObjectByName('Dry inland patch grass clusters') as THREE.InstancedMesh).count,near:Boolean(root.getObjectByName('Photographed dry inland grass 0'))};});
+ expect(fieldFallback.fallback).toBe(true);expect(fieldFallback.count).toBeGreaterThan(0);expect(fieldFallback.near).toBe(false);
  // This pose is 12m off-road: cruise intentionally requires returning first.
  await page.click('#menu-button');await page.click('#recover-button');await page.click('#auto-button');await expect.poll(async()=>page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__!.player!.speed),{timeout:10000}).toBeGreaterThan(2);
 });

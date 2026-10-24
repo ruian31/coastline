@@ -1,3 +1,25 @@
+# M24 · 可驶入原野的干草斑块
+
+2026-10-24，生产包 **index-DNiaziFM.js**，已更新5190。内陆不规则斑块复用原远草和摄影图，手机4991个作者位置、低档55%前缀；与原路边近草共用48手机/96桌面总名额。独立随机源和显式角度保留旧树/草/岩/蕨叶摆放。实际terrain+路肩坡度与根部贴合，远草150/260m裁剪、最后35m渐隐，选中株2m优先差稳定名额。**整体自然景观仍不达标，Goal active**；原野仍由同一种海岸碎石表面主导，下一步干草地底层与分区。
+
+最终TypeScript、生产构建及三浏览器environment **42项全部通过**：新共享预算/前缀/互斥/距离/贴图/独立属性/独立射线、草资源回退，及旧植被/树/岩岸/原世界矩阵。一次只读审查指出提前消失的alpha阈值和名额迟滞边界，已修正；随后优化未递归审查，以更完整的GPU像素、矩阵和驾驶验证。
+
+32m保守单元先筛选相关区域，仍逐株精确裁剪并保持原作者索引顺序；矩阵/颜色/坡度只上传实际可见前缀，清理隐藏批次旧更新范围。五个冻结横屏机位与同作者/同材质的优化前BrB控制包calls/tri相同；原RGB差>8变化像素0，更严格检查三个机位逐字节一致、另两处10/7像素最大差1/255。原始图/result保持，附pixel-precision.json及输入SHA。控制包已经有原野，**不是M23旧版画面对照**。
+
+初版手动4倍CPU8秒Task3298/Script2902ms，仅距离前置3330/2909，无可测收益；加单元3092/2679，再加前缀上传 **2905/2516**，较初版-11.9%/-13.3%，相对M23仍+4.0%/+5.0%。手动后段车会撞岩停住，另以持续巡航8秒测新旧：M23 2669/2324→M24 **2877/2538**，约+7.8%/+9.2%，终点仍巡航、路径差约0.21m。完整中间记录保留，不推算一加12/iPhone FPS，没有新GPU耗时结论。
+
+正式 **artifacts/evidence-field-grass.json**（pass-m24-field-grass）16视图0错误，连同25附属文件共41项证据检查。桌面各项峰139calls/616031tri/121geo/51tex，手机竖屏94/246426/118/44；不增加位图/纹理数。最终真实横屏双指驶离公路、四角环顾并返回 **49.58秒/88.13米/0错误**，field近草和总近草均最高47≤48，峰117/321350/120/50，仍超300k/40约7.1%/25%。
+
+- [正常原野追随](/home/ryan/workspace/coastline/artifacts/pass-m24-field-grass/desktop-field-verge.png)
+- [实际朝内陆环顾](/home/ryan/workspace/coastline/artifacts/offroad-field-grass-prefix-phone/android-touch-orbit-2.png)
+- [横屏双指行驶录像](/home/ryan/workspace/coastline/artifacts/offroad-field-grass-prefix-phone/android-touch.webm)
+- [同机位绘制与像素控制](/home/ryan/workspace/coastline/artifacts/field-culling-prefix-final-phone/result.json)
+- [更严逐字节测量](/home/ryan/workspace/coastline/artifacts/field-culling-prefix-final-phone/pixel-precision.json)
+
+普通dist与候选同DNiaziFM，无query入口实际开始前进8.30米，新field ready/材质贴图共享/坡度属性独立/一次缓存正常，测试钩子/诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。新美术真机表现仍待复核。
+
+---
+
 # M23 · 卷曲蕨叶、共享贴图与逐株剔除
 
 2026-10-24，生产包 **index-BRkU5y8R.js**，已更新5190。尖三角蕨叶换成两种完整卷曲叶束，近784/816、远198/197面，借用原Fern02三张PBR贴图，新增几何64,178字节。保留原作者位置、颜色、随机序列及60%低档前缀，近景限8手机/16桌面；成功后隐藏旧叶片，失败时仍可驾驶。旧四批实拍大蕨叶复用已有逐株视锥剔除，保留所有原始变换与50%低档前缀。整体风景仍有大片裸露地面、山体切边及树干重复，**Goal active**。

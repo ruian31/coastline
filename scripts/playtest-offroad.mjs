@@ -17,13 +17,13 @@ try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:process.env
  const point=(t,offset,along=0)=>{const s=coast.sample(t);return{x:s.position.x+s.right.x*offset+s.tangent.x*along,z:s.position.z+s.right.z*offset+s.tangent.z*along};};
  const waypoints=rocky?[point(.78,-70),point(.827,-75),point(.78,-70),point(.78,-1.7)]:[point(.12,-65,24),point(.155,-1.7)];let waypoint=0,target=waypoints[0],phase='leave-road',maxDistance=0,finished=false,lastCapture=0;const started=Date.now();
  while(Date.now()-started<(rocky?110000:65000)){
-  const sample=await page.evaluate(()=>{const d=window.__THREE_GAME_DIAGNOSTICS__,scene=window.__coastObserved.find(s=>s.isScene&&s.getObjectByName('road-network')),car=scene.getObjectByName('convertible-'+d.state.car);return{d,yaw:car.rotation.y,grass:{...scene.getObjectByName('Coastal landscape').userData.grassDetail}};});
+  const sample=await page.evaluate(()=>{const d=window.__THREE_GAME_DIAGNOSTICS__,scene=window.__coastObserved.find(s=>s.isScene&&s.getObjectByName('road-network')),car=scene.getObjectByName('convertible-'+d.state.car);return{d,yaw:car.rotation.y,grass:{...scene.getObjectByName('Coastal landscape').userData.grassDetail},fieldGrass:{...scene.getObjectByName('Coastal landscape').userData.fieldGrassDetail}};});
   const{d,yaw}=sample,p=d.player.position,speed=d.player.speed;maxDistance=Math.max(maxDistance,d.state.roadDistance);
   if(waypoint<waypoints.length-1&&Math.hypot(p.x-target.x,p.z-target.z)<7){
    await setInput([]);await page.screenshot({path:`${dir}/${name}-waypoint-${waypoint}.png`});
    if(rocky&&waypoint===1){
     await setInput(['brake']);await page.waitForFunction(()=>Math.abs(window.__THREE_GAME_DIAGNOSTICS__.player.speed)<.35);await setInput([]);
-    const size=page.viewportSize();for(const[view,delta]of[.2,-.4].entries()){
+    const size=page.viewportSize();for(const[view,delta]of(process.env.OFFROAD_ORBIT_FULL==='1'?[.2,-.4,.6,-.8]:[.2,-.4]).entries()){
      await page.mouse.move(size.width*.55,size.height*.43);await page.mouse.down();await page.mouse.move(size.width*(.55+delta),size.height*.45,{steps:30});await page.mouse.up();await page.waitForTimeout(500);await page.screenshot({path:`${dir}/${name}-orbit-${view}.png`});
      const d=await page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__);samples.push({seconds:(Date.now()-started)/1000,phase:'orbit',position:d.player.position,speed:d.player.speed,roadDistance:d.state.roadDistance,renderer:d.renderer});
     }
@@ -34,7 +34,7 @@ try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:process.env
   if(phase==='return'&&d.state.roadDistance<3.4){finished=true;await setInput(['brake']);await page.waitForTimeout(600);await setInput([]);await page.screenshot({path:`${dir}/${name}-returned.png`});break;}
   const error=wrap(Math.atan2(target.x-p.x,target.z-p.z)-yaw),targetSpeed=Math.abs(error)>.65?4.5:8;
   const desired=[];if(error>.045)desired.push('left');if(error<-.045)desired.push('right');if(speed<targetSpeed-.15)desired.push('throttle');if(speed>targetSpeed+1.1)desired.push('brake');await setInput(desired);
-  samples.push({seconds:(Date.now()-started)/1000,phase,position:p,speed,roadDistance:d.state.roadDistance,pitch:d.state.groundPitch,roll:d.state.groundRoll,hit:d.state.hit,renderer:d.renderer,grass:sample.grass,pressed:await page.locator('[data-drive].held').evaluateAll(elements=>elements.map(el=>el.dataset.drive))});
+  samples.push({seconds:(Date.now()-started)/1000,phase,position:p,speed,roadDistance:d.state.roadDistance,pitch:d.state.groundPitch,roll:d.state.groundRoll,hit:d.state.hit,renderer:d.renderer,grass:sample.grass,fieldGrass:sample.fieldGrass,pressed:await page.locator('[data-drive].held').evaluateAll(elements=>elements.map(el=>el.dataset.drive))});
   if(Date.now()-lastCapture>7000){lastCapture=Date.now();await page.screenshot({path:`${dir}/${name}-${samples.length}.png`});console.log(JSON.stringify({name,phase,seconds:Math.round((Date.now()-started)/1000),roadDistance:d.state.roadDistance,speed}));}
   await page.waitForTimeout(90);
  }

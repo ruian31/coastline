@@ -184,7 +184,19 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     float gust = sin(uCanopyTime * 1.15 + float(worldCell.x) * .071 + float(worldCell.y) * .053 + phase);
     lean += vec2(.048, .023) * gust + vec2(.012, -.018) * sin(uCanopyTime * 2.3 + phase);
     vec3 canopyForce=coastPlantPressure(vec3(bladeRoot.x,surface.height,bladeRoot.y));
-    objectNormal = normalize(cross(vec3(bladeWidthAxis.x, dot(surface.slope, bladeWidthAxis), bladeWidthAxis.y), vec3(lean.x+canopyForce.x*bladeHeight*.95, bladeHeight*(1.0-canopyForce.y*.93), lean.y+canopyForce.z*bladeHeight*.95)));
+    vec3 canopyTipOffset=coastBendByPressure(vec3(lean.x,bladeHeight,lean.y)*canopyVisibility,bladeHeight*canopyVisibility,canopyForce);
+    if(canopyForce.y>0.0&&canopyVisibility>0.0){
+      vec2 tipFraction=surface.fraction+canopyTipOffset.xz/(uCanopyTerrainSize/float(CANOPY_SEGMENTS));
+      bool cachedTip=all(greaterThanEqual(tipFraction,vec2(0.0)))&&all(lessThanEqual(tipFraction,vec2(1.0)));
+      float tipGround=cachedTip?canopyQuadHeight(surface.heights,tipFraction):canopySurface(bladeRoot+canopyTipOffset.xz).height;
+      // Follow the actual triangle beneath the displaced tip. Pressure fades
+      // the terrain correction too, retaining the original resting animation.
+      float groundOffset=tipGround-surface.height;
+      canopyTipOffset.y=max(canopyTipOffset.y+groundOffset*canopyForce.y,groundOffset+.008*canopyVisibility);
+    }
+    vec3 canopyTip=vec3(bladeRoot.x,surface.height,bladeRoot.y)+canopyTipOffset;
+    vec3 tipDirection=canopyVisibility>0.0?canopyTipOffset/canopyVisibility:vec3(lean.x,bladeHeight,lean.y);
+    objectNormal = normalize(cross(vec3(bladeWidthAxis.x, dot(surface.slope, bladeWidthAxis), bladeWidthAxis.y), tipDirection));
     float dryness = canopyRandom(worldCell, salt + 19u);
     vCanopyTint = mix(vec3(.20, .176, .086), vec3(.37, .29, .14), dryness) * mix(.65, 1.06, position.y);
   `;
@@ -196,11 +208,9 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     // The anti-diagonal decision is repeated here so even a 9mm base crossing a triangle edge stays grounded.
     bool sameQuad = all(greaterThanEqual(footFraction, vec2(0.0))) && all(lessThanEqual(footFraction, vec2(1.0)));
     float footHeight = sameQuad ? canopyQuadHeight(surface.heights, footFraction) : canopySurface(bladeRoot + footOffset).height;
-    vec2 bladeXZ = bladeRoot + footOffset + lean * position.y * canopyVisibility;
     transformed = canopyVisibility > 0.0
-      ? vec3(bladeXZ.x, footHeight + position.y * bladeHeight * canopyVisibility, bladeXZ.y)
+      ? (position.y>.5?canopyTip:vec3(bladeRoot.x+footOffset.x,footHeight,bladeRoot.y+footOffset.y))
       : uCanopyHiddenPoint;
-    if(canopyVisibility>0.0)transformed=coastBendByPressure(transformed,position.y*bladeHeight*canopyVisibility,canopyForce);
   `;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
@@ -212,7 +222,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       '#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;',
     );
   };
-  material.customProgramCacheKey = () => `coast-grass-canopy-v2-${cellsPerSide}-${segments}`;
+  material.customProgramCacheKey = () => `coast-grass-canopy-v3-${cellsPerSide}-${segments}`;
 
   // Three initializes these matrices to identity once. They remain immutable throughout the lifetime.
   const mesh = new THREE.InstancedMesh(geometry, material, fullCount);

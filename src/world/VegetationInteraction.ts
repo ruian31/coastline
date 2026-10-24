@@ -98,22 +98,29 @@ export function createVegetationInteraction(ground:(x:number,z:number)=>number){
      vec3 coastPlantRoot=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;
      ${followsGround?'coastPlantRoot.y+=instanceGroundSlope.z;':''}
      vec3 coastPlantForce=coastPlantPressure(coastPlantRoot)*${flexibility.toFixed(3)};
+     vec2 coastPlantSlope=${followsGround?'instanceGroundSlope.xy':'vec2(0.0)'};
+     if(coastPlantForce.y>0.0){
      vec3 coastPlantNormal=coastPlantBasis[0]*objectNormal.x/dot(coastPlantBasis[0],coastPlantBasis[0])+coastPlantBasis[1]*objectNormal.y/dot(coastPlantBasis[1],coastPlantBasis[1])+coastPlantBasis[2]*objectNormal.z/dot(coastPlantBasis[2],coastPlantBasis[2]);
-     coastPlantNormal.y=(coastPlantNormal.y-.95*dot(coastPlantForce.xz,coastPlantNormal.xz))/max(.05,1.0-coastPlantForce.y*.93);
+     vec3 coastPlantShear=coastPlantForce*vec3(.95,-.93,.95);coastPlantShear.y+=dot(coastPlantSlope,coastPlantShear.xz);
+     vec3 coastPlantPlane=vec3(-coastPlantSlope.x,1.0,-coastPlantSlope.y);
+     coastPlantNormal-=coastPlantPlane*dot(coastPlantShear,coastPlantNormal)/max(.05,1.0+dot(coastPlantPlane,coastPlantShear));
      objectNormal=normalize(vec3(dot(coastPlantNormal,coastPlantBasis[0]),dot(coastPlantNormal,coastPlantBasis[1]),dot(coastPlantNormal,coastPlantBasis[2])));
+     }
     #endif`);
    shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',/* glsl */`
     #ifdef USE_INSTANCING
-     vec3 coastPlantWorld=(modelMatrix*instanceMatrix*vec4(transformed,1.0)).xyz;
+     if(coastPlantForce.y>0.0){
      float coastPlantHeight=max(position.y,0.0)*length(coastPlantBasis[1]);
-     vec3 coastPlantDelta=coastBendByPressure(coastPlantWorld,coastPlantHeight,coastPlantForce)-coastPlantWorld;
+     vec3 coastPlantDelta=coastPlantForce*coastPlantHeight*vec3(.95,-.93,.95);
+     coastPlantDelta.y+=dot(coastPlantSlope,coastPlantDelta.xz);
      // Authored matrices have orthogonal rotation/scale columns. Transform
      // the displacement back without a matrix inverse per vertex.
      transformed+=vec3(dot(coastPlantDelta,coastPlantBasis[0])/dot(coastPlantBasis[0],coastPlantBasis[0]),dot(coastPlantDelta,coastPlantBasis[1])/dot(coastPlantBasis[1],coastPlantBasis[1]),dot(coastPlantDelta,coastPlantBasis[2])/dot(coastPlantBasis[2],coastPlantBasis[2]));
+     }
     #endif
     #include <project_vertex>`);
   };
-  material.customProgramCacheKey=()=>key+`-vehicle-plant-pressure-v2-${flexibility}`;
+  material.customProgramCacheKey=()=>key+`-vehicle-plant-pressure-v3-${flexibility}`;
  }
  return{diagnostics,setupShader,attach,
   update(elapsed:number,car:THREE.Object3D,wheelContacts:readonly THREE.Vector3[]){

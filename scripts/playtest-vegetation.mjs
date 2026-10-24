@@ -1,9 +1,10 @@
-// Actual keyboard/touch driving, then an unpaused minute of grass recovery.
+// Actual keyboard/touch driving, then an unpaused grass recovery interval.
 // Ambient wind is held steady to make the pressure/rebound easier to inspect.
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,devices} from 'playwright';
 const label=process.env.VEGETATION_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);const out=`artifacts/vegetation-${label}`,mobile=process.env.VEGETATION_DEVICE!=='desktop';await mkdir(out);
+const ages=(process.env.VEGETATION_RECOVERY_AGES??'0,20,45,65').split(',').map(Number);assert.ok(ages.length>1&&ages[0]===0&&ages.every((a,i)=>Number.isFinite(a)&&a>=0&&a<=120&&(i===0||a>ages[i-1])));
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),context=await browser.newContext({...mobile?devices['Pixel 7']:{},viewport:mobile?{width:844,height:390}:{width:1280,height:720},recordVideo:{dir:out,size:mobile?{width:844,height:390}:{width:1280,height:720}}}),page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));window.vegetationObjects=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',e=>vegetationObjects.push(e.detail));});
@@ -25,8 +26,8 @@ try{
  // Reverse over part of the same path; input release must stop fresh movement.
  await input(['brake']);await until(d=>d.player.speed<-.8);await page.waitForTimeout(700);await input(['throttle']);await until(d=>d.player.speed>-.3);await input([]);await until(d=>Math.abs(d.player.speed)<.1);const reversed=await read();
  await page.screenshot({path:out+'/reverse-tracks.png',scale:'css'});
- const recovery=[];for(const age of [0,20,45,65]){const d=age===0?await read():await until(d=>d.elapsed-reversed.elapsed>=age,90000);recovery.push({age,elapsed:d.elapsed,position:d.player.position,interaction:d.interaction,renderer:d.renderer});await page.screenshot({path:`${out}/recovery-${age}.png`,scale:'css'});console.log(JSON.stringify({phase:'recovery',age,elapsed:d.elapsed,deep:d.interaction.deep,cached:d.interaction.cachedCells}));}
- const result={bundle,mobile,method:'Actual touch/keyboard forward, steer, brake and reverse, followed by 65 seconds of unpaused simulation; ambient wind held steady, pressure time advances normally',start,turn,forward,reversed,recovery,errors};await writeFile(out+'/result.json',JSON.stringify(result,null,2),{flag:'wx'});
- assert.ok(forward.interaction.deep>start.interaction.deep);assert.ok(forward.interaction.uploads>start.interaction.uploads);assert.ok(turn.state.steer<-.5);assert.ok(reversed.interaction.time>forward.interaction.time);assert.ok(recovery.at(-1).elapsed-reversed.elapsed>=65);assert.deepEqual(errors,[]);
+ const recovery=[];for(const age of ages){const d=age===0?await read():await until(d=>d.elapsed-reversed.elapsed>=age,90000);recovery.push({age,elapsed:d.elapsed,position:d.player.position,interaction:d.interaction,renderer:d.renderer});await page.screenshot({path:`${out}/recovery-${age}.png`,scale:'css'});console.log(JSON.stringify({phase:'recovery',age,elapsed:d.elapsed,deep:d.interaction.deep,cached:d.interaction.cachedCells}));}
+ const result={bundle,mobile,method:`Actual touch/keyboard forward, steer, brake and reverse, followed by ${ages.at(-1)} seconds of unpaused simulation; ambient wind held steady, pressure time advances normally`,start,turn,forward,reversed,recovery,errors};await writeFile(out+'/result.json',JSON.stringify(result,null,2),{flag:'wx'});
+ assert.ok(forward.interaction.deep>start.interaction.deep);assert.ok(forward.interaction.uploads>start.interaction.uploads);assert.ok(turn.state.steer<-.5);assert.ok(reversed.interaction.time>forward.interaction.time);assert.ok(recovery.at(-1).elapsed-reversed.elapsed>=ages.at(-1));assert.deepEqual(errors,[]);
  const video=page.video();await context.close();await video.saveAs(out+'/driving-and-recovery.webm');
 }finally{await browser.close();}

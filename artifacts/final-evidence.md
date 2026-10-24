@@ -1,3 +1,23 @@
+# M37 · 受压草叶的坡面接触
+
+2026-10-25，**index-ldrvLuiu.js**，836.06kB/gzip233.42kB。草毯叶端随横移后的真实地形三角面抬起，摄影草/蕨/灌木沿已有地面坡度修正形变及法线；局部位移保留微小形变精度，未受压一般植物跳过额外变形计算。没有新增纹理、实例、作者或draw，CPU轨迹记录、保留时长和输入逻辑保持。
+
+M36控制GPU读回的121个受压样本有1片叶端低于实际地面17.45mm，未压控制0。最终Chrome横屏/WebKit/桌面三配置对1082片可见且位移>1mm的叶端逐一用真实地形三角射线核对，埋地0；不是把shader高度公式当参考。根部位移0，移窗全/半密度前缀、两侧拨开、20/45/65秒恢复及距离渐隐保持，几何面与GPU法线点积最低.999747。一般植物使用原实例地面坡面近似，不声称逐枝完整碰撞。
+
+- [本轮8个正式机位与辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-plant-ground-contact.json)
+- [旧版真实叶端接触控制](/home/ryan/workspace/coastline/artifacts/grass-canopy-m37-tip-contact-control/result.json)
+- [最终Chrome全部受压叶端](/home/ryan/workspace/coastline/artifacts/grass-canopy-m37-local-final-mobile/result.json)
+- [最终WebKit同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m37-local-final-webkit/result.json)
+- [最终桌面同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m37-local-final-desktop/result.json)
+- [三浏览器6个行为专项](/home/ryan/workspace/coastline/artifacts/tests-m37-ground-contact.json)
+- [触控前进/转弯/制动/倒车与短恢复运动](/home/ryan/workspace/coastline/artifacts/vegetation-m37-phone-contact/driving-and-recovery.webm)
+
+6项共享/实际驾驶/切档/暂停检查通过，8个正式图0错误；桌面峰147/785838/130/53，手机113/336525/128/52。集合比M36少，不能以较低桌面峰值宣称总面数减少。触控7→247个深压格，倒车停止后未暂停5.08秒，0错误，已看运动与坡面图；该视频仅证明接触改动期间的运动，完整65秒实际等待保留M36原标签，恢复渲染由本轮实际GPU时间控制再验。自然风景仍未整体达标，真实手机新美术/互动FPS待复核，**Goal active**。
+
+已更新5190，同一ldrv构建普通无query入口实际前进、压力图已上传/车位正确、原摄影草资源与世界缓存保持、测试全局undefined，0错误。固定路草/内陆坡各90有效GPU样本、无disjoint，M36→M37 P50 2.388/3.406→2.428/3.235ms，P95 3.647/7.456→3.746/5.961ms，有尾延迟波动，不宣布真机提速；CPU压力路径未改，未重复CPU节流。详情见[普通入口](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m37-release/result.json)和[GPU计时](/home/ryan/workspace/coastline/artifacts/ground-gpu-m37-local-final/result.json)。
+
+---
+
 # M36 · 车辆拨草、车底压伏与恢复中的轮胎轨迹
 
 2026-10-25，**index-D2-JlrYY.js**，835.03kB/gzip233.13kB，已更新5190。细草、摄影草/弯叶主体、蕨叶与矮灌木共用世界压力记录，车身两侧拨开、车底压伏，轮胎留下更深的连续倒草轨迹。浅痕1→5秒恢复，深痕12→60秒恢复；车底平面跟随俯仰/侧倾，形变法线同步调整。记录在GPU窗口外保留至过期，17→23m平滑呈现，跨时间戳边界保留新痕迹，防旧痕复活。独立模块负责实际需要的压力记录/资源/材质变形，没有新增模型、图片、draw或依赖。

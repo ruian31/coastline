@@ -1,3 +1,29 @@
+# M33 · 草叶轮廓与原野远草消退
+
+2026-10-24，**index-D54dcJnW.js**，814.89kB/gzip225.85kB，已更新5190。复用现有两张草图、全部模型及作者摆放，完整Canvas保覆盖mip与中心Alpha裁切让细草缩小时保留轮廓；远草在115→150m手机、225→260m桌面逐渐减少覆盖。没有增加下载、纹理槽、作者数量或近草48/96总额。**整体自然风景仍未达标，Goal active**；成片草灌关系、大片空地和坡面形态继续处理。
+
+受影响三浏览器27项全过，含实际GPU草程序/链接、近远互斥、质量前缀/共享资源、草三种下载或尺寸失效后继续行驶，以及草/灌丛源ImageBitmap关闭的连带回归。一次只读审查指出末端样本漏断言、桌面分支未测与掩码仅采集，均已补强，不递归审查。
+
+受控128个独立掩码中，每个8/16px的正侧面、0/4 samples都比自身旧处理保留更多覆盖；摄影正面8px单samples从3→10像素，16px18→38。实际摄影GPU mip五级Alpha/RGB误差0，程序四级Alpha0/RGB≤1，按各自flipY核对。手机四族完整作者矩阵Float32哈希与M32一致。掩码与哈希证明的是轮廓和布局，不是整体画质。
+
+实际远草材质在零samples/固定投影下，手机Chrome110/120/130/140/147/150/155m覆盖3049/2886/1872/597/68/0/0，WebKit3010/2867/1878/611/69/0/0；桌面220/230/240/250/257/260/265m为3129/2972/1897/608/73/0/0。原M32手机相同目标2307/2307/2305/2300/2276/0/0，原本几乎不变后突然消失的记录保留。
+
+最终12个正式视图0错误，桌面峰143calls/656633tri/128geo/53tex，手机峰107/274836/127/50。真实横屏双指驶离76.16m、四角环顾并返回50.10秒，0错误，近草峰36；整程119/342931/127/52仍超300k/40初始预算约14.3%/30%。CPU对照Task3157→3159ms、Script2796→2790ms；两个固定机位各90个GPU样本P50为2.151/2.213→2.101/2.110ms，尾延迟与主机频率有波动，不据此宣称新材质提速或手机FPS。
+
+普通无query入口开始前进8.30m，两族近远草共用各自Canvas/11与9级mip、中心裁切和原野覆盖正确；灌丛四文件各一次、世界阴影缓存1次43draw、测试钩子及诊断undefined，0错误。真实一加12/iPhone新美术帧率仍待复核。
+
+- [本轮正式12图与辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-grass-coverage.json)
+- [实际桌面原野](/home/ryan/workspace/coastline/artifacts/pass-m33-grass-coverage/desktop-field-verge.png)
+- [实际手机路草](/home/ryan/workspace/coastline/artifacts/pass-m33-grass-coverage/mobile-grass-verge.png)
+- [受控轮廓与真实GPU上传](/home/ryan/workspace/coastline/artifacts/grass-coverage-m33-final/result.json)
+- [WebKit末段消退](/home/ryan/workspace/coastline/artifacts/grass-fade-m33-final-webkit/result.json)
+- [实际横屏离路视频](/home/ryan/workspace/coastline/artifacts/offroad-grass-m33-phone/android-touch.webm)
+- [正常发布入口](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m33-release/result.json)
+
+已重新查看三张校准锚点、最终桌面/横屏画面与实际离路环顾。窄范围世界层次仍1.5→1.5，空旷构图自动失败保留；其余九类本轮未重评。草叶更完整不足以达到用户要求，下一步实际试验不规则成片枯草与裸土地带的组合。
+
+---
+
 # M32 · 干燥细针叶灌丛与真实横屏验证
 
 2026-10-24，**index-DJ93ttqD.js**，814.48kB/gzip225.76kB，已更新5190。完整扫描细针叶d/e接入道路与内陆群落，两族共享两图/8手机16桌面近景总额，原作者矩阵、颜色与质量前缀保持。原图分区覆盖mip、线性光平均和中心化裁切保留细叶；纹理所属加载者在成功转移或失败清理时关闭原ImageBitmap。**自然风景仍未达标，Goal active**；草丛细杆、空旷地表和坡面形态继续处理。

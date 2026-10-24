@@ -113,9 +113,9 @@ test('原野与路边共用摄影近草总限额，保留前缀、距离裁剪�
  expect(roadVisible).toBeGreaterThan(0);expect(fieldVisible).toBeGreaterThan(0);expect(requests.length).toBe(1);expect(errors).toEqual([]);
 });
 
-test('低草资源失效仍能开始和行驶，保留完整远景草',async({page})=>{
- await page.route('**/assets/models/coastal_grass/grass.gltf',route=>route.abort());
- await page.addInitScript(()=>{const w=window as unknown as {grassObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.grassObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.grassObjects.push((e as CustomEvent).detail));});
+for(const resource of ['grass.gltf','grass-color.png','invalid-atlas-size'])test('低草资源失效仍能开始和行驶，保留完整远景草 '+resource,async({page},info)=>{
+ if(resource==='invalid-atlas-size'){const image=new PNG({width:16,height:16});image.data.fill(255);await page.route('**/assets/models/coastal_grass/grass-color.png',route=>route.fulfill({body:PNG.sync.write(image),contentType:'image/png'}));}else await page.route('**/assets/models/coastal_grass/'+resource,route=>route.abort());
+ await page.addInitScript(()=>{const w=window as unknown as {grassObjects:unknown[];closedGrassBitmaps:number[][];__THREE_DEVTOOLS__:EventTarget};w.grassObjects=[];w.closedGrassBitmaps=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.grassObjects.push((e as CustomEvent).detail));if(typeof ImageBitmap!=='undefined'){const close=ImageBitmap.prototype.close;ImageBitmap.prototype.close=function(this:ImageBitmap){w.closedGrassBitmaps.push([this.width,this.height]);close.call(this);};}});
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
  const fallback=await page.evaluate(()=>{
   const scene=(window as unknown as {grassObjects:THREE.Scene[]}).grassObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,far=root.getObjectByName('Layered wind moving grass clusters') as THREE.InstancedMesh;
@@ -125,6 +125,7 @@ test('低草资源失效仍能开始和行驶，保留完整远景草',async({pa
  await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
  const fieldFallback=await page.evaluate(()=>{const scene=(window as unknown as {grassObjects:THREE.Scene[]}).grassObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!;return{fallback:root.userData.fieldGrassDetail.fallback,count:(root.getObjectByName('Dry inland patch grass clusters') as THREE.InstancedMesh).count,near:Boolean(root.getObjectByName('Photographed dry inland grass 0'))};});
  expect(fieldFallback.fallback).toBe(true);expect(fieldFallback.count).toBeGreaterThan(0);expect(fieldFallback.near).toBe(false);
+ if(resource==='invalid-atlas-size'&&info.project.name.includes('chrome'))expect(await page.evaluate(()=>(window as unknown as {closedGrassBitmaps:number[][]}).closedGrassBitmaps.filter(size=>size[0]===16))).toEqual([[16,16]]);
  // This pose is 12m off-road: cruise intentionally requires returning first.
  await page.click('#menu-button');await page.click('#recover-button');await page.click('#auto-button');await expect.poll(async()=>page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__!.player!.speed),{timeout:10000}).toBeGreaterThan(2);
 });
@@ -195,7 +196,8 @@ for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','inv
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('scrub-field'));
  const result=await page.evaluate(async()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh,field=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh;scene.onAfterRender=(_r,_s,c)=>{scene.userData.fallbackCamera=c.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));const camera=scene.userData.fallbackCamera as number[];let maxDistance=0;for(let i=0;i<field.count;i++){const m=field.matrix.clone();field.getMatrixAt(i,m);maxDistance=Math.max(maxDistance,Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));}return{closed:(window as unknown as {closedScrubBitmaps:number[][]}).closedScrubBitmaps,fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,field:field.visible&&root.userData.fieldScrubDetail.fallback,count:field.count,maxDistance,range:root.userData.fieldScrubDetail.range,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
  expect(result.fallback&&result.original&&result.field&&result.running).toBe(true);expect(result.loaded).toBe(false);expect(result.count).toBeGreaterThan(0);expect(result.maxDistance).toBeLessThanOrEqual(result.range+.001);
- if(info.project.name.includes('chrome')&&(resource==='scrub-impostors.png'||resource==='invalid-atlas-size'))expect(result.closed).toEqual([resource==='invalid-atlas-size'?[16,16]:[1024,1024]]);
+ if(info.project.name.includes('chrome')&&resource==='scrub-impostors.png')expect(result.closed).toEqual([[1024,1024],[1024,1024]]);
+ if(info.project.name.includes('chrome')&&resource==='invalid-atlas-size'){expect(result.closed.filter(size=>size[0]===16)).toEqual([[16,16]]);expect(result.closed.filter(size=>size[0]===1024)).toEqual([[1024,1024]]);}
 });
 
 test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前缀',async({page},info)=>{

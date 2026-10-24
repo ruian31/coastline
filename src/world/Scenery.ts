@@ -7,7 +7,7 @@ import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
-import {preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
+import {preservePlantCutoutMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
 /** Sampled from the existing photographed CC0 reef; the underwater edge and
@@ -450,6 +450,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   }
   const grassGeometry=crossedCards(1.10,.75,3),grassMaterial=wind(0xffffff,.095);
   grassMaterial.map=plantTexture('grass');grassMaterial.alphaTest=.46;grassMaterial.alphaToCoverage=true;groundFollowing(grassMaterial);
+  preservePlantCutoutMips(grassMaterial.map,[[0,0,256,256]],.46);
   const grasses:THREE.Matrix4[]=[],grassesColors:THREE.Color[]=[];
   const anchors=Array.from({length:360},(_,i)=>({t:i/360+(random()-.5)*.001,side:i%2?1:-1,offset:8+random()*14}));
   for(let i=0;i<(mobile?3300:5700);i++) {
@@ -492,10 +493,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       vec3 fieldAnchor=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;
       vFieldDistance=length(fieldAnchor.xz-cameraPosition.xz);`);
     shader.fragmentShader='varying float vFieldDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
-      diffuseColor.a*=1.0-smoothstep(${(fieldRange-35).toFixed(1)},${fieldRange.toFixed(1)},vFieldDistance);
-      if(diffuseColor.a<.0001)discard;`);
+      float fieldCoverage=1.0-smoothstep(${(fieldRange-35).toFixed(1)},${fieldRange.toFixed(1)},vFieldDistance);
+      float fieldThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
+      if(fieldCoverage<.00001||fieldCoverage<=fieldThreshold)discard;`);
   };
-  fieldMaterial.customProgramCacheKey=()=>`${fieldKey}-field-range-${fieldRange}`;
+  fieldMaterial.customProgramCacheKey=()=>`${fieldKey}-field-coverage-v2-${fieldRange}`;
+  centerPlantAlphaCoverage(grassMaterial);centerPlantAlphaCoverage(fieldMaterial);
   const fieldMesh=batch(grassGeometry.clone(),fieldMaterial,fieldGrasses,fieldColors);fieldMesh.name='Dry inland patch grass clusters';groundSlopes(fieldMesh,fieldGrasses);partitionField(fieldMesh);
   const fieldRecord=visibleBatches.find(record=>record.mesh===fieldMesh)!,fieldNear=new Uint8Array(fieldGrasses.length);fieldRecord.lod={near:fieldNear,detail:'far',range:fieldRange};
   root.userData.fieldGrassDetail={ready:false,placements:fieldGrasses.length,range:fieldRange,nearLimit:mobile?48:96,budget:'photographedGrass',selected:0,visible:0};
@@ -503,12 +506,17 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const grassReady=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_grass/grass.gltf`).then(gltf=>{
     const sources:THREE.Mesh[]=[];gltf.scene.traverse(object=>{if((object as THREE.Mesh).isMesh)sources.push(object as THREE.Mesh);});
     const sourceMaterials=new Set(sources.map(mesh=>mesh.material as THREE.MeshStandardMaterial)),map=(sources[0]?.material as THREE.MeshStandardMaterial|undefined)?.map;
-    if(disposed){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map?.dispose();return;}
-    if(sources.length!==3||!map||sources.some(mesh=>!mesh.geometry.getAttribute('uv'))){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map?.dispose();throw Error('Coastal grass needs three rooted variants and its alpha atlas');}
+    const decodedImage:unknown=map?.image;let decodedImageReleased=false;
+    const releaseDecodedImage=()=>{if(!decodedImageReleased&&typeof ImageBitmap!=='undefined'&&decodedImage instanceof ImageBitmap){decodedImage.close();decodedImageReleased=true;}};
+    const discard=()=>{sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());map?.dispose();releaseDecodedImage();};
+    if(disposed){discard();return;}
+    if(sources.length!==3||!map||sources.some(mesh=>!mesh.geometry.getAttribute('uv'))){discard();throw Error('Coastal grass needs three rooted variants and its alpha atlas');}
+    try{const image=map.image as {width:number;height:number};if(image.width!==1024||image.height!==1024)throw Error('Coastal grass requires its authored 1024-square atlas');preservePlantCutoutMips(map,[[0,0,1024,1024]],.43);releaseDecodedImage();}catch(error){discard();throw error;}
     textures.push(map);map.anisotropy=mobile?4:8;
     const material=wind(0xffffff,.16);material.name='Photographed coastal grass cutout';material.map=map;material.alphaTest=.43;material.alphaToCoverage=true;
     groundFollowing(material);
     const fieldNearMaterial=wind(0xffffff,.16);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);
+    centerPlantAlphaCoverage(material);centerPlantAlphaCoverage(fieldNearMaterial);
     const near=new Uint8Array(grasses.length),farRecord=visibleBatches.find(record=>record.mesh===grassMesh)!;
     sources.forEach((source,variant)=>{
       const indices=Array.from({length:grasses.length},(_,i)=>i).filter(i=>i%3===variant),matrices=indices.map(i=>grasses[i]),colors=indices.map(i=>grassesColors[i]);

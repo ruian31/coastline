@@ -76,7 +76,7 @@ test('干草地、海砂与岩岸共用八张实际GPU表面纹理',async({page}
   const {uniforms}=renderer.properties.get(ground) as {uniforms:Record<string,{value:THREE.Texture}>},roles=['GroundColor','GroundSurface','SandColor','SandSurface','FieldColor','FieldSurface','RockColor','RockSurface'];
   return{key:ground.customProgramCacheKey(),textures:roles.map(role=>{const texture=uniforms['u'+role].value,image=texture.image as HTMLImageElement;return{role,id:texture.uuid,width:image.width,height:image.height,colorSpace:texture.colorSpace,src:image.currentSrc,mipmaps:texture.generateMipmaps};}),shoulders:scene.getObjectByName('road-network')!.children.filter(o=>(o as THREE.Mesh).material===ground).length};
  });
- expect(result.key).toContain('coastal-dry-field-rock-v6');expect(result.shoulders).toBe(6);expect(new Set(result.textures.map(t=>t.id)).size).toBe(8);
+ expect(result.key).toContain('coastal-dry-field-rock-v7');expect(result.shoulders).toBe(6);expect(new Set(result.textures.map(t=>t.id)).size).toBe(8);
  for(const texture of result.textures){expect([texture.width,texture.height]).toEqual([1024,1024]);expect(texture.colorSpace).toBe(texture.role.endsWith('Color')?'srgb':'');expect(texture.mipmaps).toBe(true);}
  for(const file of ['ground-surface.webp','sand-surface.webp','field-color.jpg','field-surface.webp'])expect(requests.filter(r=>r===file).length).toBe(1);
  for(const file of ['ground-normal.jpg','ground-roughness.jpg','sand-normal.jpg','sand-roughness.jpg'])expect(requests).not.toContain(file);

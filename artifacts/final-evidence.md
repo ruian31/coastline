@@ -1,3 +1,26 @@
+# M35 · 连续干草地表与世界固定的近景草覆盖
+
+2026-10-25，**index-D6VD0TVj.js**，826.13kB/gzip229.91kB，已更新5190。地表沿温和坡面混合连续干草、裸土和陡坡岩面，并先归一化片元地形法线再决定坡度权重。独立GPU草层采用短叶为主的32面cell，固定世界hash、根部实际三角面贴合、径向高度渐隐和世界奇偶低档前缀；每帧只改时间/车位/窗口uniform。未改变地形、道路、驾驶物理或旧植被作者。
+
+最终相关12项（三浏览器各草毯切档/实际驾驶、八图地表、海岸准备、减弱动态）通过。首轮WebKit定时2.5秒只走0.87m，改为按真实移动距离等待，三个项目均通过，未降低移动门限。顶点探针最初按作者等步长抽样导致桌面只命中窗口边缘，改为从实际可见叶中均匀抽样；源代码未为检查改形体。最终Chrome手机/WebKit/桌面实际编译shader的transform feedback均通过：内陆/路草每图抽取128片叶的两个根点、共256条实际三角射线，最大贴地误差0.0000188m、道路命中0；单轴移窗后全档/半密度重叠草叶含叶端形态完全一致，风动根部误差0、叶端约0.10m，半密度为完整输出前缀。桌面镇旁另222根点，手机镇内无可见草，不以零样本证明贴地。
+
+- [正式12图和本轮辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-grass-canopy.json)
+- [实际桌面坡面](/home/ryan/workspace/coastline/artifacts/pass-m35-grass-canopy/desktop-bank-inland.png)
+- [手机近景草覆盖](/home/ryan/workspace/coastline/artifacts/pass-m35-grass-canopy/mobile-field-verge.png)
+- [Chrome实际GPU草根/风动/移窗](/home/ryan/workspace/coastline/artifacts/grass-canopy-m35-mobile-validated/result.json)
+- [WebKit实际GPU同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m35-webkit-validated/result.json)
+- [桌面实际GPU同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m35-desktop-validated/result.json)
+- [移动距离等待后最终三浏览器](/home/ryan/workspace/coastline/artifacts/tests-m35-canopy-movement.json)
+- [地表与岸边其余专项](/home/ryan/workspace/coastline/artifacts/tests-m35-canopy.json)
+- [实际横屏触控离路与环顾](/home/ryan/workspace/coastline/artifacts/offroad-grass-m35-phone/android-touch.webm)
+- [普通入口与实际草层资源](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m35-release/result.json)
+
+默认巡航8秒4倍CPU节流Task3537→3525ms、Script3165→3164ms，距离同为108.923m，仅近似持平。两个固定GPU机位各90样本，无disjoint；P50 1.897/2.722→1.839/2.440ms，P95 2.541/10.652→2.763/4.150ms，有频率及尾延迟波动，不是实际手机FPS或新增几何提速证据。正式峰桌面147/805233/130/53，手机113/336525/128/49；实际离路76.34m/50.09秒并返回，0错误，压力124/384409/129/53，仍超手机300k/40预算28.1%/32.5%。取舍和内存详见文档09。
+
+普通无query入口前进超过2m，真实草层RG32F121²/117128B、2304容量/1152提交、随车uniform正确；原摄影草共享/mip/弯叶配对和世界阴影缓存保持，测试全局undefined，0错误。已看最终桌面坡面/横屏原野及连续环顾帧；近景体量有所改善，但远坡与近远草形态仍不完整，世界层次1.5→1.5，空地自动失败保留，其余九类未重评，**Goal active**。用户新确认车辆两侧拨草、车底压伏与几十秒恢复的轮胎轨迹，R17/A24已记，尚未以风动替代车辆互动验收。
+
+---
+
 # M34 · 不规则草斑与近处立体弯叶
 
 2026-10-24，**index-BXlABHjY.js**，816.57kB/gzip226.54kB，已更新5190。100个不规则草斑沿路展开并向路肩偏置，保留裸土间隙与高低变化；手机14302个新原野作者点，既有道路草/树/灌丛/岩体的随机流保持。近处18片弯曲收尖薄叶（90面/簇）补摄影细枝体量，远处仍6面轮廓。没有新图片或下载，主体仅48/96容量，复制已选摄影细枝的矩阵/颜色/坡度，共用原近景总额。**整体自然风景仍未达标，Goal active**。

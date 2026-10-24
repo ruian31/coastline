@@ -3,6 +3,25 @@ import * as THREE from 'three';
 import {readFile} from 'node:fs/promises';
 import {PNG} from 'pngjs';
 
+test('近景草毯随驾驶更新窗口，切档复用地形纹理与固定实例缓冲',async({page},info)=>{
+ test.setTimeout(90000);await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {canopyObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.canopyObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.canopyObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('bank-inland'));
+ const inspect=()=>page.evaluate(()=>{
+  const objects=(window as unknown as {canopyObjects:unknown[]}).canopyObjects,scene=objects.find(o=>(o as THREE.Scene).isScene&&(o as THREE.Scene).getObjectByName('Coastal landscape')) as THREE.Scene,renderer=objects.find(o=>(o as {isWebGLRenderer?:boolean}).isWebGLRenderer) as THREE.WebGLRenderer,mesh=scene.getObjectByName('World anchored dry grass canopy') as THREE.InstancedMesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>;
+  const {uniforms,currentProgram}=renderer.properties.get(mesh.material) as {uniforms:{uCanopyField:{value:THREE.DataTexture};uCanopyOriginCell:{value:THREE.Vector2};uCanopyCarXZ:{value:THREE.Vector2};uCanopyTime:{value:number}};currentProgram:{program:WebGLProgram;vertexShader:WebGLShader}},field=uniforms.uCanopyField.value,car=window.__THREE_GAME_DIAGNOSTICS__!.player!.position!;
+  return{uuid:mesh.uuid,field:field.uuid,fieldSize:[field.image.width,field.image.height],format:field.format,type:field.type,byteLength:(field.image.data as Float32Array).byteLength,finite:Array.from(field.image.data as Float32Array).every(Number.isFinite),matrices:Array.from(mesh.instanceMatrix.array),version:mesh.instanceMatrix.version,count:mesh.count,capacity:mesh.instanceMatrix.count,origin:uniforms.uCanopyOriginCell.value.toArray(),carUniform:uniforms.uCanopyCarXZ.value.toArray(),car,time:uniforms.uCanopyTime.value,cell:mesh.userData.grassCanopy.cellSize,receiveShadow:mesh.receiveShadow,castShadow:mesh.castShadow,linked:renderer.getContext().getProgramParameter(currentProgram.program,renderer.getContext().LINK_STATUS) as boolean,key:mesh.material.customProgramCacheKey()};
+ });
+ const first=await inspect(),side=info.project.name.includes('mobile')?121:161;expect(first.fieldSize).toEqual([side,side]);expect(first.byteLength).toBe(side*side*8);expect(first.format).toBe(THREE.RGFormat);expect(first.type).toBe(THREE.FloatType);expect(first.finite&&first.linked&&first.receiveShadow).toBe(true);expect(first.castShadow).toBe(false);expect(first.count*2).toBe(first.capacity);
+ for(const quality of ['high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
+  const now=await inspect();expect(now.uuid).toBe(first.uuid);expect(now.field).toBe(first.field);expect(now.matrices).toEqual(first.matrices);expect(now.version).toBe(first.version);expect(now.count).toBe(quality==='low'?first.capacity/2:first.capacity);expect(now.linked).toBe(true);expect(now.key).toContain(quality==='low'?'coast-world-only':'coast-local-shadow');
+ }
+ await page.keyboard.down('ArrowUp');try{await expect.poll(async()=>{const current=await inspect();return Math.hypot(current.car.x-first.car.x,current.car.z-first.car.z);},{timeout:15000}).toBeGreaterThan(1.5);}finally{await page.keyboard.up('ArrowUp');}const driven=await inspect();
+ expect(Math.hypot(driven.car.x-first.car.x,driven.car.z-first.car.z)).toBeGreaterThan(1);expect(driven.origin).not.toEqual(first.origin);expect(driven.origin).toEqual([Math.floor(driven.carUniform[0]/driven.cell)-Math.sqrt(first.capacity)/2,Math.floor(driven.carUniform[1]/driven.cell)-Math.sqrt(first.capacity)/2]);expect(driven.time).toBeGreaterThan(first.time);expect(driven.matrices).toEqual(first.matrices);expect(driven.version).toBe(first.version);expect(errors).toEqual([]);
+});
+
 test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>{
  await page.setViewportSize({width:844,height:390});
  await page.addInitScript(()=>{

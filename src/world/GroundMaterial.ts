@@ -44,13 +44,14 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       float meadowPattern=coastNoise(vGroundPosition.xz*.019+vec2(11.7,3.1));
       soilUv+=vec2(macro-.5,meadowPattern-.5)*.17;
       float sandWeight=1.0-smoothstep(2.0,9.0,vGroundPosition.y+macro*2.2);
-      vec3 triWeights=pow(abs(vGroundWorldNormal),vec3(4.0));triWeights/=max(dot(triWeights,vec3(1.0)),.001);
-      float slope=1.0-clamp(vGroundWorldNormal.y,0.0,1.0);
+      vec3 groundN=normalize(vGroundWorldNormal);
+      vec3 triWeights=pow(abs(groundN),vec3(4.0));triWeights/=max(dot(triWeights,vec3(1.0)),.001);
+      float slope=1.0-clamp(groundN.y,0.0,1.0);
       float rockWeight=clamp(slope*2.4+smoothstep(.76,.95,macro)*.13,0.0,.87);
       float inland=1.0-smoothstep(.84,.96,length(vGroundPosition.xz/vec2(355.0,292.0)));
-      float fieldPatch=smoothstep(.25,.70,macro*.65+meadowPattern*.35);
-      float fieldWeight=inland*smoothstep(3.0,7.0,vGroundPosition.y)*(1.0-smoothstep(.13,.36,slope))*fieldPatch*.9;
-      vec2 fieldUv=vGroundPosition.xz/2.5+vec2(macro-.5,meadowPattern-.5)*.45;
+      float fieldPatch=smoothstep(.24,.62,macro*.65+meadowPattern*.35);
+      float fieldWeight=inland*smoothstep(3.0,7.0,vGroundPosition.y)*(1.0-smoothstep(.20,.48,slope))*mix(.25,.97,fieldPatch);
+      vec2 fieldUv=vGroundPosition.xz/4.0+vec2(macro-.5,meadowPattern-.5)*.45;
       vec3 soil=texture2D(uGroundColor,soilUv).rgb;
       vec3 sand=texture2D(uSandColor,sandUv).rgb;
       vec3 stone=coastTriplanar(uRockColor,vGroundPosition,3.5,triWeights);
@@ -62,11 +63,10 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       float soilLuma=dot(soil,vec3(.25,.60,.15));
       vec3 dryGrass=soilLuma*vec3(1.23,1.12,.72);
       soil=mix(soil,dryGrass,moss*(.48+.32*meadowPattern));
-      soil=mix(soil,texture2D(uFieldColor,fieldUv).rgb*vec3(.72,.66,.50),fieldWeight);
+      soil=mix(soil,texture2D(uFieldColor,fieldUv).rgb*vec3(1.10,1.00,.70),fieldWeight);
       vec3 albedo=mix(mix(soil,sand,sandWeight),stone,rockWeight);
       float damp=1.0-smoothstep(-.7,1.4,vGroundPosition.y);
       diffuseColor.rgb=albedo*mix(.91,1.16,macro)*mix(1.0,.65,damp);
-      vec3 groundN=normalize(vGroundWorldNormal);
       vec4 soilSurface=texture2D(uGroundSurface,soilUv),sandSurface=texture2D(uSandSurface,sandUv),fieldSurface=texture2D(uFieldSurface,fieldUv);
       vec3 soilNormal=coastXzNormal(coastDetailNormal(soilSurface.rgb),groundN);
       vec3 fieldNormal=coastXzNormal(coastDetailNormal(fieldSurface.rgb),groundN);
@@ -84,6 +84,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v6-${mobile}`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v7-${mobile}`;
   return groundMaterial;
 }

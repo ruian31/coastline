@@ -7,6 +7,7 @@ import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
+import {createGrassCanopy} from './GrassCanopy';
 import {preservePlantCutoutMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
@@ -191,6 +192,13 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile);
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
+
+  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,habitat:(x,z)=>{
+    if(groundHeight(x,z)<2.8||!naturalVerge(x,z,0))return -32;
+    const nearest=closestSurface(x,z);
+    return Math.min(32,nearest.distance-nearest.point.width/2-2.4);
+  }});
+  root.add(grassCanopy.mesh);
 
   const headland=createTunnelHeadland(mobile,groundHeight);
   const cap=place(headland.geometry,groundMaterial,'Eroded headland over the mountain tunnel');cap.castShadow=true;cap.receiveShadow=true;
@@ -933,6 +941,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     },
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setLowDetail(enabled){
+      grassCanopy.setLowDetail(enabled);
       for(const record of visibleBatches){const child=record.mesh;
         const factor=child.name.includes('grass clusters')?.55:/maquis/i.test(child.name)?.65:child.name.includes('fern rosettes')?.6:child.parent?.name==='Scanned coastal ferns'?.5:1;
         const full=record.matrices.length;child.userData.fullCount=full;
@@ -942,12 +951,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     update(elapsed, carPosition) {
       time.value=elapsed;
       water.update(carPosition);
+      grassCanopy.update(elapsed,carPosition);
       sky.position.set(carPosition.x,0,carPosition.z);
     },
     dispose() {
       disposed = true;
       vergeSurface=undefined;
       water.dispose();
+      grassCanopy.dispose();
       root.removeFromParent();
       fieldBladeBody?.mesh.dispose();
       for(const resource of resources)resource.dispose();

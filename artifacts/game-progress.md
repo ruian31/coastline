@@ -249,3 +249,22 @@
 - 首次full-fronds-first十二图因favicon.ico404拒绝，独立浏览器记录确认URL，failure.json补记且原图保留；HTML补data图标，脚本遇错保存views/errors/failure。加入与游戏同参数中性RoomEnvironment间接光，避免无环境的暗黑素材观察误导材质判断。最终full-fronds-indirect十二图0错误，已看两株正/侧/顶部代表图，卷曲和叶缘保留；不是游戏画面证据。
 - 一次独立只读二进制审查确认四网格各7组件、无退化面、顶点反变换一致、UV误差0、法线误差max4.4e-8，全部SHA/bytes一致，无纹理引用。提醒整株minY=0并非各叶束根部同高，最多差6.67cm且有外伸叶尖；接入后必须检查冠心/实际土壤，不将bbox当完整贴地验收。未递归审查，无GPU代理工作。
 - 该素材步骤验证完成，准备按commit技能提交；尚无M23运行改动、5190仍保留M22。下一步Scenery/ImportedVegetation显式共享原材质、原fern矩阵与随机调用、近远互斥限额、低档60%前缀、贴地风动和失败回退；先实际grass-verge看替换效果，再补离路山坡植被，仍不宣布自然景观达标。
+
+## 2026-10-24 · M23卷曲蕨叶实际接入中
+
+- 上一目标turn分类progress：M22运行地表a124b05和M23A素材33f0744均已验证/提交、UTF8正常、无push。当前服务进程/旧主包已检查，5190/4188稳定CKmKV6_p，4191候选单独更新；无运行中的旧GPU任务，不属于blocked。
+- ImportedVegetation只暴露已加载的fernMaterial引用，仍拥有原三张贴图；Scenery.prepareFerns等待原材质后加载几何专用ferns.gltf，在实际sceneReady内等待，失败时保留旧fern rosettes，未另外请求图片。两株近784/816、远198/197复用原fern矩阵与独立整数hash，不消费共享random；共用原60%低档前缀和近/远互斥，8/16近景限额、26/40进入和32/48退出。
+- 新材质通过wind(...).copy(template)保留当前Scenery风动回调/缓存key，借用PBR maps不归Scenery纹理释放；共用实际terrain+graded坡度/lift及压缩slot属性。几何下沉7.5cm让摄影冠心埋入地面，尚需实际坡地检查，不能凭bbox minY结论。旧材质仅成功后释放、旧矩阵批次保留作原摆放/低档前缀参考。
+- tsc/独立生产构建CVGInjoa通过，开始实际grass-verge首图观察。尚未跑三浏览器/近远切档/失败/根部专项，未更新5190、未提交M23运行改动。
+- 首轮蕨叶/失败回退/原摆放12项中10通过，两手机的近景非空断言失败：实际grass-verge/active-play/隧道/树影机位的低档近景计数均为0，只有远景。保留curved-ferns-regression-first及独立fern-near-pose-probe-1数据，不增大近景距离或放宽非空断言。
+- 新QA状态fern-verge选择原始第一株，车停在其前6米，用正常追随镜头，保证低档前缀内真实可驶近的植株；仅test/dev入口可用。手机按实际844×390横屏测试。候选_SAaiWzP（运行接入相同，只加QA机位）三浏览器主要切档/共享/互斥3项重跑全过，实际只请求原3图且UUID共享，0额外图片请求。其余失败回退6项/摆放fixture3项为同运行实现首轮有效结果。
+- 独立射线根部测试新增fern-verge实际近/远蕨叶：冠心anchor高度/梯度与实际terrain+4graded一致，几何另下沉7.5cm。与共享草/灌切档一起三浏览器9项全过，curved-ferns-shared-ground-regression。材质所有权/异步/回退/LOD一次只读review未发现具体缺陷；无GPU审查、不作美术背书。
+- 第一张实际desktop grass-verge图尖三角已消失，原近景处换成卷曲照片叶；同机位calls115→118、tri473157→478003、geo106→110、tex46保持。整体稀疏地面仍弱。正在做实际raised verge/陡坡的独立植株接触观察和真实风动，不把纯素材预览当普通驾驶图；未发布/提交M23运行改动。
+- fern-contact-first-phone/desktop已捕获58/103低档前缀摆放中的最高路肩抬升和最陡坡两处，风动3.1/3.3s有实际像素变化；但隔离脚本漏绘4个graded verge，不能作接触证明。两目录另存inconclusive.json保留原result/图。脚本现同时保留terrain+4graded，待重拍；运行场景和独立射线本来包含路肩。QA fern-verge车位改为第一株旁3米、后4米，避免车遮挡植株，候选DsVoHfa5的根部/主蕨叶三浏览器6项重跑全过。
+- 发现旧ImportedVegetation四批实拍蕨叶按整批球绘制，跨区域实例不能逐株剔除。M23增加已有registerInstances回调复用Scenery逐株视锥，不增批次/图/改变原矩阵；注册初始limit取实际mesh.count保留异步低档50%前缀，后续setLowDetail按原parent角色切档。Imported回调前root.add，关闭未形变整批二次剔除，原图仍由Imported拥有；所有权释放顺序不变。
+- 改动前从实际5190/CKmKV6_p分别捕获桌面4×16/手机4×4完整原矩阵为tests/fixtures/imported-fern-placements.json（包含GPU全容量，即使当前count为低档半数）。新测试核对全部原矩阵、低档50%前缀、切档无重复/未知实例、视锥确实剔除且active-play仍有原植物。
+- 当前候选BRkU5y8R，tsc/build通过，15项三浏览器共享根部/草/灌/新蕨叶/旧实拍逐株剔除正在跑；暂无新最终性能结论。新增profile-fern-culling脚本将用相同冻结机位/原矩阵/材质，把旧完整前缀及原整批球行为作控制，实际对照像素与三角形，不用不同路线的峰值差额冒充提速。5190仍M22/CKmKV6_p。
+- 最终BRk三浏览器15项根部/共享草灌/新旧蕨叶和6项失败回退全过，共21项。土壤完整绘制的contact-soil-visible手机/桌面重拍有效，最大路肩抬升35.7/29.3cm的冠心和最陡坡侧面已看；风动3.12/3.28秒、8762/22896像素变化，0错误。前两目录保持inconclusive，不覆盖失败证据。
+- 相同冻结横屏以当前几何/材质/作者前缀恢复整批球行为：active-play少5416tri、rock-back少3848tri，calls100/81不变，两幅像素变化0；不是完整旧构建复现。正式pass-m23-curved-ferns十二视图0错误，桌面各项峰138/611279/117/51、手机93/246408/114/44，实际路肩/电影/近蕨叶和最终离路环顾/返回图已查看。
+- 实际横屏双指绕岩46.66秒、离路88.02m并返回，0错误，峰116calls/318527tri/116geo/50tex，仍超300k/40约6.2%/25%。CPU4倍8秒2794/2397ms（Task/Script）相对M22约+4.8%/+5.0%，heap21.78MiB；未称真机提速。没有新GPU计时，真实一加12/iPhone表现仍待反馈。
+- 正常npm run build与候选同BRkU5y8R，5190普通入口实际开始前进8.30米，原三图共享、旧三角叶隐藏、原大株逐株剔除、一次缓存正常，测试钩子/诊断undefined、0错误。证据清单12+20=32项检查通过，准备按commit技能提交，无push；下一步M24复用已有低草覆盖离路山坡斑块，近草共享总限额，整体Goal active。

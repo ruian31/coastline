@@ -22,6 +22,19 @@ test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>
  expect(data.verges).toBe(4);expect(data.raised,'test must cover visible grass above raised shoulder geometry').toBeGreaterThan(0);
  const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),meshes=data.parts.map(part=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(part.positions,3));g.setIndex(part.indices);return new THREE.Mesh(g,material);}),ray=new THREE.Raycaster();
  const height=(x:number,z:number)=>{ray.set(new THREE.Vector3(x,120,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(meshes)[0];expect(hit).toBeDefined();return hit.point.y;};
+ await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('fern-verge'));
+ const fernSamples=await page.evaluate(()=>{
+  const scene=(window as unknown as {rootObjects:THREE.Scene[]}).rootObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,samples:{x:number;y:number;z:number;gx:number;gz:number;lift:number}[]=[];let near=0;
+  for(const detail of ['near','far'])for(let variant=0;variant<2;variant++){
+   const mesh=scene.getObjectByName(`Curved photographed fern ${detail} ${variant}`) as THREE.InstancedMesh,slope=mesh.geometry.getAttribute('instanceGroundSlope');if(detail==='near')near+=mesh.count;
+   for(let i=0;i<Math.min(mesh.count,4);i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);samples.push({x:m.elements[12],y:m.elements[13],z:m.elements[14],gx:slope.getX(i),gz:slope.getY(i),lift:slope.getZ(i)});}
+  }return{near,samples};
+ });
+ expect(fernSamples.near,'include actual near fern geometry in the root check').toBeGreaterThan(0);
+ for(const p of fernSamples.samples){
+  expect(p.y+p.lift,'fern crown anchor follows the actual top surface; geometry supplies the burial').toBeCloseTo(height(p.x,p.z),3);
+  expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);expect(p.gz).toBeCloseTo((height(p.x,p.z+.15)-height(p.x,p.z-.15))/.3,2);
+ }
  for(const p of data.samples){
   expect(height(p.x,p.z)-(p.y+p.lift),'root is buried only 5cm below the visible top surface').toBeCloseTo(.05,3);
   expect(p.gx).toBeCloseTo((height(p.x+.15,p.z)-height(p.x-.15,p.z))/.3,2);
@@ -107,6 +120,58 @@ for(const resource of ['scrub.gltf','scrub-impostors.png'])test('灌木载入失
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
  const result=await page.evaluate(()=>{const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Fine leaf coastal maquis clusters') as THREE.InstancedMesh;return{fallback:root.userData.scrubDetail.fallback,original:old.visible&&old.count>0,loaded:Boolean(root.getObjectByName('Grey green coastal scrub near 0')),running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
  expect(result).toEqual({fallback:true,original:true,loaded:false,running:true});
+});
+
+test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前缀',async({page},info)=>{
+ if(info.project.name.includes('mobile'))await page.setViewportSize({width:844,height:390});
+ await page.addInitScript(()=>{
+  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));
+  const w=window as unknown as {fernObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fernObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fernObjects.push((e as CustomEvent).detail));
+ });
+ const requests:string[]=[],errors:string[]=[];page.on('request',r=>{if(r.url().includes('/models/fern_02/textures/'))requests.push(r.url());});page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('fern-verge'));
+ const inspect=()=>page.evaluate(()=>{
+  const scene=(window as unknown as {fernObjects:THREE.Scene[]}).fernObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,original=root.getObjectByName('Curved coastal fern rosettes') as THREE.InstancedMesh,placements=original.userData.authoredInstances as THREE.Matrix4[];
+  const key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),lookup=new Map(placements.map((m,i)=>[key(m),i])),seen=new Set<string>(),outside:number[]=[],unknown:string[]=[],triangles:number[]=[],textureKeys:string[]=[];let duplicates=0,near=0,slopesFinite=true,shared=true;
+  const imported=scene.getObjectByName('Scanned coastal ferns')!.children[0] as THREE.InstancedMesh,template=imported.material as THREE.MeshStandardMaterial,limit=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low'?Math.floor(placements.length*.6):placements.length;
+  for(const detail of ['near','far'])for(let variant=0;variant<2;variant++){
+   const mesh=root.getObjectByName(`Curved photographed fern ${detail} ${variant}`) as THREE.InstancedMesh,material=mesh.material as THREE.MeshStandardMaterial,slope=mesh.geometry.getAttribute('instanceGroundSlope');triangles.push(mesh.geometry.index!.count/3);if(detail==='near')near+=mesh.count;
+   shared&&=material.map===template.map&&material.normalMap===template.normalMap&&material.roughnessMap===template.roughnessMap;textureKeys.push(material.map!.uuid);mesh.geometry.computeBoundingBox();if(Math.abs(mesh.geometry.boundingBox!.min.y+.075)>.0001)slopesFinite=false;
+   for(let i=0;i<mesh.count;i++){const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);if(seen.has(k))duplicates++;seen.add(k);slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);}
+  }
+  return{detail:root.userData.fernDetail,originalVisible:original.visible,near,duplicates,outside,unknown,triangles,shared,slopesFinite,textureKeys};
+ });
+ const first=await inspect();expect(first.detail.ready).toBe(true);expect(first.originalVisible).toBe(false);expect(first.near).toBeGreaterThan(0);expect(first.detail.visible).toBe(first.near);expect(first.triangles).toEqual([784,816,198,197]);
+ for(const quality of ['high','low','high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));const current=await inspect();
+  expect(current.near).toBeLessThanOrEqual(info.project.name.includes('mobile')?8:16);expect(current.detail.visible).toBe(current.near);expect(current.shared).toBe(true);expect(current.slopesFinite).toBe(true);expect(current.duplicates).toBe(0);expect(current.outside).toEqual([]);expect(current.unknown).toEqual([]);expect(current.textureKeys).toEqual(first.textureKeys);
+ }
+ expect(requests.length).toBe(3);expect(new Set(requests).size).toBe(3);expect(errors).toEqual([]);
+});
+
+test('原实拍蕨叶按视锥逐株剔除，切档保留全部原始摆放',async({page},info)=>{
+ const fixture=JSON.parse(await readFile(new URL('./fixtures/imported-fern-placements.json',import.meta.url),'utf8')).platforms[info.project.name.includes('mobile')?'mobile':'desktop'];
+ await page.setViewportSize({width:844,height:390});await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {fernObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fernObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fernObjects.push((e as CustomEvent).detail));});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('fern-verge'));
+ const inspect=()=>page.evaluate(()=>{
+  const root=(window as unknown as {fernObjects:THREE.Scene[]}).fernObjects.find(o=>o.isScene&&o.getObjectByName('Scanned coastal ferns'))!.getObjectByName('Scanned coastal ferns')!,low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low';
+  return root.children.map(o=>{const m=o as THREE.InstancedMesh,authored=m.userData.authoredInstances as THREE.Matrix4[],key=(v:THREE.Matrix4)=>Array.from(new Float32Array(v.elements),n=>n.toFixed(3)).join(','),lookup=new Map(authored.map((v,i)=>[key(v),i])),indices:(number|undefined)[]=[];for(let i=0;i<m.count;i++){const v=m.matrix.clone();m.getMatrixAt(i,v);indices.push(lookup.get(key(v)));}return{name:m.name,frustumCulled:m.frustumCulled,matrices:authored.map(v=>v.toArray()),indices,limit:low?Math.floor(authored.length*.5):authored.length};});
+ });
+ const before=await inspect();expect(before.some(m=>m.indices.length<m.limit)).toBe(true);
+ for(const expected of fixture.batches){const actual=before.find(m=>m.name===expected.name)!;expect(actual.matrices.length).toBe(expected.matrices.length);for(let i=0;i<expected.matrices.length;i++)for(let j=0;j<16;j++)expect(actual.matrices[i][j],expected.name+' original transform').toBeCloseTo(expected.matrices[i][j],4);}
+ for(const quality of ['high','low','high','low']){
+  await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
+  for(const m of await inspect()){expect(m.frustumCulled).toBe(false);expect(m.indices.length).toBeLessThanOrEqual(m.limit);expect(m.indices.every(i=>i!==undefined&&i<m.limit)).toBe(true);expect(new Set(m.indices).size).toBe(m.indices.length);expect(m.matrices).toEqual(before.find(v=>v.name===m.name)!.matrices);}
+ }
+ await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('active-play'));expect((await inspect()).reduce((n,m)=>n+m.indices.length,0),'old photographic plants still appear in their original roadside section').toBeGreaterThan(0);
+});
+
+for(const resource of ['coastal_ferns/ferns.gltf','fern_02/fern_02_browser.gltf'])test('蕨叶载入失败保留原植物并能继续驾驶 '+resource,async({page})=>{
+ await page.route('**/assets/models/'+resource,route=>route.abort());await page.addInitScript(()=>{const w=window as unknown as {fernObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fernObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fernObjects.push((e as CustomEvent).detail));});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const result=await page.evaluate(()=>{const root=(window as unknown as {fernObjects:THREE.Scene[]}).fernObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!.getObjectByName('Coastal landscape')!,old=root.getObjectByName('Curved coastal fern rosettes') as THREE.InstancedMesh;return{detail:root.userData.fernDetail,visible:old.visible,count:old.count,newMesh:Boolean(root.getObjectByName('Curved photographed fern near 0'))};});
+ expect(result.detail.fallback).toBe(true);expect(result.visible).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.newMesh).toBe(false);
+ await page.click('#menu-button');await page.click('#recover-button');await page.click('#auto-button');await expect.poll(async()=>page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__!.player!.speed),{timeout:10000}).toBeGreaterThan(2);
 });
 
 test('树木根部落在实际绘制的地形网格上',async({page})=>{

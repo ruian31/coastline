@@ -33,6 +33,7 @@ function offshoreRockGeometry(variant:number):THREE.BufferGeometry {
 export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager=THREE.DefaultLoadingManager): {
   ready:Promise<void>;
   prepareVerge:(parts:THREE.BufferGeometry[])=>void;
+  prepareFerns:(source:Promise<THREE.MeshStandardMaterial|undefined>)=>Promise<void>;
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
@@ -293,7 +294,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   function registerInstances(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[],colors?:THREE.Color[],lod?:InstanceLod){
     const geometry=mesh.geometry;mesh.computeBoundingSphere();geometry.computeBoundingSphere();
     const bounds=matrices.map(matrix=>{const sphere=geometry.boundingSphere!.clone().applyMatrix4(matrix);sphere.radius+=.8;return sphere;});
-    visibleBatches.push({mesh,matrices,colors,bounds,slots:Int32Array.from(matrices.map((_,i)=>i)),limit:matrices.length,lod});
+    visibleBatches.push({mesh,matrices,colors,bounds,slots:Int32Array.from(matrices.map((_,i)=>i)),limit:mesh.count,lod});
     if(debugPlacements)mesh.userData.authoredInstances=matrices;
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);if(mesh.instanceColor)mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
   }
@@ -577,7 +578,33 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     if(y<.3||!naturalVerge(x,z,7.4))continue;
     const size=.55+random()*.9;ferns.push(matrix(x,y,z,size,size,size));
   }
-  batch(fernGeometry,fernMaterial,ferns).name='Curved coastal fern rosettes';
+  const fernMesh=batch(fernGeometry,fernMaterial,ferns);fernMesh.name='Curved coastal fern rosettes';
+  // Geometry-only LODs borrow the existing photographed maps. ImportedVegetation
+  // owns those textures; this landscape owns only its new material and geometry.
+  async function prepareFerns(source:Promise<THREE.MeshStandardMaterial|undefined>){
+    try{
+      const template=await source;if(disposed)return;if(!template?.map)throw Error('Fern photographs unavailable');
+      const gltf=await new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_ferns/ferns.gltf`),sources:THREE.Mesh[]=[];
+      gltf.scene.traverse(object=>{if((object as THREE.Mesh).isMesh)sources.push(object as THREE.Mesh);});
+      const sourceMaterials=new Set(sources.map(mesh=>mesh.material as THREE.Material)),expected=new Set(['Coastal_fern_0_near','Coastal_fern_0_far','Coastal_fern_1_near','Coastal_fern_1_far']);
+      if(disposed||sources.length!==4||sources.some(mesh=>!expected.delete(mesh.name)||!mesh.geometry.getAttribute('uv'))){sources.forEach(mesh=>mesh.geometry.dispose());sourceMaterials.forEach(material=>material.dispose());if(!disposed)throw Error('Coastal ferns require two complete near/far pairs');return;}
+      // Material.copy preserves the wind callback; clone would omit it. Maps
+      // are shared references, not added to this scenery's texture ownership.
+      const material=wind(0xffffff,.065);material.copy(template);material.name='Curved photographed coastal fern';material.vertexColors=false;groundFollowing(material);
+      const sourceRecord=visibleBatches.find(record=>record.mesh===fernMesh)!,near=new Uint8Array(ferns.length),variantFor=(index:number)=>(Math.imul(index+1,2246822519)>>>19)&1;
+      for(const source of sources){
+        const match=/Coastal_fern_([01])_(near|far)$/.exec(source.name)!,variant=Number(match[1]),detail=match[2] as 'near'|'far',indices=Array.from({length:ferns.length},(_,i)=>i).filter(i=>variantFor(i)===variant),matrices=indices.map(i=>ferns[i]);
+        // The photographed fronds meet above their lowest leaf tip. Bury the
+        // crown slightly; a zero minimum-Y alone would leave several stems up.
+        source.geometry.translate(0,-.075,0);
+        const mesh=batch(source.geometry,material,matrices,undefined,{near,detail,indices,source:sourceRecord});mesh.name=`Curved photographed fern ${detail} ${variant}`;groundSlopes(mesh,matrices);
+      }
+      fernMesh.visible=false;sourceMaterials.forEach(material=>material.dispose());fernMaterial.dispose();resources.delete(fernMaterial);windMaterials.splice(windMaterials.indexOf(fernMaterial),1);
+      foliageDetails.push({key:'fernDetail',near,source:sourceRecord,anchors:ferns.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?26:40,exit:mobile?32:48,cap:mobile?8:16,visible:0});
+      root.userData.fernDetail={ready:true,nearLimit:mobile?8:16,enterRange:mobile?26:40,exitRange:mobile?32:48,selected:0,visible:0,crownSink:.075};
+      let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;
+    }catch(error){if(!disposed)root.userData.fernDetail={ready:false,fallback:true,error:String(error)};}
+  }
 
   // Tiny flowering clumps add restrained lavender and pale gold accents along the verge.
   const flowerParts:{geometry:THREE.BufferGeometry;transform:THREE.Matrix4;color:THREE.Color}[]=[];
@@ -691,6 +718,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   ];
   return {
     ready:Promise.all([grassReady,scrubReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
+    prepareFerns,
     prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
     groundHeight:cameraGroundHeight,
     terrainHeight:groundHeight,
@@ -749,7 +777,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setLowDetail(enabled){
       for(const record of visibleBatches){const child=record.mesh;
-        const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:1;
+        const factor=child.name.includes('grass clusters')?.55:child.name.includes('maquis')?.65:child.name.includes('fern rosettes')?.6:child.parent?.name==='Scanned coastal ferns'?.5:1;
         const full=record.matrices.length;child.userData.fullCount=full;
         record.limit=enabled?Math.min(full,Math.max(1,Math.floor(full*factor))):full;
       }

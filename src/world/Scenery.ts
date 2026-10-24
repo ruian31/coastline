@@ -467,25 +467,26 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
 
   // Inland patches have their own random stream: changing their density must
   // never shuffle the established road, tree, rock or roadside placements.
-  const fieldRandom=createSeededRandom(864224),fieldGrasses:THREE.Matrix4[]=[],fieldColors:THREE.Color[]=[];
+  const fieldPatchRandom=createSeededRandom(864224),fieldRandom=createSeededRandom(864225),fieldGrasses:THREE.Matrix4[]=[],fieldColors:THREE.Color[]=[];
   for(let patch=0;patch<100;patch++){
-    const t=(patch+.2+fieldRandom()*.6)/100,s=coast.sample(t),offset=27+fieldRandom()*82;
-    const cx=s.position.x-s.right.x*offset,cz=s.position.z-s.right.z*offset,rx=7+fieldRandom()*7,rz=5+fieldRandom()*6,angle=fieldRandom()*Math.PI*2;
-    for(let tuft=0;tuft<(mobile?54:84);tuft++){
-      const a=fieldRandom()*Math.PI*2,r=Math.sqrt(fieldRandom()),dx=Math.cos(a)*r*rx,dz=Math.sin(a)*r*rz;
+    const t=(patch+.2+fieldPatchRandom()*.6)/100,s=coast.sample(t),offset=18+fieldPatchRandom()**3*88;
+    const cx=s.position.x-s.right.x*offset,cz=s.position.z-s.right.z*offset,rx=20+fieldPatchRandom()*14,rz=8+fieldPatchRandom()*6,angle=Math.atan2(s.tangent.z,s.tangent.x)+(fieldPatchRandom()-.5)*.6;
+    const density=.65+fieldPatchRandom()*.7,tufts=Math.round((mobile?160:250)*density);
+    for(let tuft=0;tuft<tufts;tuft++){
+      const a=fieldRandom()*Math.PI*2,r=Math.sqrt(fieldRandom())*(1+.16*Math.sin(a*3+angle)+.1*Math.sin(a*5-angle)),dx=Math.cos(a)*r*rx,dz=Math.sin(a)*r*rz;
       const x=cx+dx*Math.cos(angle)-dz*Math.sin(angle),z=cz+dx*Math.sin(angle)+dz*Math.cos(angle),y=groundHeight(x,z);
-      if(y<1.8||!naturalVerge(x,z,13.5))continue;
+      if(y<1.8||!naturalVerge(x,z,8.6))continue;
       const gradient=Math.hypot((groundHeight(x+.3,z)-groundHeight(x-.3,z))/.6,(groundHeight(x,z+.3)-groundHeight(x,z-.3))/.6);
       if(gradient>.6)continue;
-      const size=.8+fieldRandom()*.85;
-      fieldGrasses.push(matrix(x,y-.05,z,size,size*(.65+fieldRandom()*.4),size,fieldRandom()*Math.PI*2));
+      const size=.8+fieldRandom()*.85,tall=fieldRandom()<.18,height=size*(tall?.75+fieldRandom()*.35:.45+fieldRandom()*.35);
+      fieldGrasses.push(matrix(x,y-.05,z,size,height,size,fieldRandom()*Math.PI*2));
       fieldColors.push(new THREE.Color().setHSL(.105+fieldRandom()*.025,.24,.65+fieldRandom()*.16));
     }
   }
   // Shuffle together, so the low-detail prefix thins every patch rather than
   // removing one end of the coast. No runtime quality switch regenerates it.
   for(let i=fieldGrasses.length-1;i>0;i--){const j=Math.floor(fieldRandom()*(i+1));[fieldGrasses[i],fieldGrasses[j]]=[fieldGrasses[j],fieldGrasses[i]];[fieldColors[i],fieldColors[j]]=[fieldColors[j],fieldColors[i]];}
-  const fieldRange=mobile?150:260,fieldMaterial=wind(0xffffff,.095);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);dryFieldColor(fieldMaterial,1);
+  const fieldRange=mobile?120:260,fieldMaterial=wind(0xffffff,.095);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);dryFieldColor(fieldMaterial,1);
   const compileField=fieldMaterial.onBeforeCompile,fieldKey=fieldMaterial.customProgramCacheKey();
   fieldMaterial.onBeforeCompile=(shader,renderer)=>{
     compileField(shader,renderer);
@@ -502,6 +503,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const fieldMesh=batch(grassGeometry.clone(),fieldMaterial,fieldGrasses,fieldColors);fieldMesh.name='Dry inland patch grass clusters';groundSlopes(fieldMesh,fieldGrasses);partitionField(fieldMesh);
   const fieldRecord=visibleBatches.find(record=>record.mesh===fieldMesh)!,fieldNear=new Uint8Array(fieldGrasses.length);fieldRecord.lod={near:fieldNear,detail:'far',range:fieldRange};
   root.userData.fieldGrassDetail={ready:false,placements:fieldGrasses.length,range:fieldRange,nearLimit:mobile?48:96,budget:'photographedGrass',selected:0,visible:0};
+  let fieldBladeBody:{mesh:THREE.InstancedMesh;sources:THREE.InstancedMesh[]}|undefined;
+  const bladeCopyMatrix=new THREE.Matrix4(),bladeCopyColor=new THREE.Color();
 
   const grassReady=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_grass/grass.gltf`).then(gltf=>{
     const sources:THREE.Mesh[]=[];gltf.scene.traverse(object=>{if((object as THREE.Mesh).isMesh)sources.push(object as THREE.Mesh);});
@@ -517,6 +520,26 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     groundFollowing(material);
     const fieldNearMaterial=wind(0xffffff,.16);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);
     centerPlantAlphaCoverage(material);centerPlantAlphaCoverage(fieldNearMaterial);
+    // Real curved blades supply the near clump's body. The photographed stems
+    // add fine detail; replacing the entire far silhouette with stems left gaps.
+    const bladeRandom=createSeededRandom(864226),bladePositions:number[]=[],bladeColors:number[]=[],bladeIndices:number[]=[],rootColor=new THREE.Color('#716c48'),tipColor=new THREE.Color('#c1ad76');
+    for(let blade=0;blade<18;blade++){
+      const angle=blade*2.39996+bladeRandom()*.4,dx=Math.cos(angle),dz=Math.sin(angle),radius=.05+bladeRandom()*.11,height=.4+bladeRandom()*.46,upright=bladeRandom()<.22,reach=upright?.12+bladeRandom()*.12:.28+bladeRandom()*.28,width=.018+bladeRandom()*.027,tip=upright?.95:.5+bladeRandom()*.2,offset=bladePositions.length/3;
+      for(let row=0;row<4;row++){
+        const u=row/3,x=dx*(radius+reach*u*u),z=dz*(radius+reach*u*u),y=height*(3*(1-u)**2*u*.8+3*(1-u)*u*u*1.1+u**3*tip),half=width*(1-u)**.65*.5,color=rootColor.clone().lerp(tipColor,u*.85+bladeRandom()*.1);
+        for(const side of row===3?[0]:[-1,1]){bladePositions.push(x-dz*half*side,y,z+dx*half*side);bladeColors.push(color.r,color.g,color.b);}
+      }
+      for(const i of [0,1,2,1,3,2,2,3,4,3,5,4,4,5,6])bladeIndices.push(offset+i);
+    }
+    const bladeGeometry=new THREE.BufferGeometry();bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bladePositions,3));bladeGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bladeColors,3));bladeGeometry.setIndex(bladeIndices);bladeGeometry.computeVertexNormals();
+    const bladeMaterial=wind(0xffffff,.095);bladeMaterial.name='Curved dry grass blades';bladeMaterial.vertexColors=true;groundFollowing(bladeMaterial);dryFieldColor(bladeMaterial,1);
+    // Copy only the already selected fine clumps, rather than keeping another
+    // full field-sized matrix buffer and scanning the field a second time.
+    const bladeCap=mobile?48:96,blades=new THREE.InstancedMesh(keep(bladeGeometry),keep(bladeMaterial),bladeCap);
+    blades.name='Modeled dry grass blade bodies';blades.receiveShadow=true;blades.frustumCulled=false;blades.count=0;blades.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    blades.setColorAt(0,new THREE.Color(1,1,1));blades.instanceColor!.setUsage(THREE.DynamicDrawUsage);
+    const bladeSlopes=new THREE.InstancedBufferAttribute(new Float32Array(bladeCap*3),3);bladeSlopes.setUsage(THREE.DynamicDrawUsage);bladeGeometry.setAttribute('instanceGroundSlope',bladeSlopes);
+    root.add(blades);fieldBladeBody={mesh:blades,sources:[]};
     const near=new Uint8Array(grasses.length),farRecord=visibleBatches.find(record=>record.mesh===grassMesh)!;
     sources.forEach((source,variant)=>{
       const indices=Array.from({length:grasses.length},(_,i)=>i).filter(i=>i%3===variant),matrices=indices.map(i=>grasses[i]),colors=indices.map(i=>grassesColors[i]);
@@ -524,6 +547,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       groundSlopes(mesh,matrices);
       const fieldIndices=Array.from({length:fieldGrasses.length},(_,i)=>i).filter(i=>i%3===variant),fieldMatrices=fieldIndices.map(i=>fieldGrasses[i]),fieldTints=fieldIndices.map(i=>fieldColors[i]);
       const field=batch(source.geometry.clone(),fieldNearMaterial,fieldMatrices,fieldTints,{near:fieldNear,detail:'near',indices:fieldIndices,source:fieldRecord,range:mobile?24:35});field.name='Photographed dry inland grass '+variant;groundSlopes(field,fieldMatrices);partitionField(field);
+      fieldBladeBody!.sources.push(field);
     });
     farRecord.lod={near,detail:'far'};foliageDetails.push({key:'grassDetail',near,source:farRecord,anchors:grasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
     foliageDetails.push({key:'fieldGrassDetail',near:fieldNear,source:fieldRecord,anchors:fieldGrasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
@@ -897,6 +921,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         mesh.count=count;if(changed){uploadVisiblePrefix(mesh.instanceMatrix,count);if(mesh.instanceColor)uploadVisiblePrefix(mesh.instanceColor,count);if(groundSlopes)uploadVisiblePrefix(groundSlopes.attribute,count);}
         if(lod?.indices&&lod.detail==='near'){const detail=foliageDetails.find(detail=>detail.near===lod.near);if(detail)detail.visible+=count;}
       }
+      if(fieldBladeBody){
+        const {mesh,sources}=fieldBladeBody,slopes=mesh.geometry.getAttribute('instanceGroundSlope') as THREE.InstancedBufferAttribute;let count=0;
+        for(const source of sources){const sourceSlopes=source.geometry.getAttribute('instanceGroundSlope');for(let i=0;i<source.count;i++){
+          source.getMatrixAt(i,bladeCopyMatrix);mesh.setMatrixAt(count,bladeCopyMatrix);source.getColorAt(i,bladeCopyColor);mesh.setColorAt(count,bladeCopyColor);
+          slopes.setXYZ(count,sourceSlopes.getX(i),sourceSlopes.getY(i),sourceSlopes.getZ(i));count++;
+        }}
+        mesh.count=count;if(count){uploadVisiblePrefix(mesh.instanceMatrix,count);uploadVisiblePrefix(mesh.instanceColor!,count);uploadVisiblePrefix(slopes,count);}
+      }
       for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setSkyReflection:texture=>water.setSkyReflection(texture),
@@ -917,6 +949,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       vergeSurface=undefined;
       water.dispose();
       root.removeFromParent();
+      fieldBladeBody?.mesh.dispose();
       for(const resource of resources)resource.dispose();
       windMaterials.length=0;
       for(const texture of textures)texture.dispose();

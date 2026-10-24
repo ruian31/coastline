@@ -285,9 +285,9 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
     const t=tunnelStart+(tunnelEnd-tunnelStart)*i/12,frame=routeFrame(t,1,0);
     for(const side of [-1,1]) {
       box(frame,iron,0,3.65,side*5.15,.65,.55,.13);box(frame,bulb,0,3.65,side*5.06,.44,.27,.12);
-      sphere(frame,rock,0,3.1,side*9.9,5.4,5.3,3.15);
     }
-    sphere(frame,rock,0,10.9,0,5.6,3.25,10.1);
+    // The continuous Scenery headland now encloses this shell. Old overlapping
+    // ellipsoid placeholders protruded above the portals and masked its shape.
     // Narrow longitudinal ceiling fixture, readable while the environment is shadowed.
     box(frame,iron,0,6.37,0,1.3,.10,.28);box(frame,bulb,0,6.29,0,.95,.06,.15);
   }

@@ -1,3 +1,25 @@
+# M27 · 出洞海景、共边山体与实际高度
+
+2026-10-24，**index-D82rtCAi.js**，807.41kB/gzip223.41kB，已更新5190。隧道侧翼从沿路约27m缩回约7m，缓和侧坡纵向收口，出洞视野直接展开大海；删除39个未贴图多面体椭球，保留连续山体、真实内外拱壳/厚洞口/灯具，无新增图片。**整体自然风景仍未达标，Goal active**；山体大尺度面感、硬折小叶、均匀树干仍需精修。
+
+一次独立只读审查发现两项M26已存在的问题：约5m道路样本逆算使实际侧翼安全高度低估约17m，侧面机位可进实体；屋顶32均匀段与封面手写截面不共边，接缝最高约2.24m。局部提取TunnelHeadland，使绘制和高度共用实际三角网格；屋顶/封面共用截面与首末行顶点，scanSurface精确查询，连续道路投影单独保留中央空气通道。修复后未递归审查，以独立三角射线和开放边拓扑验证。
+
+纯CPU桌面/手机、基础/起伏地面四组合，各2067条侧翼网格射线、1320/1321实际屋顶点，最大高度误差6.6e-14、0漏面；洞口外高于地面的开放接缝0，中央各63点与已知侧面机位通过。地面/拱洞边缘仍有232/204条开放边，不伪称整个独立模型封底。最终三浏览器驾驶/巡航/三视角/选车/暂停、车内急转、树根/原世界矩阵与首帧缓存 **15项全通过**。
+
+正式 **artifacts/evidence-tunnel-headland.json**（pass-m27-shared-headland）十二视图0错误；桌面各项峰139calls/621710tri/121geo/51tex，手机94/247180/118/44。实际连续穿越 **手机14.11秒/桌面14.27秒**，真实按钮切车内/追随、出洞后拖动回看，0碰撞/离路/错误。99条实际山体/内外拱壳净空射线各含81条内部有顶样本，最小眼高以上净空3.795/3.796m。中央净空和侧翼/接缝分开验证；所有前版原图/通过报告保留为pre-surface历史，未覆盖或冒充最终证据。
+
+共享截面增加几何，但删除39×80tri占位物后净少手机768/桌面208面；同一tunnel-exit手机228905→228137、桌面568913→568705tri，其余调用/几何/纹理保持。4倍CPU同tunnel起点、暖机1.5秒、持续巡航8秒：M26 Task2955/Script2627→M27 **2718/2410ms**，约-8.0%/-8.3%，终点相差0.81m，不能当逐帧同轨迹或将差额全部归因于查询优化。heap29.88/36.72MiB仅当次GC状态，无新GPU计时/一加12或iPhone帧率；M26绕岩超预算压力边界仍保留。
+
+- [实际出洞海景](/home/ryan/workspace/coastline/artifacts/pass-m27-shared-headland/desktop-tunnel-exit.png)
+- [实际洞口回看](/home/ryan/workspace/coastline/artifacts/tunnel-shared-roof-desktop/portal-back.png)
+- [横屏车内穿越](/home/ryan/workspace/coastline/artifacts/tunnel-shared-roof-phone/cabin.png)
+- [实际穿越/切镜记录](/home/ryan/workspace/coastline/artifacts/tunnel-shared-roof-phone/result.json)
+- [侧翼高度与接缝拓扑](/home/ryan/workspace/coastline/artifacts/tunnel-surface-shared-roof-first/summary.json)
+
+普通dist与候选同D82rtCAi；5190无query入口实际开始前进8.59m，手机山体5200tri、外拱壳2304tri、缓存1/43、准备正常，钩子/诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。继续树干实拍表面与自然细节，整体目标未完成。
+
+---
+
 # M26 · 分龄棕榈冠与远叶覆盖
 
 2026-10-24，**index-Ot5MRk8T.js**，807.66kB/gzip223.54kB，已更新5190。原单层细线冠改为14/18片按年龄展开的叶轴：下层老叶垂落、中层展开、年轻叶向上；黄金角错落、局部扫弯、错位小叶及折脊增加体积。所有叶轴从实际干顶生长，独立随机流不改变原世界作者矩阵/树根/碰撞，无新增图片。**整体自然风景仍未达标，Goal active**；硬折小叶、均匀环状树干、隧道山体直切仍需改。

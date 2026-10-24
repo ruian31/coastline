@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {createCoastalGroundMaterial,usePackedRockRoughness} from './GroundMaterial';
 import {scanSurface} from './SurfaceHeight';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import {createTunnelHeadland} from './TunnelHeadland';
 import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
@@ -190,67 +190,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
-  // The road passes through a continuous headland, with a true arched void at both portals.
-  // This top surface is separate from the heightfield so the driving corridor remains open below it.
-  const capStart=.6802,capEnd=.7348,capAlong=mobile?34:48,capAcross=32,capMin=-75,capMax=32;
-  const capVertices:number[]=[];
-  function capPoint(t:number,offset:number):THREE.Vector3 {
-    const progress=(t-capStart)/(capEnd-capStart);
-    const flankWeight=THREE.MathUtils.smoothstep(Math.abs(offset),6.4,12);
-    const flankExtension=flankWeight*.015;
-    const actualT=THREE.MathUtils.lerp(capStart-flankExtension,capEnd+flankExtension,progress);
-    const sample=coast.sample(actualT),p=sample.position.clone().addScaledVector(sample.right,offset);
-    const u=(offset-capMin)/(capMax-capMin);
-    const weathering=.91+.055*Math.sin(p.x*.12+Math.sin(p.z*.07))+.035*Math.cos(p.z*.11+p.x*.04);
-    const approach=Math.pow(Math.max(0,Math.sin(progress*Math.PI)),.40);
-    const slopeIntoHill=1-flankWeight*(1-approach);
-    const cover=Math.pow(Math.max(0,Math.sin(u*Math.PI)),1.25)*(12+18*Math.exp(-(((offset+22)/34)**2)))*weathering*slopeIntoHill;
-    p.y=groundHeight(p.x,p.z)+cover;
-    return p;
-  }
-  function capTriangle(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3) {
-    capVertices.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
-  }
-  for(let row=0;row<capAlong;row++)for(let col=0;col<capAcross;col++) {
-    const t=THREE.MathUtils.lerp(capStart,capEnd,row/capAlong),t2=THREE.MathUtils.lerp(capStart,capEnd,(row+1)/capAlong);
-    const x=THREE.MathUtils.lerp(capMin,capMax,col/capAcross),x2=THREE.MathUtils.lerp(capMin,capMax,(col+1)/capAcross);
-    const a=capPoint(t,x),b=capPoint(t2,x),c=capPoint(t,x2),d=capPoint(t2,x2);
-    capTriangle(a,b,c);capTriangle(b,d,c);
-  }
-  for(const t of [capStart,capEnd]) {
-    const offsets=[capMin,-60,-45,-30,-20,-12,-8,-6.4,-5.6,-4.5,-3,-1.5,0,1.5,3,4.5,5.6,6.4,8,12,20,capMax];
-    for(let i=0;i<offsets.length-1;i++) {
-      const x=offsets[i],x2=offsets[i+1],a=capPoint(t,x),b=capPoint(t,x2),c=a.clone(),d=b.clone(),roadY=coast.sample(t).position.y;
-      c.y=Math.abs(x)<=6.4?roadY+6.74*Math.sqrt(Math.max(0,1-(x/6.4)**2)):groundHeight(c.x,c.z)-.35;
-      d.y=Math.abs(x2)<=6.4?roadY+6.74*Math.sqrt(Math.max(0,1-(x2/6.4)**2)):groundHeight(d.x,d.z)-.35;
-      const tangent=coast.sample(t).tangent,sign=t===capStart?-1:1;
-      const eroded=(bottom:THREE.Vector3,top:THREE.Vector3,v:number)=>{
-        const p=bottom.clone().lerp(top,v);
-        const relief=Math.sin(v*Math.PI)*.7*(Math.sin(p.x*.21+p.y*.48)+.5*Math.cos(p.z*.23-p.y*.39));
-        return p.addScaledVector(tangent,sign*relief);
-      };
-      for(let layer=0;layer<8;layer++) {
-        const lowA=eroded(c,a,layer/8),lowB=eroded(d,b,layer/8),topA=eroded(c,a,(layer+1)/8),topB=eroded(d,b,(layer+1)/8);
-        if(t===capStart){capTriangle(topA,topB,lowA);capTriangle(topB,lowB,lowA);}else{capTriangle(topA,lowA,topB);capTriangle(topB,lowA,lowB);}
-      }
-    }
-  }
-  const rawCapGeometry=new THREE.BufferGeometry();rawCapGeometry.setAttribute('position',new THREE.Float32BufferAttribute(capVertices,3));
-  const capGeometry=mergeVertices(rawCapGeometry,.001);rawCapGeometry.dispose();capGeometry.computeVertexNormals();
-  const cap=place(capGeometry,groundMaterial,'Eroded headland over the mountain tunnel');cap.castShadow=true;cap.receiveShadow=true;
-  capGeometry.computeBoundingBox();const capBounds=capGeometry.boundingBox!;
-  function cameraGroundHeight(x:number,z:number):number {
-    const base=groundHeight(x,z);if(x<capBounds.min.x-2||x>capBounds.max.x+2||z<capBounds.min.z-2||z>capBounds.max.z+2)return base;
-    const{point}=closestSurface(x,z);
-    if(point.id!=='coast')return base;
-    const offset=(x-point.position.x)*point.right.x+(z-point.position.z)*point.right.z;
-    // Preserve the air corridor inside the cave, while preventing an orbit camera entering its solid flanks.
-    if(Math.abs(offset)<6.1||offset<capMin||offset>capMax)return base;
-    const extension=THREE.MathUtils.smoothstep(Math.abs(offset),6.4,12)*.015;
-    const progress=(point.t-(capStart-extension))/(capEnd-capStart+extension*2);
-    if(progress<0||progress>1)return base;
-    return Math.max(base,capPoint(THREE.MathUtils.lerp(capStart,capEnd,progress),offset).y);
-  }
+  const headland=createTunnelHeadland(mobile,groundHeight);
+  const cap=place(headland.geometry,groundMaterial,'Eroded headland over the mountain tunnel');cap.castShadow=true;cap.receiveShadow=true;
+  const cameraGroundHeight=headland.groundHeight;
 
   // A sky dome avoids an external HDR dependency while retaining a consistent sunset direction.
   const sky = place(new THREE.SphereGeometry(1900, 32, 16), new THREE.ShaderMaterial({

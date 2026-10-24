@@ -5,6 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,devices} from 'playwright';
 
 const label=process.env.GROUND_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);
+const states=(process.env.GROUND_STATES??'grass-verge,tunnel-exit,shore-side').split(',');assert.ok(states.length>0&&states.every(state=>/^[a-z0-9-]+$/.test(state)));
 const out=`artifacts/ground-gpu-${label}`;await mkdir(out);
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 const page=await browser.newPage({...devices['Pixel 7'],viewport:{width:844,height:390}}),errors=[];
@@ -16,7 +17,7 @@ await page.addInitScript(()=>{
 try{
  await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:4191')+'/?test=1');
  const bundle=await page.locator('script[type=module][src]').getAttribute('src'),samples=[];
- for(const state of ['grass-verge','tunnel-exit','shore-side']){
+ for(const state of states){
   await page.evaluate(async state=>{const h=window.__THREE_GAME_TEST_HOOKS__;await h.setState(state);h.setPausedForScreenshot(true);h.setReducedMotion(true);},state);
   const sample=await page.evaluate(async()=>{
    const renderer=groundObjects.find(o=>o.isWebGLRenderer),gl=renderer.getContext(),ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');

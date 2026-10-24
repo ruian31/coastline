@@ -73,11 +73,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     return texture;
   }
   const groundMaps = {
-    color: surfaceTexture('ground-color.jpg', true), normal: surfaceTexture('ground-normal.jpg'), roughness: surfaceTexture('ground-roughness.jpg'),
+    color: surfaceTexture('ground-color.jpg', true), surface: surfaceTexture('ground-surface.webp'),
   };
   const sandMaps = {
-    color: surfaceTexture('sand-color.jpg', true), normal: surfaceTexture('sand-normal.jpg'), roughness: surfaceTexture('sand-roughness.jpg'),
+    color: surfaceTexture('sand-color.jpg', true), surface: surfaceTexture('sand-surface.webp'),
   };
+  const fieldMaps={color:surfaceTexture('field-color.jpg',true),surface:surfaceTexture('field-surface.webp')};
   const rockMaps = {
     color: surfaceTexture('rock-color.jpg', true), surface: surfaceTexture('rock-surface.png'),
   };
@@ -185,7 +186,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const ix=Math.min(subdivisions-1,Math.floor(gx)),iz=Math.min(subdivisions-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(subdivisions+1)+ix,b=a+subdivisions+1,d=a+1,c=b+1;
     return u+v<=1?tp.getY(a)*(1-u-v)+tp.getY(d)*u+tp.getY(b)*v:tp.getY(c)*(u+v-1)+tp.getY(b)*(1-u)+tp.getY(d)*(1-v);
   };
-  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,mobile);
+  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile);
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
@@ -373,6 +374,15 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     };
     material.customProgramCacheKey=()=>windKey+'-ground-plane-v2';
   }
+  function dryFieldColor(material:THREE.MeshStandardMaterial,brightness:number){
+    const compile=material.onBeforeCompile,key=material.customProgramCacheKey();
+    material.onBeforeCompile=(shader,renderer)=>{
+      compile(shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        float dryGrassValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=mix(diffuseColor.rgb,dryGrassValue*vec3(1.12,1.01,.76)*${brightness.toFixed(2)},.7);`);
+    };
+    material.customProgramCacheKey=()=>`${key}-dry-field-color-${brightness}`;
+  }
   function groundSlopes(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[]){
     // Per-instance spheres below include shader deformation; the renderer's
     // undeformed aggregate sphere must not cull this compacted batch again.
@@ -530,16 +540,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   // Shuffle together, so the low-detail prefix thins every patch rather than
   // removing one end of the coast. No runtime quality switch regenerates it.
   for(let i=fieldGrasses.length-1;i>0;i--){const j=Math.floor(fieldRandom()*(i+1));[fieldGrasses[i],fieldGrasses[j]]=[fieldGrasses[j],fieldGrasses[i]];[fieldColors[i],fieldColors[j]]=[fieldColors[j],fieldColors[i]];}
-  const fieldRange=mobile?150:260,fieldMaterial=wind(0xffffff,.095);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);
+  const fieldRange=mobile?150:260,fieldMaterial=wind(0xffffff,.095);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);dryFieldColor(fieldMaterial,1);
   const compileField=fieldMaterial.onBeforeCompile,fieldKey=fieldMaterial.customProgramCacheKey();
   fieldMaterial.onBeforeCompile=(shader,renderer)=>{
     compileField(shader,renderer);
     shader.vertexShader='varying float vFieldDistance;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
       vec3 fieldAnchor=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;
       vFieldDistance=length(fieldAnchor.xz-cameraPosition.xz);`);
-    shader.fragmentShader='varying float vFieldDistance;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
-      float dryGrassValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-      diffuseColor.rgb=mix(diffuseColor.rgb,dryGrassValue*vec3(1.12,1.01,.76),.7);`).replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
+    shader.fragmentShader='varying float vFieldDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
       diffuseColor.a*=1.0-smoothstep(${(fieldRange-35).toFixed(1)},${fieldRange.toFixed(1)},vFieldDistance);
       if(diffuseColor.a<.0001)discard;`);
   };
@@ -556,13 +564,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     textures.push(map);map.anisotropy=mobile?4:8;
     const material=wind(0xffffff,.16);material.name='Photographed coastal grass cutout';material.map=map;material.alphaTest=.43;material.alphaToCoverage=true;
     groundFollowing(material);
+    const fieldNearMaterial=wind(0xffffff,.16);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);
     const near=new Uint8Array(grasses.length),farRecord=visibleBatches.find(record=>record.mesh===grassMesh)!;
     sources.forEach((source,variant)=>{
       const indices=Array.from({length:grasses.length},(_,i)=>i).filter(i=>i%3===variant),matrices=indices.map(i=>grasses[i]),colors=indices.map(i=>grassesColors[i]);
       const mesh=batch(source.geometry,material,matrices,colors,{near,detail:'near',indices});mesh.name='Photographed low coastal grass '+variant;
       groundSlopes(mesh,matrices);
       const fieldIndices=Array.from({length:fieldGrasses.length},(_,i)=>i).filter(i=>i%3===variant),fieldMatrices=fieldIndices.map(i=>fieldGrasses[i]),fieldTints=fieldIndices.map(i=>fieldColors[i]);
-      const field=batch(source.geometry.clone(),material,fieldMatrices,fieldTints,{near:fieldNear,detail:'near',indices:fieldIndices,source:fieldRecord,range:mobile?24:35});field.name='Photographed dry inland grass '+variant;groundSlopes(field,fieldMatrices);partitionField(field);
+      const field=batch(source.geometry.clone(),fieldNearMaterial,fieldMatrices,fieldTints,{near:fieldNear,detail:'near',indices:fieldIndices,source:fieldRecord,range:mobile?24:35});field.name='Photographed dry inland grass '+variant;groundSlopes(field,fieldMatrices);partitionField(field);
     });
     farRecord.lod={near,detail:'far'};foliageDetails.push({key:'grassDetail',near,source:farRecord,anchors:grasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
     foliageDetails.push({key:'fieldGrassDetail',near:fieldNear,source:fieldRecord,anchors:fieldGrasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});

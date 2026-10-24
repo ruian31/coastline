@@ -293,3 +293,17 @@
 - scripts/prepare-dry-field-surfaces.mjs核对官方Withered Grass三输入MD5/bytes，旧ground/sand四输入SHA，借Pillow合并normal RGB/roughness A。新四文件（3张1024²无损WebP+JPEG88颜色）8,157,525B，输出全部SHA再次核对，三surface解码通道误差0。作者Charlotte Baglioni、CC0、2m，来源与处理存dry-field-source.json，已看Diffuse实图。
 - 原型PNG9.28MB；有损WebP字段法线P95约7.3–7.6°，放弃。无损WebP保留所有解码数据；首次下载相对旧未合并图会增加，不能把纹理槽减少说成文件下载减少。原始图留工作缓存和官方URL/哈希，旧地面/砂地JPEG保留作重建。
 - 本步没有任何运行引用/地面shader改动，5190仍M24。素材验证完成后按commit技能提交；下一步实际内陆干草分区与地面/砂地合并采样，保持总纹理数/物理地形/路肩连续，实际浏览器与GPU解码另验，尚不声称风景或手机达标。
+
+## 2026-10-24 · M25实际干草地分区开发中
+
+- 素材步骤已提交153b1e5、UTF8核验通过、临时消息删除，无push；5190仍M24 DNiaziFM，Goal active。
+- Scenery的ground/sand各2张旧normal/roughness改为1张surface.webp，新增field-color.jpg与field-surface.webp；GroundMaterial同一8槽读取、RGB法线/A粗糙度，颜色/法线/粗糙度按同一fieldWeight混合。保持旧地形、实际路肩和共享地面材质，内陆椭圆、海拔、坡度与已有宏观噪声作连续分区，field约2.5m尺度并扭曲UV；标准岩块/背壳仍用旧rock-surface.png。
+- 初版CLfli9LK的field-verge完整通过但过亮、大片均匀，保留dry-field-first。改为宏观草斑并暖暗枯草色，Bgju1KuV六机位0错误，已看field/路边/岩后；较旧碎石地面更有干燥分区，但植被覆盖、棕榈冠和山体轮廓仍弱，不称自然风景达标。
+- BXrxtmQy给field近草独立干草色材质，仍借用原摄影图，不增加位图；与远草复用dryFieldColor局部helper，保留wind/ground调用链及各自缓存key。原照片图唯一所有权、几何属性/原矩阵/共用近景限额保持。field近草只需新程序/材质，不再与路边共享同一材质对象，但三变体共用一个field材质及同一图。
+- 新materials专项读取实际WebGLRenderer已准备程序的八个sampler，核对图片1024/颜色空间/共用六路肩、只请求新四资源且不再请求旧四JPEG。当前与根部/近草/cap/车漆及近岸一起三浏览器18项在跑。shore_review做本次一次只读审查，无GPU/不递归。5190未发布，GPU耗时/动态湿润/最终横屏行驶尚未验证。
+- 最终专项17通过/1平台跳过。一次只读审查未见通道/所有权/回调链缺陷，指出CPU打包不能证明浏览器上传；新增check-packed-ground-decode从实际sampler取得三张1024²图，Chrome/WebKit GPU逐像素normal RGB/roughness A均与同浏览器原JPEG相同，六组最大字节误差0。原Pillow验证仍独立保留，不用它替代GPU结果。
+- 同一四机位各90次硬件GPU查询新旧各两轮完成，全部原始结果保留ground-gpu-m25-{before,after}-r{1,2}。field候选P50 1.97–2.11ms、旧2.19–2.58；隧道候选2.89–2.98、旧2.74–2.88，候选第二轮长尾更高；波动明显，不宣称整体GPU提速/真机帧率不变。持续巡航4倍CPU8秒2944/2597 vs M24 2877/2538（Task/Script约+2.3%/+2.3%），终点108.92m仍巡航，heap30.77MiB仅GC状态。
+- 首次formal命令漏test参数导致pass-m25-dry-field十六机位全失败，原报告与evidence-dry-field-plain-entry清单保留；修正命令新runId pass-m25-dry-field-final重拍十六机位0错误，桌面峰139/616031/121/51、手机94/246426/118/44。实际原野/路边/隧道/手机离路环顾/岸面图已看；棕榈细线冠与山体直切仍明显。
+- 横屏双指49.52秒离路88.08m、四角环顾并返回，0错误，近草总峰47，整程116calls/320139tri/120geo/50tex，仍超300k/40约6.7%/25%。海水实际深度水线四测线1.23–2.62m、两个周期返回，8湿/4干点、正常运动18.02秒、0错误。
+- 正常构建首次发现新增测试类型交叉/unknown取值错误，只修测试类型断言，再次npm run build通过，dist与候选同BXrxtmQy。5190普通无query开始前进8.45m，共用地面/六路肩、field ready/图共享与独立坡度、缓存1/43正常，钩子和诊断undefined、0错误。文档与证据更新，准备按commit技能提交，无push，整体Goal active；随后M26先处理棕榈分层冠形/折弯叶片，未称自然风景达标。
+- 证据清单16正式+18附属=34项确认。首次清单误引不存在的shore result.json，检查拒绝后改引用实际samples.json并补原动画录像，原证据未改。失败/通过检查输出不混淆；最终diff检查通过。

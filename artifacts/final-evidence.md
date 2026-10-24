@@ -1,3 +1,28 @@
+# M25 · 连续干草地、海砂与岩岸
+
+2026-10-24，生产包 **index-BXrxtmQy.js**，807.13kB/gzip223.33kB，已更新5190。内陆真实枯草与褐土按海拔、坡面及宏观噪声形成连续斑块，约2.5m摄影尺度；海砂与三向岩面保留。地形、六路肩、洞顶共用材质，实际物理表面不变。原野近草改暖干色，仍借用路边图集并合用48/96总名额。**整体自然风景仍不达标，Goal active**：棕榈细线冠、简单树干和山体直切轮廓仍需改进。
+
+新素材来自[Poly Haven Withered Grass](https://polyhaven.com/a/withered_grass)，Charlotte Baglioni/CC0；输入官方MD5、字节与全部输出SHA、处理方式见dry-field-source.json。地面/砂地normal RGB+roughness A各合一张无损WebP，腾出的两槽供枯草color/surface，实际地表仍八张1k纹理。首次下载净增加 **7,156,159字节**；不称下载优化。Chrome与WebKit从实际游戏sampler取得纹理，用texelFetch/readRenderTargetPixels逐像素对照同浏览器原JPEG，三张图的RGB法线/A粗糙度六组最大误差均0，区别于仅CPU编码验证。
+
+三浏览器受影响范围 **17项通过、1项按平台跳过**，覆盖八槽实际uniform/请求/颜色空间/mip、六路肩共享、近草共用cap、实际根部射线、首帧车漆和海水进退。最终普通构建还修复新增测试的TypeScript观察对象类型，运行代码未变。一次独立只读审查未发现通道/所有权/风动贴地调用链缺陷，指出CPU编码不能代替浏览器上传验证，本轮补充GPU读回，没有递归审查。
+
+正式 **artifacts/evidence-dry-field.json**（pass-m25-dry-field-final）16机位0错误；桌面各项峰139calls/616031tri/121geo/51tex，手机94/246426/118/44，与M24同机位相同。首次采集因URL漏test参数无法切状态，pass-m25-dry-field全部失败报告保留；使用新runId/路径重拍，不覆盖旧证据。已实际查看原野/路边/隧道、离路内陆环顾及近岸图；地面分区更合理，仍不能以非空像素或专项通过替代美术验收。
+
+横屏真实双指离路、四角环顾、返回公路 **49.52秒/88.08米/0错误**；近草最高47≤48，峰116calls/320139tri/120geo/50tex，仍超300k/40约6.7%/25%。海水实际深度水线四测线两个周期往返1.23–2.62m，8个地面探针湿润变化、4个高处干地不变，正常运行18.02秒。
+
+硬件GPU四状态各90次、新旧两轮完整保留，P50/P95全表见文档09。原野中位1.97–2.11ms（M24 2.19–2.58），隧道2.89–2.98（M24 2.74–2.88），第二轮候选长尾变大，整体波动明显，不宣称GPU提速或真机帧率不变。4倍CPU持续巡航8秒Task2944/Script2597ms，M24 2877/2538，约+2.3%/+2.3%；终点仍在巡航、距离108.92m，非逐帧相同轨迹。真实一加12/iPhone开销仍待复核。
+
+- [正常原野追随](/home/ryan/workspace/coastline/artifacts/pass-m25-dry-field-final/desktop-field-verge.png)
+- [连续路肩与地面](/home/ryan/workspace/coastline/artifacts/pass-m25-dry-field-final/desktop-grass-verge.png)
+- [手机离路环顾](/home/ryan/workspace/coastline/artifacts/offroad-dry-field-phone/android-touch-orbit-2.png)
+- [双指行驶录像](/home/ryan/workspace/coastline/artifacts/offroad-dry-field-phone/android-touch.webm)
+- [实际GPU数据比较](/home/ryan/workspace/coastline/artifacts/packed-ground-dry-field-chrome/result.json)
+- [近岸运动与湿润](/home/ryan/workspace/coastline/artifacts/shore-wash-dry-field-phone/samples.json)
+
+普通dist与候选同BXrxtmQy；5190无query入口点击开始前进8.45m，六路肩/field ready/共用贴图/独立坡度/一次缓存正常，钩子和诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。继续M26棕榈形体，整体目标未完成。
+
+---
+
 # M24 · 可驶入原野的干草斑块
 
 2026-10-24，生产包 **index-DNiaziFM.js**，已更新5190。内陆不规则斑块复用原远草和摄影图，手机4991个作者位置、低档55%前缀；与原路边近草共用48手机/96桌面总名额。独立随机源和显式角度保留旧树/草/岩/蕨叶摆放。实际terrain+路肩坡度与根部贴合，远草150/260m裁剪、最后35m渐隐，选中株2m优先差稳定名额。**整体自然景观仍不达标，Goal active**；原野仍由同一种海岸碎石表面主导，下一步干草地底层与分区。

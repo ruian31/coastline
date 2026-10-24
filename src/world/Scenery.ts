@@ -9,6 +9,7 @@ import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeome
 import {createCoastalWater} from './CoastalWater';
 import {createGrassCanopy} from './GrassCanopy';
 import {createVegetationInteraction} from './VegetationInteraction';
+import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
@@ -243,7 +244,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   sky.renderOrder = -10;
 
   // Geometry assembly helpers keep repeated coastal assets in a handful of draw calls.
-  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number;impostorRange?:number};
+  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number;impostorRange?:number;nearRange?:number};
   type InstanceBatch={mesh:THREE.InstancedMesh;matrices:THREE.Matrix4[];colors?:THREE.Color[];bounds:THREE.Sphere[];slots:Int32Array;limit:number;lod?:InstanceLod;groundSlopes?:{source:Float32Array;attribute:THREE.InstancedBufferAttribute};spatial?:{cells:{bounds:THREE.Sphere;indices:number[]}[];candidates:number[]}};
   const visibleBatches:InstanceBatch[]=[];
   type FoliageDetail={key:string;near:Uint8Array;anchors:THREE.Vector3[];source:typeof visibleBatches[number];enter:number;exit:number;cap:number;visible:number;budget?:string;distant?:Uint8Array;impostorRange?:number};
@@ -292,11 +293,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     root.add(mesh);
     return mesh;
   }
-  function treeBatch(geometry:THREE.BufferGeometry,material:THREE.Material,matrices:THREE.Matrix4[],colors?:THREE.Color[],farGeometry?:THREE.BufferGeometry):THREE.Group {
+  function treeBatch(geometry:THREE.BufferGeometry,material:THREE.Material,matrices:THREE.Matrix4[],colors?:THREE.Color[],farGeometry?:THREE.BufferGeometry,nearRange?:number):THREE.Group {
     // Per-instance visibility removes the need for many spatial draw batches.
     const group=new THREE.Group();root.add(group);const near=new Uint8Array(matrices.length).fill(1),anchors=matrices.map(m=>new THREE.Vector3(m.elements[12],m.elements[13],m.elements[14]));
-    const mesh=batch(geometry,material,matrices,colors,farGeometry?{near,anchors,detail:'near'}:undefined);mesh.name='Visible detailed trees';group.add(mesh);
-    if(farGeometry){const far=batch(farGeometry,material,matrices,colors,{near,anchors,detail:'far'});far.name='Visible distant trees';group.add(far);}
+    const mesh=batch(geometry,material,matrices,colors,farGeometry?{near,anchors,nearRange,detail:'near'}:undefined);mesh.name='Visible detailed trees';group.add(mesh);
+    if(farGeometry){const far=batch(farGeometry,material,matrices,colors,{near,anchors,nearRange,detail:'far'});far.name='Visible distant trees';group.add(far);}
     return group;
   }
   function matrix(x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = random() * Math.PI * 2): THREE.Matrix4 {
@@ -822,7 +823,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     pineColors.push(new THREE.Color().setHSL(.23,.10,.72+random()*.12));
   }
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
-  treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
+  const pineTrunkGroup=treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines);pineTrunkGroup.name='Stone pine trunks';
   const pineMaterial=wind(0xffffff,.01);pineMaterial.vertexColors=true;
   pineMaterial.userData.rigidTree=true;
   const pineAtlas=createPineNeedleAtlas();textures.push(pineAtlas);pineMaterial.map=pineAtlas;pineMaterial.alphaTest=.38;pineMaterial.alphaToCoverage=true;
@@ -837,7 +838,29 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       #endif`);
   };
   pineMaterial.customProgramCacheKey=()=>pineWindKey()+'-pine-volume-normal-v1';
-  treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors,createPineCrown(true)).name='Sheltered stone pine boughs';
+  const pineCrownGroup=treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors,createPineCrown(true));pineCrownGroup.name='Sheltered stone pine boughs';
+  const pineObstacles=pines.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.hypot(m.elements[0],m.elements[2])+.78}));
+  root.userData.coastalTrees={ready:false};
+  const treeReady=loadCoastalTree(mobile,time,loadingManager).then(asset=>{
+    if(disposed){asset.near.dispose();asset.far.dispose();asset.material.dispose();asset.textures.forEach(t=>t.dispose());return;}
+    // The independent tree seed/roots are unchanged. Use a complete scanned
+    // tree at each existing inland anchor instead of a flat scaled crown.
+    const vertices=asset.near.getAttribute('position'),feet:THREE.Vector3[]=[];for(let i=0;i<vertices.count;i++)if(vertices.getY(i)<.08)feet.push(new THREE.Vector3().fromBufferAttribute(vertices,i));
+    const sinks:number[]=[],matrices=pines.map((m,i)=>{
+      const size=Math.hypot(m.elements[0],m.elements[2])/.18,rotation=new THREE.Quaternion(),position=new THREE.Vector3(),scale=new THREE.Vector3();pineCrowns[i].decompose(position,rotation,scale);
+      pineObstacles[i].radius=.6*1.3*size+.78;
+      const result=new THREE.Matrix4().compose(new THREE.Vector3(m.elements[12],m.elements[13]-.03*size,m.elements[14]),rotation,new THREE.Vector3(1,1,1).multiplyScalar(size*1.3));
+      // Bury the scanned ground skirt against the actual triangles across its
+      // footprint, including the downhill edge. Keep the upper tree upright.
+      let sink=0;for(const foot of feet){const p=foot.clone().applyMatrix4(result);sink=Math.max(sink,p.y-groundHeight(p.x,p.z)+.015);}result.elements[13]-=sink;sinks.push(sink+.03*size);return result;
+    });
+    for(let i=visibleBatches.length-1;i>=0;i--){const record=visibleBatches[i];if(record.mesh.parent===pineTrunkGroup||record.mesh.parent===pineCrownGroup){record.mesh.dispose();visibleBatches.splice(i,1);}}
+    for(const group of[pineTrunkGroup,pineCrownGroup]){group.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();resources.delete(o.geometry);for(const m of(Array.isArray(o.material)?o.material:[o.material])){m.dispose();resources.delete(m);}}});group.removeFromParent();}
+    pineAtlas.dispose();textures.splice(textures.indexOf(pineAtlas),1);windMaterials.splice(windMaterials.indexOf(pineMaterial),1);
+    textures.push(...asset.textures);const nearRange=mobile?18:32;
+    treeBatch(asset.near,asset.material,matrices,undefined,asset.far,nearRange).name='Wind-shaped coastal trees';
+    root.userData.coastalTrees={ready:true,placements:matrices.length,nearRange,triangles:[asset.near.index!.count/3,asset.far.index!.count/3],source:'island_tree_01',rootSinks:sinks};
+  }).catch(error=>{root.userData.coastalTrees={ready:false,fallback:true,error:String(error)};});
 
   // Baked contact occlusion grounds static props even when mobile sun shadows are disabled.
   // One shared texture and one draw; projected onto the rendered heightfield rather than a flat decal.
@@ -861,11 +884,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   root.userData.sceneryBudget = { tier:mobile?'mobile':'desktop', instancedBatches, terrainTriangles:subdivisions*subdivisions*2 };
   const obstacles=[
     ...palms.map(m=>({x:m.elements[12],z:m.elements[14],radius:.25*Math.hypot(m.elements[0],m.elements[2])+.78})),
-    ...pines.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.hypot(m.elements[0],m.elements[2])+.78})),
+    ...pineObstacles,
     ...rocks.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.max(Math.hypot(m.elements[0],m.elements[2]),Math.hypot(m.elements[8],m.elements[10]))*.85+.78})),
   ];
   return {
-    ready:Promise.all([grassReady,scrubReady,barkReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
+    ready:Promise.all([grassReady,scrubReady,barkReady,treeReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
     prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
     groundHeight:cameraGroundHeight,
@@ -885,9 +908,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       for(const record of visibleBatches){
         // Pine needle gaps are finer than the world cache's texels. Bake the
         // full authored crown once; only the visible color pass uses far LOD.
-        const pineCrown=record.mesh.parent?.name==='Sheltered stone pine boughs';
+        const pineCrown=['Sheltered stone pine boughs','Wind-shaped coastal trees'].includes(record.mesh.parent?.name??'');
         if(record.lod?.detail===(pineCrown?'far':'near'))continue;
-        const name=record.mesh.parent?.name??'',isTree=/palm|pine/.test(name);
+        const name=record.mesh.parent?.name??'',isTree=/palm|pine|coastal trees/.test(name);
         if(!isTree&&record.mesh.name!=='Coastal limestone boulders')continue;
         const mesh=new THREE.InstancedMesh(record.mesh.geometry,record.mesh.material,record.matrices.length);mesh.name=name||record.mesh.name;
         record.matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.matrixAutoUpdate=false;mesh.matrix.copy(record.mesh.matrixWorld);mesh.castShadow=true;group.add(mesh);
@@ -927,7 +950,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         for(let slot=0;slot<(candidates?.length??limit);slot++){
           const i=candidates?.[slot]??slot;
           if(lod?.range&&((matrices[i].elements[12]-viewPosition.x)**2+(matrices[i].elements[14]-viewPosition.z)**2)>lod.range**2)continue;
-          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=mobile?130:200;if(distance<(range-12)**2)lod.near[index]=1;else if(distance>(range+12)**2)lod.near[index]=0;}
+          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=lod.nearRange??(mobile?130:200),band=lod.nearRange?range*.2:12;if(distance<(range-band)**2)lod.near[index]=1;else if(distance>(range+band)**2)lod.near[index]=0;}
             // Spatial colonies update their far/proxy state only among actual
             // draw candidates; selecting a near bush need not scan the horizon.
             if(lod.impostorRange&&lod.distant){const e=matrices[i].elements,distance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2,range=lod.impostorRange;if(distance>(range+6)**2)lod.distant[index]=1;else if(distance<(range-6)**2)lod.distant[index]=0;}

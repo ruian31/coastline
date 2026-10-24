@@ -1,0 +1,175 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5690,
+      "max": [
+        2.5858705043792725,
+        5.128652572631836,
+        2.335927963256836
+      ],
+      "min": [
+        -2.4528794288635254,
+        -3.296136696917529e-8,
+        -2.650392770767212
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 5690,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 5690,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 16113,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4293,
+      "bufferView": 1,
+      "byteOffset": 32228
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1776,
+      "max": [
+        2.8345751762390137,
+        5.164744853973389,
+        2.3013598918914795
+      ],
+      "min": [
+        -2.5129852294921875,
+        -3.296136696917529e-8,
+        -2.8194546699523926
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1776,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1776,
+      "bufferView": 2,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 182080,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 182080,
+      "byteLength": 40816,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 222896,
+      "byteLength": 56832,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "tree.bin",
+      "byteLength": 279728
+    }
+  ],
+  "materials": [
+    {
+      "name": "Scanned bark and spatial foliage",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.45,
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "roughnessFactor": 0.9,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Coastal tree near",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Coastal tree far",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "coastal_tree_near",
+      "mesh": 0
+    },
+    {
+      "name": "coastal_tree_far",
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Wind-shaped coastal tree",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ]
+}

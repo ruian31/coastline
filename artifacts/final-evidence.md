@@ -1,3 +1,27 @@
+# M38 · 扫描海岸树、分层枝叶和近镜头渐隐
+
+2026-10-25，**index-sZ71VLvZ.js**，841.40kB/gzip235.02kB，已更新5190。保留原内陆树的独立随机序列、根部XZ、尺度关系与旋转，替换伞状冠与直筒树干为CC0 Island Tree 01扫描树。近5371/远1431面，近188/远67个空间簇分别用自己的三个方向实模图像，三张正交片保留体积和视差；不是整树单片。树皮使用摄影颜色、扫描法线与粗糙度，叶簇使用体积法线和轻微风动，刚体树不接入车辆压草。实体树干仍可能短暂挡住第三人称镜头；极近叶簇在1.2→3.8m范围按像素渐隐，减少驶入树冠时的大张贴片遮挡。
+
+原159.94万面/60.7MB模型仅离线使用。最初16代表簇重复明显、1k逐簇图集分辨率不足，两者都未发布。最终逐簇2k无损WebP、独立512×256紧凑normal/roughness共3,299,118B，GPU RGBA含mip约22MiB，比旧松针图增加约20.67MiB；每级共用同一材质/两图。保护简化中的细连接，近/远只增加4/24面，两级木质连通部分均实测35；44,168叶片部分的空间分布在两级均保留，源细枝也逐簇烘焙。模型、纹理和烘焙输入SHA、许可及作者写入[source.json](/home/ryan/workspace/coastline/public/assets/models/coastal_tree/source.json)，离线核验通过。
+
+- [12个正式桌面/横屏机位与辅助证据](/home/ryan/workspace/coastline/artifacts/evidence-coastal-trees.json)
+- [模型连通性、来源哈希与预算](/home/ryan/workspace/coastline/artifacts/coastal-tree-m38-validation.json)
+- [三浏览器相关回归原记录](/home/ryan/workspace/coastline/artifacts/tests-m38-connected-final.json)
+- [全部根部射线、材质和近远切换复核](/home/ryan/workspace/coastline/artifacts/tests-m38-root-final.json)
+- [近镜头渐隐后最终三浏览器材质/根部/LOD](/home/ryan/workspace/coastline/artifacts/tests-m38-camera-final.json)
+- [最终真实触控驾驶与连续环顾](/home/ryan/workspace/coastline/artifacts/coastal-tree-motion-m38-camera/drive-and-orbit.webm)
+- [普通无query入口验证](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m38-release/result.json)
+
+相关18项首次有3项测试变量错误，修正后17过/1桌面根部检查超时；不是游戏报错。保留所有根点的实际三角射线检查，把每点断言改为汇总命中数和最大净空，3浏览器30.7秒全过。最终渐隐后同3项32.3秒全过。两个3项是同组复核，不合计为23个独立用例。原世界其他作者/布局继承、缓存阴影、草压共享/实际驾驶/切档/暂停、树加载失败回退都已通过；不把较早版本记录换标签。树脚扫描裙按实际坡面整体埋入，独立射线验证所有根部，无只比较高度公式的自证。
+
+12个正式图0错误，桌面各项峰147calls/857704tri/129geo/56tex，横屏手机111/376919/128/53；仍超原750k/300k面和手机40纹理建议预算。匹配手机内陆视图336525→376919面、113→111calls、50→51纹理；不能用不同捕获集合的峰值推断净变化。最终真实触控前进、转向、制动与拖动环顾，模拟时间7.97秒、位移约10.87m，风动继续、树无草压绑定、世界缓存仍1次，0错误。已看正式图和实际运动前/驶过/环顾帧；近镜头渐隐明显减少叶片遮挡，实体树枝仍可遮挡局部画面。
+
+8秒默认巡航、4倍CPU节流：M37→M38渐隐前同CPU路径Task3667→3650ms、Script3302→3287ms，距离108.92/108.50m，单轮相近路线，不是真机FPS。最终GPU固定路草/内陆各90样本、无disjoint：M37 P50=2.272/3.265ms，最终=2.535/3.546；P95=3.636/14.958→14.635/12.742，主机尾延迟波动大。渐隐前两次内陆对照P50约3.032→3.115、2.634→3.067，P95约4.718→10.189、4.362→4.986，原数据全部保留，不挑低样本宣布提速。详情见[最终对照](/home/ryan/workspace/coastline/artifacts/ground-gpu-m38-camera-control/result.json)、[最终候选](/home/ryan/workspace/coastline/artifacts/ground-gpu-m38-camera-final/result.json)和[CPU](/home/ryan/workspace/coastline/artifacts/mobile-performance/m38-final.json)。新版本一加12/iPhone实际帧率仍待复核，已询问一加12用户。
+
+普通入口同sZ71前进8.45m，新树加载成功；旧草共享Canvas/mip、48容量配对主体、256²压草图上传及车位、42个世界投影体全部一次烘焙、测试全局undefined，0错误。树木形状和材质改善，但宽阔空坡、近远草形态与地表组合仍未达到用户要求。世界层次保持此前1.5/3判断，空地构图自动失败保留，其余九类本轮未重评；**Goal active**。下一阶段优先整体坡面/植被层次，以及实际手机反馈下的远树和纹理开销。
+
+---
+
 # M37 · 受压草叶的坡面接触
 
 2026-10-25，**index-ldrvLuiu.js**，836.06kB/gzip233.42kB。草毯叶端随横移后的真实地形三角面抬起，摄影草/蕨/灌木沿已有地面坡度修正形变及法线；局部位移保留微小形变精度，未受压一般植物跳过额外变形计算。没有新增纹理、实例、作者或draw，CPU轨迹记录、保留时长和输入逻辑保持。

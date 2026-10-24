@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><link rel="icon" href="data:,"><script type="module">
+import * as THREE from 'three';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true,premultipliedAlpha:false});renderer.setSize(240,240);renderer.setPixelRatio(1);renderer.setClearColor(0,0);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;document.body.append(renderer.domElement);
+const loader=new THREE.TextureLoader(),maps=await Promise.all(['leaf-color.png','textures/island_tree_01_leaves_arm_1k.jpg','textures/island_tree_01_branches_diff_1k.jpg','textures/island_tree_01_branches_arm_1k.jpg'].map(p=>loader.loadAsync('/work/tree-reference-source/'+p)));
+maps.forEach((t,i)=>{t.flipY=false;t.colorSpace=i%2?THREE.NoColorSpace:THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;});for(const t of maps.slice(2)){t.repeat.set(15,3.4);t.offset.set(0,-2.4);}
+const materials=[0,1].map(i=>new THREE.MeshBasicMaterial({map:maps[i*2],aoMap:maps[i*2+1],aoMapIntensity:.65,side:THREE.DoubleSide,alphaTest:i===0?.45:0,alphaToCoverage:i===0,toneMapped:false}));
+const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-1.04,1.04,1.04,-1.04,.01,10),gltf=await new GLTFLoader().loadAsync('/work/tree-reference-source/tree-clusters.gltf'),models=gltf.scene.children;scene.add(gltf.scene);
+gltf.scene.traverse(o=>{if(o.isMesh)o.material=materials[o.material.name==='leaves'?0:1];});
+window.treeBake={async render(cluster,view){models.forEach(m=>m.visible=m.name==='cluster_'+cluster);const axis=view,sign=1;camera.position.set(0,0,0);camera.position.setComponent(axis,sign*4);camera.up.set(0,1,0);if(axis===1)camera.up.set(0,0,-1);camera.lookAt(0,0,0);camera.updateProjectionMatrix();renderer.render(scene,camera);await new Promise(requestAnimationFrame);renderer.render(scene,camera);return renderer.domElement.toDataURL();}};window.bakeReady=true;
+</script>

@@ -283,7 +283,7 @@ test('树木根部落在实际绘制的地形网格上',async({page})=>{
   const scene=globals.__coastScenes.find(s=>s.isScene&&s.getObjectByName('Coastal landscape'))!;
   const terrain=scene.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh;
   const feet:number[][]=[];
-  for(const name of ['Curved palm trunks','Stone pine trunks'])scene.getObjectByName(name)!.traverse(object=>{
+  for(const name of ['Curved palm trunks'])scene.getObjectByName(name)!.traverse(object=>{
    const mesh=object as THREE.InstancedMesh;if(!mesh.isInstancedMesh)return;
    const placements=mesh.userData.authoredInstances as THREE.Matrix4[];const matrix=mesh.matrix.clone();
    for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);if(!placements.some(m=>m.elements.every((v,k)=>Math.abs(v-matrix.elements[k])<.001)))throw Error('visible instance lost its authored transform');}
@@ -351,15 +351,23 @@ test('离岸岩岛具有闭合厚度和海下基座，三种山脊保持绘制�
   for(let variant=0;variant<3;variant++){const mesh=scene.getObjectByName(`Weathered offshore rock ridge ${variant}`) as THREE.InstancedMesh;(mesh.userData.authoredInstances as THREE.Matrix4[]).forEach((matrix,index)=>{islands[index*3+variant]=matrix.toArray();});}
   for(const name of names){
    if(name==='Hazy offshore islets'){batches[name]=islands;continue;}
-   const object=scene.getObjectByName(name)!,mesh=(object as THREE.InstancedMesh).isInstancedMesh?object:object.children.find(child=>child.name==='Visible detailed trees')!;
+   const object=scene.getObjectByName(['Stone pine trunks','Sheltered stone pine boughs'].includes(name)?'Wind-shaped coastal trees':name)!,mesh=(object as THREE.InstancedMesh).isInstancedMesh?object:object.children.find(child=>child.name==='Visible detailed trees')!;
    batches[name]=(mesh.userData.authoredInstances as THREE.Matrix4[]).map(m=>m.toArray());
   }
-  return{batches};
+  return{batches,treeSinks:scene.getObjectByName('Coastal landscape')!.userData.coastalTrees.rootSinks};
  },Object.keys(baseline.batches));
  // Shadow framing follows current crown geometry; compare placement directly.
  // Cache stability and actual receiving surfaces have dedicated sun checks.
  for(const name of Object.keys(baseline.batches)){
   const expected=baseline.batches[name];expect(placement.batches[name].length,name+' count').toBe(expected.count);
-  for(const sample of expected.samples)for(let i=0;i<16;i++)expect(placement.batches[name][sample.index][i],name+' original transform '+sample.index).toBeCloseTo(sample.matrix[i],4);
+  for(const sample of expected.samples){
+   const actual=placement.batches[name][sample.index];
+   if(name==='Stone pine trunks'||name==='Sheltered stone pine boughs'){
+    const size=name==='Stone pine trunks'?Math.hypot(sample.matrix[0],sample.matrix[2])/.18:Math.hypot(sample.matrix[0],sample.matrix[2])/3.8;
+    expect(actual[12]).toBeCloseTo(sample.matrix[12],4);expect(actual[14]).toBeCloseTo(sample.matrix[14],4);expect(Math.hypot(actual[0],actual[2])).toBeCloseTo(size*1.3,4);
+    expect(actual[13]+placement.treeSinks[sample.index]).toBeCloseTo(sample.matrix[13]-(name==='Stone pine trunks'?0:4.7*size),4);
+    if(name==='Sheltered stone pine boughs'){const a=new THREE.Matrix4().fromArray(actual),b=new THREE.Matrix4().fromArray(sample.matrix),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();a.decompose(new THREE.Vector3(),qa,new THREE.Vector3());b.decompose(new THREE.Vector3(),qb,new THREE.Vector3());expect(qa.angleTo(qb)).toBeLessThan(.001);}
+   }else for(let i=0;i<16;i++)expect(actual[i],name+' original transform '+sample.index).toBeCloseTo(sample.matrix[i],4);
+  }
  }
 });

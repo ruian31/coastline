@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><link rel="icon" href="data:,"><style>html,body{margin:0}</style><script type="module">
+import * as THREE from 'three';import{loadCoastalTree}from'/src/world/CoastalTree.ts';
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(900,800);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b6bdc6');scene.add(new THREE.HemisphereLight('#b9d2ee','#65543d',2));const sun=new THREE.DirectionalLight('#ffe5ba',3);sun.position.set(7,6,4);scene.add(sun);
+const asset=await loadCoastalTree(false,{value:0}),mesh=new THREE.Mesh(asset.near,asset.material);scene.add(mesh);const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#a69d7e',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);
+const camera=new THREE.PerspectiveCamera(35,900/800,.1,100);window.treePreview={render(angle=0,elevation=2.6,lod='near'){mesh.geometry=asset[lod];camera.position.set(Math.sin(angle)*10,elevation,Math.cos(angle)*10);camera.lookAt(0,2.6,0);renderer.render(scene,camera);return renderer.domElement.toDataURL();}};window.treePreview.render();window.previewReady=true;
+</script>

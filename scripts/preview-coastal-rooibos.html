@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><link rel="icon" href="data:,"><title>Dry fine-leaf scrub inspection</title><style>html,body{margin:0;background:#bdb6a7}canvas{display:block}</style><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {preserveRooibosCutoutMips,centerPlantAlphaCoverage} from '/src/world/PlantTexture.ts';
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#bdb6a7');scene.add(new THREE.HemisphereLight('#bbc9dd','#8f7960',.9));const sun=new THREE.DirectionalLight('#ffd8af',2.5);sun.position.set(4,2,3);scene.add(sun);
+const pmrem=new THREE.PMREMGenerator(renderer),room=new RoomEnvironment();scene.environment=pmrem.fromScene(room,.05).texture;scene.environmentIntensity=.62;room.dispose();pmrem.dispose();
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:'#a79f87',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.025;scene.add(floor);
+const camera=new THREE.PerspectiveCamera(37,innerWidth/innerHeight,.01,40),gltf=await new GLTFLoader().loadAsync('/assets/models/coastal_rooibos/scrub.gltf'),sources=[];let material;
+gltf.scene.traverse(o=>{if(o.isMesh){if(!material){material=o.material;material.alphaToCoverage=true;preserveRooibosCutoutMips(material.map);centerPlantAlphaCoverage(material);}o.material=material;o.visible=false;sources.push(o);}});scene.add(gltf.scene);
+window.rooibosPreview={select(variant,lod,view){const name=`Coastal_scrub_${variant}_${lod}`,source=sources.find(o=>o.name===name);if(!source)throw Error('Unknown '+name);sources.forEach(o=>o.visible=o===source);const eye={front:[1.4,.9,1.8],side:[-1.9,.8,.35],above:[.7,2.4,.8]}[view];camera.position.set(...eye);camera.lookAt(0,.42,0);renderer.render(scene,camera);return{name,triangles:source.geometry.index.count/3,vertices:source.geometry.getAttribute('position').count,map:{uuid:material.map.uuid,width:material.map.image.width,height:material.map.image.height,mips:material.map.mipmaps.map(m=>[m.width,m.height]),generateMipmaps:material.map.generateMipmaps,coverage:material.map.userData.alphaCoverage},key:material.customProgramCacheKey(),render:renderer.info.render};}};
+window.rooibosTextureProbe=()=>{
+ const gl=renderer.getContext(),texture=material.map;
+ // Upload a real preceding texture, so Three's pixel-store cache also records
+ // the opposite state. Direct GL mutation alone would invalidate that cache.
+ const previous=new THREE.CanvasTexture(document.createElement('canvas'));previous.premultiplyAlpha=true;previous.flipY=true;renderer.initTexture(previous);
+ const preceding={flipY:gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL),premultiplyAlpha:gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL)};
+ texture.needsUpdate=true;renderer.initTexture(texture);
+ const state={flipY:gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL),premultiplyAlpha:gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL)},handle=renderer.properties.get(texture).__webglTexture,framebuffer=gl.createFramebuffer(),levels=[];
+ gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ for(const level of [0,2,4,8,10]){
+  const canvas=texture.mipmaps[level],cpu=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,gpu=new Uint8Array(cpu.length);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,handle,level);
+  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw Error('Incomplete plant mip framebuffer');
+  gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,gpu);
+  let maxAlphaError=0,maxRgbError=0;for(let i=0;i<cpu.length;i++){const error=Math.abs(cpu[i]-gpu[i]);if(i%4===3)maxAlphaError=Math.max(maxAlphaError,error);else maxRgbError=Math.max(maxRgbError,error);}
+  levels.push({level,size:canvas.width,maxAlphaError,maxRgbError});
+ }
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.deleteFramebuffer(framebuffer);const error=gl.getError();previous.dispose();renderer.resetState();
+ // Independent first-level reference uses direct transfer functions, rather
+ // than the helper's lookup tables. Only retained leaf/twig pixels are compared.
+ const base=texture.mipmaps[0].getContext('2d').getImageData(0,0,1024,1024).data,mip=texture.mipmaps[1].getContext('2d').getImageData(0,0,512,512).data,decode=c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4,encode=c=>255*(c<=.0031308?c*12.92:1.055*c**(1/2.4)-.055);let tested=0,maxLinearError=0;
+ for(let y=0;y<512;y++)for(let x=0;x<331;x++){
+  const index=(y*512+x)*4;if(mip[index+3]<128)continue;const sums=[0,0,0];let alpha=0;
+  for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const i=((y*2+dy)*1024+x*2+dx)*4,a=base[i+3];alpha+=a;for(let c=0;c<3;c++)sums[c]+=decode(base[i+c]/255)*a;}
+  if(!alpha)continue;for(let c=0;c<3;c++)maxLinearError=Math.max(maxLinearError,Math.abs(mip[index+c]-Math.round(encode(sums[c]/alpha))));tested++;
+ }
+ return{preceding,state,levels,error,linearReference:{tested,maxRgbError:maxLinearError},sourceIsCanvas:texture.image instanceof HTMLCanvasElement,allMipsAreCanvas:texture.mipmaps.every(m=>m instanceof HTMLCanvasElement)};
+};
+window.rooibosReady=true;
+</script></html>

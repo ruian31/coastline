@@ -6,13 +6,15 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 
-const root='public/assets/models/coastal_scrub',label=process.env.SCRUB_BAKE_LABEL??String(Date.now());assert.match(label,/^[a-z0-9-]+$/);
+const asset=process.env.SCRUB_ASSET??'coastal_scrub';assert.ok(['coastal_scrub','coastal_rooibos'].includes(asset));
+const root='public/assets/models/'+asset,label=process.env.SCRUB_BAKE_LABEL??String(Date.now());assert.match(label,/^[a-z0-9-]+$/);
 const out='artifacts/scrub-impostor-bake-'+label;await mkdir(out);
-const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),page=await browser.newPage(),errors=[],atlas=new PNG({width:512,height:512}),views=[],inputs=[];
+const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),page=await browser.newPage(),errors=[],atlas=new PNG({width:512,height:512}),views=[],inputs=[],bakerInputs=[];
 for(const path of ['scrub.gltf','scrub.bin','scrub-color.png'])inputs.push({path,sha256:createHash('sha256').update(await readFile(root+'/'+path)).digest('hex')});
+for(const path of ['scripts/bake-coastal-scrub-impostors.mjs','scripts/bake-coastal-scrub.html','src/world/PlantTexture.ts'])bakerInputs.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 try{
- await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:5188')+'/scripts/bake-coastal-scrub.html');await page.waitForFunction(()=>window.bakeReady);
+ await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:5188')+'/scripts/bake-coastal-scrub.html?asset='+asset);await page.waitForFunction(()=>window.bakeReady);
  for(let variant=0;variant<2;variant++)for(let view=0;view<5;view++){
   const result=await page.evaluate(([variant,view])=>window.scrubBake.render(variant,view),[variant,view]),bytes=Buffer.from(result.png.split(',')[1],'base64'),tile=PNG.sync.read(bytes);delete result.png;
   const index=variant*5+view,x=index%4*128,y=Math.floor(index/4)*128;let covered=0;
@@ -31,6 +33,6 @@ try{
   PNG.bitblt(tile,atlas,0,0,128,128,x,y);views.push({variant,view,tile:index,covered,...result});
  }
  assert.deepEqual(errors,[]);const bytes=PNG.sync.write(atlas);await writeFile(root+'/scrub-impostors.png',bytes);
- const result={kind:'Unlit photographed albedo from real model, four sides plus top per plant; RGB-only transparent dilation',inputs,size:[512,512],tileSize:128,views,output:{path:'scrub-impostors.png',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')},errors};
+ const result={kind:'Unlit photographed albedo from real model, four sides plus top per plant; RGB-only transparent dilation',inputs,bakerInputs,size:[512,512],tileSize:128,views,output:{path:'scrub-impostors.png',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')},errors};
  await writeFile(root+'/impostor-source.json',JSON.stringify(result,null,2)+'\n');await writeFile(out+'/result.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify({out,output:result.output,views:views.map(v=>({variant:v.variant,view:v.view,covered:v.covered}))}));
 }finally{await browser.close();}

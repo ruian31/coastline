@@ -1,0 +1,134 @@
+{
+  "kind": "Unlit photographed albedo from real model, four sides plus top per plant; RGB-only transparent dilation",
+  "inputs": [
+    {
+      "path": "scrub.gltf",
+      "sha256": "9e74a572f7abb5b273b4de7558c0fa231bf2b547da54782db939cbb9c9a5d364"
+    },
+    {
+      "path": "scrub.bin",
+      "sha256": "e183702948ac55b534c7a1e4954b96af3f459eaed42f941f7aa24e79cdc7fd0a"
+    },
+    {
+      "path": "scrub-color.png",
+      "sha256": "e6721d7e0b0b852a0795b80eb87ac54505ceecfc7895cff7140b99833e6536e4"
+    }
+  ],
+  "bakerInputs": [
+    {
+      "path": "scripts/bake-coastal-scrub-impostors.mjs",
+      "sha256": "268f9496c215f9e11928fe82c52f2c40861e08ab856c2e2fc8ceca279ccee432"
+    },
+    {
+      "path": "scripts/bake-coastal-scrub.html",
+      "sha256": "3e423308fc43cd4b3832fe96f6a11f80fe60947a02bcca866349472d48d87287"
+    },
+    {
+      "path": "src/world/PlantTexture.ts",
+      "sha256": "b75ed4544defea53bfd517a5dd77ff2aea75b52c2fa520a1300cbff201380e6e"
+    }
+  ],
+  "size": [
+    512,
+    512
+  ],
+  "tileSize": 128,
+  "views": [
+    {
+      "variant": 0,
+      "view": 0,
+      "tile": 0,
+      "covered": 1582,
+      "width": 1.4624163866043092,
+      "height": 0.9941460251808166,
+      "maxY": 0.8941460251808167
+    },
+    {
+      "variant": 0,
+      "view": 1,
+      "tile": 1,
+      "covered": 1561,
+      "width": 1.4624163866043092,
+      "height": 0.9941460251808166,
+      "maxY": 0.8941460251808167
+    },
+    {
+      "variant": 0,
+      "view": 2,
+      "tile": 2,
+      "covered": 1593,
+      "width": 1.4624163866043092,
+      "height": 0.9941460251808166,
+      "maxY": 0.8941460251808167
+    },
+    {
+      "variant": 0,
+      "view": 3,
+      "tile": 3,
+      "covered": 1552,
+      "width": 1.4624163866043092,
+      "height": 0.9941460251808166,
+      "maxY": 0.8941460251808167
+    },
+    {
+      "variant": 0,
+      "view": 4,
+      "tile": 4,
+      "covered": 716,
+      "width": 1.4624163866043092,
+      "height": 0.9941460251808166,
+      "maxY": 0.8941460251808167
+    },
+    {
+      "variant": 1,
+      "view": 0,
+      "tile": 5,
+      "covered": 1708,
+      "width": 1.1648208856582642,
+      "height": 1.0100000262260438,
+      "maxY": 0.9100000262260437
+    },
+    {
+      "variant": 1,
+      "view": 1,
+      "tile": 6,
+      "covered": 1489,
+      "width": 1.1648208856582642,
+      "height": 1.0100000262260438,
+      "maxY": 0.9100000262260437
+    },
+    {
+      "variant": 1,
+      "view": 2,
+      "tile": 7,
+      "covered": 1692,
+      "width": 1.1648208856582642,
+      "height": 1.0100000262260438,
+      "maxY": 0.9100000262260437
+    },
+    {
+      "variant": 1,
+      "view": 3,
+      "tile": 8,
+      "covered": 1496,
+      "width": 1.1648208856582642,
+      "height": 1.0100000262260438,
+      "maxY": 0.9100000262260437
+    },
+    {
+      "variant": 1,
+      "view": 4,
+      "tile": 9,
+      "covered": 943,
+      "width": 1.1648208856582642,
+      "height": 1.0100000262260438,
+      "maxY": 0.9100000262260437
+    }
+  ],
+  "output": {
+    "path": "scrub-impostors.png",
+    "bytes": 133042,
+    "sha256": "0badd1fce04dff841bf246f9c9f1be6621b33a973213102e8e5bd988e60ad3c1"
+  },
+  "errors": []
+}

@@ -270,7 +270,7 @@ TypeScript/生产构建通过。三浏览器根部/原世界摆放fixture/首帧
 - [侧向海岸](/home/ryan/workspace/coastline/artifacts/offshore-final-comparison/after-shore-side.png)
 - [正常行驶录像](/home/ryan/workspace/coastline/artifacts/sun-motion-offshore-phone/drive.webm)
 
-源gltf/bin双SHA-256及许可作者保存在src/world/offshore-heights.json，5,452字节随包导入；scripts/prepare-offshore-rocks.mjs可离线重建。本步是远景形体迭代；下一步处理团块状松树冠和地表层次，不声称已经接近照片效果。历史光照/海水/自由驾驶证据保留如下。
+源模型与二进制双SHA-256及许可作者保存在[offshore-heights.json](/home/ryan/workspace/coastline/src/world/offshore-heights.json)，5,452字节随包导入；scripts/prepare-offshore-rocks.mjs可离线重建。本步是远景形体迭代；下一步处理团块状松树冠和地表层次，不声称已经接近照片效果。历史光照/海水/自由驾驶证据保留如下。
 
 正常dist构建与独立预览主包相同；5190无测试查询入口实际点击开始通过，无测试钩子/诊断暴露，三个岩岛批次、车辆、一次太阳缓存正常，0错误。烟测保存offshore-release-smoke。
 
@@ -349,3 +349,17 @@ GPU计时为RTX4050、844×390/DPR1，每组120次、三机位关/开各两轮�
 目前泡沫/水色仍采用最高表面高度场近似，复杂悬挑下不是体积水深；也不是完整流体或数小时的潮汐模拟。新海水版真实一加12和iPhone性能尚待复核。整体自然地表、光照、远景和公路外开销仍需改进，Goal保持active；没有以非空截图或测试数目宣布接近满分。
 
 复现命令：`npm run build`、`npm run test:driving`、`npm run test:rocks`、`npm run test:shore`；浏览器使用 `TEST_BASE_URL=http://127.0.0.1:4188`，WebKit环境见playwright配置。海水脚本以唯一 `SHORE_LABEL` 运行，`SHORE_DEVICE=mobile`为横屏；正式采集必须带 `/?test=1`。所有GPU检查串行执行。
+
+## M31A · 细叶素材检查，游戏运行引用待接入
+
+最终完整d/e近2344/1058、远1541/736面；独立二进制核对各427/179组件、0退化面、原木枝542/264边界位置0缺失，UV/原顶点对应与逆缩放法线误差约4.19e-8，RGB16源遮罩转8位后误差0。三个导出文件重建SHA一致，实际代理与烘焙代码SHA核对通过。
+
+- [独立来源、几何、边界与Alpha核对](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-validation-protected-endpoints/result.json)
+- [Chrome两株两级三角度与GPU逐级读回](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-asset-protected-endpoints-chrome/result.json)
+- [WebKit同组检查](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-asset-protected-endpoints-webkit/result.json)
+- [最终近景侧面](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-asset-protected-endpoints-chrome/0-near-side.png)
+- [最终远档侧面](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-asset-protected-endpoints-chrome/0-far-side.png)
+- [小株顶部](/home/ryan/workspace/coastline/artifacts/coastal-rooibos-asset-protected-endpoints-chrome/1-near-above.png)
+- [实际代理10格与输入/输出SHA](/home/ryan/workspace/coastline/artifacts/scrub-impostor-bake-rooibos-protected-endpoints/result.json)
+
+Chrome/WebKit共24个素材视图、0浏览器错误；真实前置普通纹理使flipY/premultiply=true，再上传全Canvas叶图恢复false。0/2/4/8/10级FBO读回Alpha最大误差0、RGB≤1；独立首级线性参考7806个保留叶/枝像素最大差2。该证据是素材/解码/受光观察，不是手机实测帧率或游戏世界通过。当前5190仍M29，Goal active。

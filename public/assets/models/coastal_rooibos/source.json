@@ -1,0 +1,166 @@
+{
+  "asset": "wild_rooibos_bush",
+  "page": "https://polyhaven.com/a/wild_rooibos_bush",
+  "license": "CC0-1.0",
+  "authors": {
+    "James Ray Cock": "modeling",
+    "Jenelle van Heerden": "photography"
+  },
+  "sourceFiles": [
+    {
+      "path": "wild_rooibos_bush_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wild_rooibos_bush/wild_rooibos_bush_1k.gltf",
+      "bytes": 23122,
+      "md5": "589911681acc2ebac68ff12ded20460d",
+      "sha256": "7f3fb17e4606e33d0bc4239c4901c9610b4bd17fe26b6780ba11ab4493f25d29"
+    },
+    {
+      "path": "wild_rooibos_bush.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wild_rooibos_bush/wild_rooibos_bush.bin",
+      "bytes": 1236928,
+      "md5": "0d6c39ac444bac0381ecdff32a191a9c",
+      "sha256": "7a3471b4d110fe9927f4a200191eae86fa3c0a08f8e8e797d22e94a1703322e1"
+    },
+    {
+      "path": "textures/wild_rooibos_bush_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wild_rooibos_bush/wild_rooibos_bush_diff_1k.jpg",
+      "bytes": 374003,
+      "md5": "47ee13b7a87d2aff07c0ec708a33f6ab",
+      "sha256": "d963cdaf769bc39bb57295d518b37cd9456168cf5e3b82fd59f58c98d3faf596"
+    },
+    {
+      "path": "textures/wild_rooibos_bush_alpha_1k.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/wild_rooibos_bush/wild_rooibos_bush_alpha_1k.png",
+      "bytes": 90888,
+      "md5": "f58e9c4d8874751b2a02dcc65c11c655",
+      "sha256": "6a9fcd7a62aab1366b0ae50273c4a638591e932049a647ccadce6687ce657b72"
+    }
+  ],
+  "conversion": "Complete plants d/e, ignore display translations. Both LODs keep every leaf/twig/wood component; near retains folded leaf fans, far simplifies each toward two triangles. Simplify within each connected component, lock the lowest 5mm and every wood border vertex, also use LockBorder for wood; retain its original geometry if simplification removes/disconnects it or loses any locked border vertex. Normalize original height to 0.91m, small plant modestly widened. Official RGB16 alpha converted to 8-bit high bytes by Pillow, then unchanged; RGB-only transparent dilation. No normal/ARM runtime maps. Far silhouette and actual-game cost remain subject to visual/GPU validation.",
+  "runtimeRequirements": {
+    "alphaTest": 0.45,
+    "alphaToCoverage": true,
+    "mipHelper": "src/world/PlantTexture.ts preserveRooibosCutoutMips",
+    "cutoffHelper": "src/world/PlantTexture.ts centerPlantAlphaCoverage",
+    "textures": "one 1024-square sRGB alpha atlas plus one 512-square sRGB proxy atlas, shared by all near/far instances"
+  },
+  "variants": [
+    {
+      "variant": 0,
+      "node": "wild_rooibos_bush_d",
+      "lod": "near",
+      "sourceTriangles": 2684,
+      "sourceComponents": 427,
+      "components": 427,
+      "roles": {
+        "leaves": 348,
+        "twigs": 23,
+        "wood": 56
+      },
+      "triangles": 2344,
+      "vertices": 3041,
+      "maxError": 0.04961705952882767,
+      "keptWholeComponents": 8,
+      "root": [
+        0.0017793012503534555,
+        -0.001182745909318328,
+        -0.0003805727930739522
+      ],
+      "heightBeforeSimplification": 0.91,
+      "heightAfterSimplification": 0.8941460146988944,
+      "horizontalWiden": 1.4
+    },
+    {
+      "variant": 0,
+      "node": "wild_rooibos_bush_d",
+      "lod": "far",
+      "sourceTriangles": 2684,
+      "sourceComponents": 427,
+      "components": 427,
+      "roles": {
+        "leaves": 348,
+        "twigs": 23,
+        "wood": 56
+      },
+      "triangles": 1541,
+      "vertices": 2238,
+      "maxError": 0.15658167004585266,
+      "keptWholeComponents": 8,
+      "root": [
+        0.0017793012503534555,
+        -0.001182745909318328,
+        -0.0003805727930739522
+      ],
+      "heightBeforeSimplification": 0.91,
+      "heightAfterSimplification": 0.8833152264253522,
+      "horizontalWiden": 1.4
+    },
+    {
+      "variant": 1,
+      "node": "wild_rooibos_bush_e",
+      "lod": "near",
+      "sourceTriangles": 1193,
+      "sourceComponents": 179,
+      "components": 179,
+      "roles": {
+        "leaves": 142,
+        "twigs": 11,
+        "wood": 26
+      },
+      "triangles": 1058,
+      "vertices": 1315,
+      "maxError": 0.04942554607987404,
+      "keptWholeComponents": 6,
+      "root": [
+        -0.00422768891803571,
+        -0.0009769063908606768,
+        -0.00012362388952169567
+      ],
+      "heightBeforeSimplification": 0.91,
+      "heightAfterSimplification": 0.91,
+      "horizontalWiden": 1.2
+    },
+    {
+      "variant": 1,
+      "node": "wild_rooibos_bush_e",
+      "lod": "far",
+      "sourceTriangles": 1193,
+      "sourceComponents": 179,
+      "components": 179,
+      "roles": {
+        "leaves": 142,
+        "twigs": 11,
+        "wood": 26
+      },
+      "triangles": 736,
+      "vertices": 993,
+      "maxError": 0.11448030173778534,
+      "keptWholeComponents": 6,
+      "root": [
+        -0.00422768891803571,
+        -0.0009769063908606768,
+        -0.00012362388952169567
+      ],
+      "heightBeforeSimplification": 0.91,
+      "heightAfterSimplification": 0.91,
+      "horizontalWiden": 1.2
+    }
+  ],
+  "preparedAssets": [
+    {
+      "path": "scrub.gltf",
+      "bytes": 5922,
+      "sha256": "9e74a572f7abb5b273b4de7558c0fa231bf2b547da54782db939cbb9c9a5d364"
+    },
+    {
+      "path": "scrub.bin",
+      "bytes": 276860,
+      "sha256": "e183702948ac55b534c7a1e4954b96af3f459eaed42f941f7aa24e79cdc7fd0a"
+    },
+    {
+      "path": "scrub-color.png",
+      "bytes": 992613,
+      "sha256": "e6721d7e0b0b852a0795b80eb87ac54505ceecfc7895cff7140b99833e6536e4"
+    }
+  ]
+}

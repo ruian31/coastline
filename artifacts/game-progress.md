@@ -334,3 +334,10 @@
 - 新旧同tunnel起点暖机1.5秒，4倍CPU巡航8秒M26 2955/2627→M27 2718/2410ms（Task/Script约-8.0%/-8.3%），末端115.75/116.56m差.81m；不宣称逐帧同路径或全部差额归因查询优化。heap29.88/36.72MiB仅GC状态，无新GPU时间/真机FPS；M26绕岩压力边界仍保留，本轮不重跑未变路线。
 - 正常npm run build同D82rtCAi/5190；普通无query入口前进8.59m、手机山体5200tri/外拱2304tri、缓存1/43与植物准备正常、钩子/诊断undefined、0错误。共享截面比旧山体多2352/2912面，但删39×80旧椭球后净少768/208面；纹理/calls保持。正式清单12+23=35项确认，准备按commit技能提交，无push、整体Goal active。
 - 下一处棕榈树皮已从Poly Haven官方page/API确认Palm Tree Bark，Dimitrios Savva摄影/Rico Cilliers处理、CC0、约1.3m，info/files保存work/palm-bark-source，仅前期输入。未添加运行资源；计划先看实图与512²合并表面成本，再替换均匀环纹，不承诺自然风景已达标。
+
+## 2026-10-24 · M28A实拍棕榈树皮准备
+
+- M27已提交3b890a8，立即核验中文UTF8、临时消息删除、无push；5190稳定D82rtCAi，所有GPU任务已终止完成，Goal active。上一目标turn是progress（运行修复、独立验证及提交），无阻塞。
+- 官方Palm Tree Bark三个源图下载并核对MD5/bytes和SHA：color1,974,940B、normal1,514,646B、rough1,350,564B。实际1024×2048而非方图，已看原Diffuse实图；为保留比例选512×1024两图，未按最初512²设想拉伸。作者/许可/来源见文档06与palm-bark-source.json。
+- prepare-palm-bark.mjs用Pillow12.1.1数值BOX缩小法线、XYZ归一化、重新量化；粗糙度BOX，颜色LANCZOS/JPEG90/4:4:4。surface无损WebP RGB normal/A rough，与处理后的PNG解码误差0（不等同原分辨率），normal长度最大误差.00535，rough范围124–241。未安装numpy；本地get_flattened_data消除Pillow弃用警告。
+- 输出color244264B、surface893266B，共1,137,530B，SHA/原图/处理方式齐全；未来运行会新增2纹理/~5.33MiB含mip存储。当前没有运行引用/新shader，实际GPU解码与近景树干待下一步。已看512×1024颜色实图，准备按commit技能完成素材步骤，无push、不把这一步当画质通过。

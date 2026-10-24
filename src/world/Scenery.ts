@@ -8,6 +8,7 @@ import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
 import {createGrassCanopy} from './GrassCanopy';
+import {createVegetationInteraction} from './VegetationInteraction';
 import {preservePlantCutoutMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
@@ -37,6 +38,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   prepareVerge:(parts:THREE.BufferGeometry[])=>void;
   prepareFerns:(source:Promise<THREE.MeshStandardMaterial|undefined>)=>Promise<void>;
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
+  updateVehicle:(elapsed:number,car:THREE.Object3D,wheelContacts:readonly THREE.Vector3[])=>void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
   terrainHeight: (x:number,z:number) => number;
@@ -193,7 +195,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
-  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,habitat:(x,z)=>{
+  const vegetationInteraction=createVegetationInteraction((x,z)=>Math.max(groundHeight(x,z),vergeSurface?.height(x,z)??-Infinity));
+  root.userData.vegetationInteraction=vegetationInteraction.diagnostics;
+  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,interaction:vegetationInteraction,habitat:(x,z)=>{
     if(groundHeight(x,z)<2.8||!naturalVerge(x,z,0))return -32;
     const nearest=closestSurface(x,z);
     return Math.min(32,nearest.distance-nearest.point.width/2-2.4);
@@ -278,6 +282,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     attribute.clearUpdateRanges();attribute.addUpdateRange(0,count*attribute.itemSize);attribute.needsUpdate=true;
   }
   function batch(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], colors?: THREE.Color[],lod?:InstanceLod): THREE.InstancedMesh {
+    if(material.userData.coastalVegetation&&!material.userData.rigidTree)vegetationInteraction.attach(material as THREE.MeshStandardMaterial,material.name.toLowerCase().includes('scrub')?.55:.85);
     const mesh = new THREE.InstancedMesh(keep(geometry), keep(material), matrices.length);
     mesh.receiveShadow=true;
     matrices.forEach((matrix, i) => { mesh.setMatrixAt(i, matrix); if (colors) mesh.setColorAt(i, colors[i]); });
@@ -299,6 +304,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   }
   function wind(color: number, amplitude: number,crownRoot=false): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness: .9, side: THREE.DoubleSide });
+    material.userData.coastalVegetation=true;
+    if(crownRoot)material.userData.rigidTree=true;
     material.onBeforeCompile = shader => {
       shader.uniforms.uSceneryTime = time;
       shader.vertexShader = 'uniform float uSceneryTime;\n' + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -315,6 +322,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     return material;
   }
   function groundFollowing(material:THREE.MeshStandardMaterial){
+    material.userData.coastalVegetation=true;
     const compileWind=material.onBeforeCompile,windKey=material.customProgramCacheKey();
     material.onBeforeCompile=(shader,renderer)=>{
       compileWind(shader,renderer);
@@ -541,6 +549,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }
     const bladeGeometry=new THREE.BufferGeometry();bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bladePositions,3));bladeGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bladeColors,3));bladeGeometry.setIndex(bladeIndices);bladeGeometry.computeVertexNormals();
     const bladeMaterial=wind(0xffffff,.095);bladeMaterial.name='Curved dry grass blades';bladeMaterial.vertexColors=true;groundFollowing(bladeMaterial);dryFieldColor(bladeMaterial,1);
+    vegetationInteraction.attach(bladeMaterial,.85);
     // Copy only the already selected fine clumps, rather than keeping another
     // full field-sized matrix buffer and scanning the field a second time.
     const bladeCap=mobile?48:96,blades=new THREE.InstancedMesh(keep(bladeGeometry),keep(bladeMaterial),bladeCap);
@@ -815,6 +824,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const pineTrunk=new THREE.CylinderGeometry(.7,1,1,6);pineTrunk.translate(0,.5,0);
   treeBatch(pineTrunk,new THREE.MeshStandardMaterial({color:0x78674e,roughness:1}),pines).name='Stone pine trunks';
   const pineMaterial=wind(0xffffff,.01);pineMaterial.vertexColors=true;
+  pineMaterial.userData.rigidTree=true;
   const pineAtlas=createPineNeedleAtlas();textures.push(pineAtlas);pineMaterial.map=pineAtlas;pineMaterial.alphaTest=.38;pineMaterial.alphaToCoverage=true;
   const pineWind=pineMaterial.onBeforeCompile,pineWindKey=pineMaterial.customProgramCacheKey;
   pineMaterial.onBeforeCompile=(shader,renderer)=>{
@@ -940,6 +950,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setSkyReflection:texture=>water.setSkyReflection(texture),
+    updateVehicle:vegetationInteraction.update,
     setLowDetail(enabled){
       grassCanopy.setLowDetail(enabled);
       for(const record of visibleBatches){const child=record.mesh;
@@ -959,6 +970,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       vergeSurface=undefined;
       water.dispose();
       grassCanopy.dispose();
+      vegetationInteraction.dispose();
       root.removeFromParent();
       fieldBladeBody?.mesh.dispose();
       for(const resource of resources)resource.dispose();

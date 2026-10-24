@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {VegetationInteraction} from './VegetationInteraction';
 
 type GrassCanopyOptions = {
   mobile: boolean;
@@ -9,6 +10,7 @@ type GrassCanopyOptions = {
   segments: number;
   /** Signed clearance in metres; negative values forbid growth. Sampled once at terrain vertices. */
   habitat: (x: number, z: number) => number;
+  interaction:VegetationInteraction;
 };
 
 export type GrassCanopy = {
@@ -23,7 +25,7 @@ const CELL_SIZE = .75;
 const BLADES_PER_CELL = 32;
 
 /** A fixed-budget, moving GPU window over stable world cells. No placement-matrix updates or world scans. */
-export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat }: GrassCanopyOptions): GrassCanopy {
+export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat, interaction }: GrassCanopyOptions): GrassCanopy {
   if (!Number.isFinite(width) || !Number.isFinite(depth) || width <= 0 || depth <= 0 || !Number.isInteger(segments) || segments < 1) {
     throw new RangeError('GrassCanopy requires positive terrain dimensions and an integer segment count.');
   }
@@ -181,7 +183,8 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     float phase = canopyRandom(worldCell, salt + 16u) * 6.283185307;
     float gust = sin(uCanopyTime * 1.15 + float(worldCell.x) * .071 + float(worldCell.y) * .053 + phase);
     lean += vec2(.048, .023) * gust + vec2(.012, -.018) * sin(uCanopyTime * 2.3 + phase);
-    objectNormal = normalize(cross(vec3(bladeWidthAxis.x, dot(surface.slope, bladeWidthAxis), bladeWidthAxis.y), vec3(lean.x, bladeHeight, lean.y)));
+    vec3 canopyForce=coastPlantPressure(vec3(bladeRoot.x,surface.height,bladeRoot.y));
+    objectNormal = normalize(cross(vec3(bladeWidthAxis.x, dot(surface.slope, bladeWidthAxis), bladeWidthAxis.y), vec3(lean.x+canopyForce.x*bladeHeight*.95, bladeHeight*(1.0-canopyForce.y*.93), lean.y+canopyForce.z*bladeHeight*.95)));
     float dryness = canopyRandom(worldCell, salt + 19u);
     vCanopyTint = mix(vec3(.20, .176, .086), vec3(.37, .29, .14), dryness) * mix(.65, 1.06, position.y);
   `;
@@ -197,17 +200,19 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     transformed = canopyVisibility > 0.0
       ? vec3(bladeXZ.x, footHeight + position.y * bladeHeight * canopyVisibility, bladeXZ.y)
       : uCanopyHiddenPoint;
+    if(canopyVisibility>0.0)transformed=coastBendByPressure(transformed,position.y*bladeHeight*canopyVisibility,canopyForce);
   `;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = declarations + shader.vertexShader
       .replace('#include <beginnormal_vertex>', prepareBlade)
       .replace('#include <begin_vertex>', placeBlade);
+    interaction.setupShader(shader);
     shader.fragmentShader = 'varying vec3 vCanopyTint;\n' + shader.fragmentShader.replace(
       '#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;',
     );
   };
-  material.customProgramCacheKey = () => `coast-grass-canopy-v1-${cellsPerSide}-${segments}`;
+  material.customProgramCacheKey = () => `coast-grass-canopy-v2-${cellsPerSide}-${segments}`;
 
   // Three initializes these matrices to identity once. They remain immutable throughout the lifetime.
   const mesh = new THREE.InstancedMesh(geometry, material, fullCount);

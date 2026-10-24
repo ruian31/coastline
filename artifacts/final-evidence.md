@@ -1,3 +1,28 @@
+# M36 · 车辆拨草、车底压伏与恢复中的轮胎轨迹
+
+2026-10-25，**index-D2-JlrYY.js**，835.03kB/gzip233.13kB，已更新5190。细草、摄影草/弯叶主体、蕨叶与矮灌木共用世界压力记录，车身两侧拨开、车底压伏，轮胎留下更深的连续倒草轨迹。浅痕1→5秒恢复，深痕12→60秒恢复；车底平面跟随俯仰/侧倾，形变法线同步调整。记录在GPU窗口外保留至过期，17→23m平滑呈现，跨时间戳边界保留新痕迹，防旧痕复活。独立模块负责实际需要的压力记录/资源/材质变形，没有新增模型、图片、draw或依赖。
+
+初版18专项中3项抓到主体和克隆/模板材质漏接，修复后Cvl三浏览器18项通过；最终D2三浏览器共享实际纹理/编译、驾驶留下深浅痕、切档复用及暂停冻结3项再通过。两组不是21个同版本独立用例，D2未重复原18项全集，渲染改动另由实际GPU探针和正式图覆盖。CPU专项验证连续轮路、倒车方向、旋转接触点、软压不覆盖深痕、跨窗返回、瞬移不连线、过期、时间回退/边界、倾斜车底和资源释放。
+
+最终D2 Chrome横屏/WebKit/桌面实际编译顶点shader读回：根部位移0，全/半密度移窗重叠叶片一致；两侧叶端平均向外约2–3cm，四片轮点区域叶端平均降低约.337m，20秒约.312m、45秒约.078m、65秒与无压控制完全一致。实际形变面与GPU法线点积最低.999739、长度误差<.00000016。受控旧痕距离0/15/20/26m平均压伏约.338/.338/.152/0m，验证移窗边界前已有渐隐。它们是实际GPU程序/几何检查，不是美术评分或真机FPS。
+
+- [本轮12正式机位与辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-vegetation-interaction.json)
+- [D2三浏览器最终共享/驾驶/切档/暂停](/home/ryan/workspace/coastline/artifacts/tests-m36-range-bindings.json)
+- [Cvl18项基础回归原记录](/home/ryan/workspace/coastline/artifacts/tests-m36-vegetation-final.json)
+- [CPU轨迹/边界/坡面/生命周期](/home/ryan/workspace/coastline/artifacts/tests-m36-pressure-cpu-final.json)
+- [D2 Chrome实际形变与距离渐隐](/home/ryan/workspace/coastline/artifacts/grass-canopy-m36-range-final-mobile/result.json)
+- [D2 WebKit同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m36-range-final-webkit/result.json)
+- [D2桌面同项](/home/ryan/workspace/coastline/artifacts/grass-canopy-m36-range-final-desktop/result.json)
+- [手机触控前进/转弯/倒车与65秒恢复](/home/ryan/workspace/coastline/artifacts/vegetation-m36-phone-final/driving-and-recovery.webm)
+- [D2桌面键盘同类连续运动](/home/ryan/workspace/coastline/artifacts/vegetation-m36-desktop-final/driving-and-recovery.webm)
+- [D2普通入口](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m36-release/result.json)
+
+手机录像为CMB近处同渲染路径，7个深压格→前进255格，并实际未暂停等待65.16秒；最终D2另录桌面键盘65.08秒（7→229格），均0错误。两段固定环境风相位使压伏/恢复可辨，交互时间正常前进，不是快进或切换时间截图。已看最终正式蕨叶/灌丛、手机前进/恢复和桌面运动帧；痕迹目前较细，受草地密度影响。自然景观仍沿用M35未达标，不以新增互动抬高整体视觉结论，**Goal active**。
+
+手动内陆8秒4倍CPU节流Task4015→4234ms、Script3601→3806ms（约+5.5/+5.7%），相近非同轨迹；最终D2固定机位各90有效GPU样本P50路草/内陆2.103/3.156ms、P95 3.143/4.217ms，保留比前版较低样本更高的最终成本。12图桌面峰147/805233/130/53，手机113/336525/128/52，原预算超标仍在，真实一加12/iPhone新版本FPS待复核。普通无query入口实际前进、256²/262144B压力图已上传、车位uniform正确、原摄影草与世界缓存保持、测试全局undefined，0错误。坡地叶端的接触形态仍需进一步专项检查和改善。
+
+---
+
 # M35 · 连续干草地表与世界固定的近景草覆盖
 
 2026-10-25，**index-D6VD0TVj.js**，826.13kB/gzip229.91kB，已更新5190。地表沿温和坡面混合连续干草、裸土和陡坡岩面，并先归一化片元地形法线再决定坡度权重。独立GPU草层采用短叶为主的32面cell，固定世界hash、根部实际三角面贴合、径向高度渐隐和世界奇偶低档前缀；每帧只改时间/车位/窗口uniform。未改变地形、道路、驾驶物理或旧植被作者。

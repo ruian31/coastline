@@ -13,6 +13,7 @@ export interface Convertible {
   root: THREE.Group;
   cockpitEye: THREE.Vector3;
   cockpitLook: THREE.Vector3;
+  wheelContacts:readonly THREE.Vector3[];
   update: (speed: number, steer: number, dt: number) => void;
   setContactShadow:(visible:boolean)=>void;
   dispose: () => void;
@@ -529,9 +530,10 @@ export function createConvertible(index = 0): Convertible {
   const batch = new GeometryBatch(materials);
   buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
 
-  const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [];
+  const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [],wheelContacts:THREE.Vector3[]=[];
   for (const z of [-1.28, 1.28]) for (const x of [-.845, .845]) {
     const steering = new THREE.Group(); steering.position.set(x, .338, z);
+    wheelContacts.push(V(x,steering.position.y-.338,z));
     const roll = wheelTemplate.clone(true); steering.add(roll); root.add(steering); rolls.push(roll);
     if (z > 0) steers.push(steering);
   }
@@ -590,7 +592,7 @@ export function createConvertible(index = 0): Convertible {
   const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
-    root, cockpitEye, cockpitLook,setContactShadow(visible){contactShadow.visible=visible;},
+    root, cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadow.visible=visible;},
     update(speed, steer, dt) {
       driver.update(steer, dt);
       contactShadow.rotation.set(-Math.PI/2,0,-root.rotation.z,'ZXY');

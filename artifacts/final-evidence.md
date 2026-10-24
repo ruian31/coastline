@@ -1,3 +1,25 @@
+# M28 · 实拍棕榈树干与连续驾驶
+
+2026-10-24，**index-B8t9kL2e.js**，808.52kB/gzip223.83kB，已更新5190。均匀程序环纹换为实拍日晒纤维/损伤，512×1024颜色和normal RGB/roughness A共享表面按生长方向/约1.3m尺度映射，三路实例phase对齐。原位置、弯曲、树根/碰撞及共享随机流保持。**整体自然风景仍未达标，Goal active**；离路群落稀疏、地形表面均匀、硬折小叶和树皮周期仍需改进。
+
+一次独立只读审查找到UV边位置重合但法线约差36°的硬缝；保留UV分离并平均边法线修复，没有递归审查。三浏览器实际游戏网格按位置独立配对，法线角差<.01°；连同编译shader的A粗糙度/三路phase、高低反复切档资源复用、两张单图各自失败仍可巡航、八槽地表、原世界矩阵/岩岛、首帧缓存和树根，共 **21项通过**。
+
+Chrome/WebKit实际GPU纹理全像素读回，与处理后参考PNG的normal RGB/roughness A最大字节误差0；参考不是原分辨率JPEG。此读回在RmWwu_Pi完成，最终只修几何边法线，图像及通道未变；ground模式回归三张1024²表面也0误差。实拍资产来源/作者/CC0、处理和哈希见文档06及palm-bark-source.json。
+
+正式 **artifacts/evidence-photographed-bark.json** 十二视图0错误，桌面各项峰139calls/623886tri/121geo/53tex、手机94/247820/118/46。已看实际驾驶原野/路边及最终正侧背近景，近远冠体保持，固定模型镜头连续风动3.33/3.25秒留存。模型预览与非空指标不能代替整体自然感验收。
+
+每棵可见树干112→240tri，新增两图共1,137,530字节/含mip估算5.33MiB存储。手机横屏实际双指离路88.02m、四角环顾并返回49.48秒、0错误，近草总峰48≤48；整程115calls/329400tri/120geo/52tex，仍超300k/40约9.8%/30%。4倍CPU持续巡航8秒M27 Task2870/Script2513→M28 **2948/2574ms**，约+2.7%/+2.4%，同终点108.29m，单轮比较不证明逐帧同轨迹或将全部差额归因材质；没有新的GPU计时/实际一加12或iPhone帧率。
+
+- [实际海岸驾驶](/home/ryan/workspace/coastline/artifacts/pass-m28-photographed-bark/desktop-active-play.png)
+- [实际原野树干](/home/ryan/workspace/coastline/artifacts/palm-crown-photographed-bark-final-desktop/world-field-verge.png)
+- [最终树干背面近景](/home/ryan/workspace/coastline/artifacts/palm-crown-photographed-bark-final-desktop/trunk-back.png)
+- [横屏实际离路记录](/home/ryan/workspace/coastline/artifacts/offroad-photographed-bark-phone/android-touch.json)
+- [横屏实际离路视频](/home/ryan/workspace/coastline/artifacts/offroad-photographed-bark-phone/android-touch.webm)
+
+正常dist/5190同B8t9kL2e；普通入口实际开始前进8.60m，两图共享/准备及颜色空间、240面树干、一次缓存1/43、植物正常，钩子/诊断undefined、0错误。试玩[当前地址](http://10.158.204.114:5190/)。继续改善可驶入区域的群落与地形层次，整体目标未完成。
+
+---
+
 # M27 · 出洞海景、共边山体与实际高度
 
 2026-10-24，**index-D82rtCAi.js**，807.41kB/gzip223.41kB，已更新5190。隧道侧翼从沿路约27m缩回约7m，缓和侧坡纵向收口，出洞视野直接展开大海；删除39个未贴图多面体椭球，保留连续山体、真实内外拱壳/厚洞口/灯具，无新增图片。**整体自然风景仍未达标，Goal active**；山体大尺度面感、硬折小叶、均匀树干仍需精修。

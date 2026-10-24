@@ -21,7 +21,7 @@ try{
   const scene=palmObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')),renderer=palmObjects.find(o=>o.isWebGLRenderer),group=scene.getObjectByName('Wind moving palm fronds'),trunks=scene.getObjectByName('Curved palm trunks'),near=group.children[0],far=group.children[1],trunk=trunks.children[0];
   renderer.shadowMap.enabled=false;scene.children.forEach(o=>o.visible=Boolean(o.isLight));scene.background=near.material.color.clone().set(0x899295);
   const previews=[near,trunk].map(source=>{const mesh=new source.constructor(source.geometry,source.material,1),matrix=source.userData.authoredInstances[0].clone().identity();mesh.setMatrixAt(0,matrix);if(source.instanceColor)mesh.setColorAt(0,source.material.color.clone().set('#c6cca6'));mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;scene.add(mesh);return mesh;});
-  window.palmPreview={scene,renderer,near,far,trunk,previews,eye:[13,8,15]};scene.onBeforeRender=(_r,_s,camera)=>{camera.position.set(...palmPreview.eye);camera.lookAt(.65,6.6,0);camera.updateMatrixWorld();};
+  window.palmPreview={scene,renderer,near,far,trunk,previews,eye:[13,8,15],focus:[.65,6.6,0]};scene.onBeforeRender=(_r,_s,camera)=>{camera.position.set(...palmPreview.eye);camera.lookAt(...palmPreview.focus);camera.updateMatrixWorld();};
   const data=source=>{const g=source.geometry;g.computeBoundingBox();const p=g.getAttribute('position'),n=g.getAttribute('normal');return{triangles:g.index?g.index.count/3:p.count/3,bounds:{min:g.boundingBox.min.toArray(),max:g.boundingBox.max.toArray()},finite:Array.from(p.array).every(Number.isFinite)&&Array.from(n.array).every(Number.isFinite)};};
   return{near:data(near),far:data(far),trunk:data(trunk)};
  });
@@ -29,6 +29,11 @@ try{
   await page.evaluate(async({lod,eye})=>{palmPreview.eye=eye;palmPreview.previews[0].geometry=palmPreview[lod].geometry;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},{lod,eye});
   await page.screenshot({path:`${out}/${lod}-${name}.png`,scale:'css'});
  }
+ for(const [name,eye]of [['front',[2.4,3.4,3]],['side',[-3.1,3.3,1]],['back',[-1.5,3.4,-3]]]){
+  await page.evaluate(async eye=>{palmPreview.eye=eye;palmPreview.focus=[.3,3.2,0];palmPreview.previews[0].visible=false;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},eye);
+  await page.screenshot({path:`${out}/trunk-${name}.png`,scale:'css'});
+ }
+ await page.evaluate(()=>{palmPreview.previews[0].visible=true;palmPreview.focus=[.65,6.6,0];});
  const distanceSamples=[];
  for(const distance of [130,250])for(const lod of ['near','far']){
   await page.evaluate(async({distance,lod})=>{palmPreview.eye=[.65,7.8,distance];palmPreview.previews[0].geometry=palmPreview[lod].geometry;palmPreview.previews[1].visible=false;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},{distance,lod});

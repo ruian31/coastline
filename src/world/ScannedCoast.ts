@@ -5,7 +5,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createSeededRandom} from '../utils/random';
 
 import {scanSurface} from './SurfaceHeight';
-import {usePackedRockRoughness} from './GroundMaterial';
+import {usePackedSurfaceRoughness} from './GroundMaterial';
 export {scanSurface} from './SurfaceHeight';
 
 type CoastOptions={ground:(x:number,z:number)=>number;mobile:boolean;manager:THREE.LoadingManager;rockMaterial:THREE.MeshStandardMaterial;registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;addWetness:(material:THREE.MeshStandardMaterial)=>void};
@@ -15,7 +15,7 @@ export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
  const root=new THREE.Group();root.name='Eroded sandstone headland';scene.add(root);
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();
  const sections:{group:THREE.Group;inverse:THREE.Matrix4;surface:ReturnType<typeof scanSurface>}[]=[];
- const bodyMaterial=rockMaterial.clone();bodyMaterial.name='Metre textured solid sandstone';bodyMaterial.vertexColors=false;bodyMaterial.color.set('#d7cfbc');usePackedRockRoughness(bodyMaterial);addWetness(bodyMaterial);materials.add(bodyMaterial);
+ const bodyMaterial=rockMaterial.clone();bodyMaterial.name='Metre textured solid sandstone';bodyMaterial.vertexColors=false;bodyMaterial.color.set('#d7cfbc');usePackedSurfaceRoughness(bodyMaterial);addWetness(bodyMaterial);materials.add(bodyMaterial);
  const localPoint=new THREE.Vector3();
  let disposed=false;const time={value:0};
  const cliffsReady=new GLTFLoader(manager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_cliff_01/cliff-${mobile?'far':'near'}.gltf`).then(gltf=>{

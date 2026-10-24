@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createCoastalGroundMaterial,usePackedRockRoughness} from './GroundMaterial';
+import {createCoastalGroundMaterial,usePackedSurfaceRoughness} from './GroundMaterial';
 import {scanSurface} from './SurfaceHeight';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createTunnelHeadland} from './TunnelHeadland';
@@ -62,10 +62,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   let disposed = false;
   let vergeSurface:ReturnType<typeof scanSurface>|undefined;
   const textureLoader = new THREE.TextureLoader(loadingManager);
-  function surfaceTexture(file: string, color = false): THREE.Texture {
+  function surfaceTexture(file: string, color = false,onLoad?:()=>void,onError?:()=>void): THREE.Texture {
     const texture = textureLoader.load(`${import.meta.env.BASE_URL}assets/environment/${file}`, loaded => {
       if (disposed) loaded.dispose();
-    });
+      onLoad?.();
+    },undefined,()=>onError?.());
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     texture.anisotropy = mobile ? 4 : 8;
@@ -400,7 +401,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }
   }
   const rockMaterial=new THREE.MeshStandardMaterial({color:0xffffff,map:rockMaps.color,normalMap:rockMaps.surface,roughnessMap:rockMaps.surface,roughness:.95});
-  usePackedRockRoughness(rockMaterial);
+  usePackedSurfaceRoughness(rockMaterial);
   for(const texture of Object.values(rockMaps))texture.repeat.set(2,2);
   rockMaterial.normalScale.set(.72,.72);
   water.addWetness(rockMaterial);
@@ -646,21 +647,50 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   // Bent tapering palm trunks and finely divided fronds read from both cockpit and chase views.
   const trunkPoints=Array.from({length:8},(_,i)=>new THREE.Vector3(Math.sin(i/7*1.5)*.65,i/7*7.8,0));
   const trunkCurve=new THREE.CatmullRomCurve3(trunkPoints);
-  const trunkGeometry=new THREE.TubeGeometry(trunkCurve,8,.20,7,false);
-  const trunkPos=trunkGeometry.getAttribute('position');
+  const trunkAlong=12,trunkAround=10;
+  const trunkGeometry=new THREE.TubeGeometry(trunkCurve,trunkAlong,.20,trunkAround,false);
+  const trunkPos=trunkGeometry.getAttribute('position'),trunkUv=trunkGeometry.getAttribute('uv'),barkHeightRepeats=trunkCurve.getLength()/1.3;
   for(let i=0;i<trunkPos.count;i++) {
     const t=trunkPos.getY(i)/7.8;
     const cx=Math.sin(Math.max(0,t)*1.5)*.65;
     trunkPos.setX(i,cx+(trunkPos.getX(i)-cx)*(1.25-t*.45));
     trunkPos.setZ(i,trunkPos.getZ(i)*(1.25-t*.45));
+    // Tube UV.x follows its length; the photographed grain grows along V.
+    const along=trunkUv.getX(i),around=trunkUv.getY(i);trunkUv.setXY(i,around*2,along*barkHeightRepeats);
   }
   trunkGeometry.computeVertexNormals();
-  const trunkMaterial=new THREE.MeshStandardMaterial({color:0x8a7452,roughness:1});
-  trunkMaterial.onBeforeCompile=shader=>{
-    shader.vertexShader='varying float vPalmHeight;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPalmHeight=position.y;');
-    shader.fragmentShader='varying float vPalmHeight;\n'+shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb*=.82+.18*smoothstep(.13,.32,fract(vPalmHeight*3.8));');
+  // Keep the UV seam split, but light its coincident edges as one curved surface.
+  const trunkNormals=trunkGeometry.getAttribute('normal'),seamNormal=new THREE.Vector3(),otherNormal=new THREE.Vector3();
+  for(let ring=0;ring<=trunkAlong;ring++) {
+    const first=ring*(trunkAround+1),last=first+trunkAround;
+    seamNormal.fromBufferAttribute(trunkNormals,first).add(otherNormal.fromBufferAttribute(trunkNormals,last)).normalize();
+    trunkNormals.setXYZ(first,seamNormal.x,seamNormal.y,seamNormal.z);trunkNormals.setXYZ(last,seamNormal.x,seamNormal.y,seamNormal.z);
+  }
+  const trunkMaterial=new THREE.MeshStandardMaterial({name:'Photographed sun bleached palm bark',color:0xf0ede2,roughness:.98});trunkMaterial.normalScale.set(.6,.6);
+  let barkLoads=0,barkFailed=false,resolveBark!:()=>void;const barkReady=new Promise<void>(resolve=>resolveBark=resolve);root.userData.palmBark={ready:false};
+  const barkLoaded=()=>{if(++barkLoads===2){if(!disposed&&!barkFailed)root.userData.palmBark={ready:true,dimensions:[512,1024]};resolveBark();}};
+  const barkFallback=()=>{barkFailed=true;if(!disposed){trunkMaterial.map=trunkMaterial.normalMap=trunkMaterial.roughnessMap=null;trunkMaterial.color.setHex(0x8a7452);trunkMaterial.roughness=1;trunkMaterial.needsUpdate=true;root.userData.palmBark={ready:false,fallback:true};}resolveBark();};
+  trunkMaterial.map=surfaceTexture('palm-bark-color.jpg',true,barkLoaded,barkFallback);
+  trunkMaterial.normalMap=trunkMaterial.roughnessMap=surfaceTexture('palm-bark-surface.webp',false,barkLoaded,barkFallback);
+  usePackedSurfaceRoughness(trunkMaterial);
+  const compileBark=trunkMaterial.onBeforeCompile,barkKey=trunkMaterial.customProgramCacheKey();
+  trunkMaterial.onBeforeCompile=(shader,renderer)=>{
+    compileBark(shader,renderer);shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>',`#include <uv_vertex>
+      #ifdef USE_INSTANCING
+        float barkSeed=fract(sin(dot(instanceMatrix[3].xz,vec2(.041,.073)))*43758.5453);
+        vec2 barkPhase=vec2(barkSeed,fract(barkSeed*7.37));
+        #ifdef USE_MAP
+          vMapUv+=barkPhase;
+        #endif
+        #ifdef USE_NORMALMAP
+          vNormalMapUv+=barkPhase;
+        #endif
+        #ifdef USE_ROUGHNESSMAP
+          vRoughnessMapUv+=barkPhase;
+        #endif
+      #endif`);
   };
-  trunkMaterial.customProgramCacheKey=()=>'coast-palm-trunk-rings';
+  trunkMaterial.customProgramCacheKey=()=>barkKey+'-palm-photo-phase-v1';
   const frondGeometry=createPalmCrown(mobile);
   const frondMaterial=wind(0xd3d5ad,.014,true);frondMaterial.vertexColors=true;
   random=createSeededRandom(864208);
@@ -738,7 +768,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     ...rocks.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.max(Math.hypot(m.elements[0],m.elements[2]),Math.hypot(m.elements[8],m.elements[10]))*.85+.78})),
   ];
   return {
-    ready:Promise.all([grassReady,scrubReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
+    ready:Promise.all([grassReady,scrubReady,barkReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
     prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
     groundHeight:cameraGroundHeight,

@@ -2,9 +2,9 @@ import * as THREE from 'three';
 
 type SurfaceMaps={color:THREE.Texture;surface:THREE.Texture};
 
-// Standard materials normally read roughness from G; the shared rock image
-// stores normals in RGB and roughness in A. Reapply after Material.clone().
-export function usePackedRockRoughness(material:THREE.MeshStandardMaterial){
+// Standard materials normally read roughness from G; these surface images
+// store normals in RGB and roughness in A. Reapply after Material.clone().
+export function usePackedSurfaceRoughness(material:THREE.MeshStandardMaterial){
   material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',THREE.ShaderChunk.roughnessmap_fragment.replace('texelRoughness.g','texelRoughness.a'));};
   material.customProgramCacheKey=()=> 'coast-packed-rock-v1';
 }

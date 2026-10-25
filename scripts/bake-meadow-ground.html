@@ -1,0 +1,49 @@
+<!doctype html><meta charset="utf-8"><link rel="icon" href="data:,"><script type="module">
+import * as THREE from 'three';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';
+const size=2048,tile=2,renderer=new THREE.WebGLRenderer({alpha:true,antialias:false,premultipliedAlpha:false});renderer.setSize(size,size);renderer.setPixelRatio(1);renderer.setClearColor(0,0);renderer.toneMapping=THREE.NoToneMapping;document.body.append(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-tile/2,tile/2,tile/2,-tile/2,.01,20);camera.up.set(0,0,-1);
+const normalPass={value:false},loader=new THREE.TextureLoader(),source=await new GLTFLoader().loadAsync('/work/meadow-grass-source/bake.gltf');
+const models=[];source.scene.traverse(o=>{if(o.isMesh&&/large_[abc]_LOD0/.test(o.name))models.push(o);});if(models.length!==3)throw Error('Expected three actual large grass clumps');
+function bakeMaterial(map,normalMap,roughness){
+ const material=new THREE.MeshStandardMaterial({map,normalMap,roughness,metalness:0,side:THREE.DoubleSide,alphaTest:.43});
+ material.onBeforeCompile=shader=>{shader.uniforms.uMeadowNormal=normalPass;shader.fragmentShader='uniform bool uMeadowNormal;\n'+shader.fragmentShader.replace('#include <opaque_fragment>',`
+  if(uMeadowNormal){
+   vec3 worldNormal=inverseTransformDirection(normal,viewMatrix);
+   // GroundMaterial's XZ tangent frame: RGB encodes east, south, up.
+   vec3 fieldNormal=normalize(vec3(worldNormal.x,worldNormal.z,max(.001,worldNormal.y)));
+   gl_FragColor=vec4(fieldNormal*.5+.5,roughnessFactor);
+  }else{gl_FragColor=vec4(diffuseColor.rgb,1.0);}`);};
+ return material;
+}
+const [soilColor,soilSurface]=await Promise.all(['field-color.jpg','field-surface.webp'].map(name=>loader.loadAsync('/assets/environment/'+name)));soilColor.colorSpace=THREE.SRGBColorSpace;
+soilColor.wrapS=soilColor.wrapT=soilSurface.wrapS=soilSurface.wrapT=THREE.RepeatWrapping;
+const soil=new THREE.Mesh(new THREE.PlaneGeometry(tile*4,tile*4),bakeMaterial(soilColor,soilSurface,.96));soil.rotation.x=-Math.PI/2;soil.position.y=-.03;scene.add(soil);
+// Four repeats across the support plane preserve the two-metre soil period.
+soilColor.repeat.set(4,4);soilSurface.repeat.set(4,4);
+const count=Number(new URLSearchParams(location.search).get('density')??288);if(!Number.isInteger(count)||count<16||count>400)throw Error('Invalid density');
+let seed=419553;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return(seed>>>0)/4294967296;};
+const placements=models.map(()=>[]),matrix=new THREE.Matrix4(),quaternion=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
+for(let i=0;i<count;i++){
+ const x=(((i+.5)*.754877666+random()*.08)%1-.5)*tile,z=(((i+.5)*.569840291+random()*.08)%1-.5)*tile,angle=random()*Math.PI*2,scale=.82+random()*.36;
+ for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)placements[i%3].push(matrix.clone().compose(new THREE.Vector3(x+dx*tile,0,z+dz*tile),quaternion.setFromAxisAngle(up,angle),new THREE.Vector3(scale,scale,scale)));
+}
+let submittedTriangles=0;const grassMeshes=[];
+for(const [i,model]of models.entries()){
+ const mesh=new THREE.InstancedMesh(model.geometry,bakeMaterial(model.material.map,model.material.normalMap,1),placements[i].length);placements[i].forEach((m,j)=>mesh.setMatrixAt(j,m));mesh.frustumCulled=false;scene.add(mesh);grassMeshes.push(mesh);submittedTriangles+=placements[i].length*model.geometry.index.count/3;
+}
+const colorTarget=new THREE.WebGLRenderTarget(size,size,{depthBuffer:true,stencilBuffer:false}),normalTarget=new THREE.WebGLRenderTarget(size,size,{depthBuffer:true,stencilBuffer:false});colorTarget.texture.colorSpace=THREE.SRGBColorSpace;normalTarget.texture.colorSpace=THREE.NoColorSpace;
+const flatMaterial=bakeMaterial(null,null,1),soilMaterial=soil.material;
+function render(pass,shiftX=0,shiftZ=0){
+ const calibration=pass.startsWith('calibration');normalPass.value=pass==='normal'||calibration;soil.visible=pass!=='coverage';soil.material=calibration?flatMaterial:soilMaterial;grassMeshes.forEach(m=>m.visible=!calibration);const target=normalPass.value?normalTarget:colorTarget;
+ soil.rotation.set(-Math.PI/2,0,0);
+ if(pass==='calibration-tilt')soil.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(.36,.8,-.48));
+ camera.position.set(shiftX,4,shiftZ);camera.lookAt(shiftX,0,shiftZ);camera.updateMatrixWorld();renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera);
+ const bytes=new Uint8Array(size*size*4);renderer.readRenderTargetPixels(target,0,0,size,size,bytes);renderer.setRenderTarget(null);
+ if(calibration)return Array.from(bytes.slice((size*size/2+size/2)*4,(size*size/2+size/2)*4+4));
+ // Readback row zero is the +Z edge. Keep it as PNG row zero: runtime ground
+ // textures use flipY=true and v=worldZ, so colour and +Z normals stay aligned.
+ const image=bytes;
+ let binary='';for(let i=0;i<image.length;i+=32768)binary+=String.fromCharCode(...image.subarray(i,i+32768));return btoa(binary);
+}
+window.meadowBake={size,tile,count,submittedTriangles,render};window.bakeReady=true;
+</script>

@@ -10,6 +10,8 @@ const browser=kind==='webkit'?await webkit.launch({executablePath:path.resolve('
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 for(const file of ['three.module.js','three.core.js'])await page.route(`**/__qa/${file}`,route=>route.fulfill({path:path.resolve('node_modules/three/build',file),contentType:'text/javascript'}));
 for(const file of ['normal','roughness'])await page.route(`**/__qa/field-${file}.jpg`,route=>route.fulfill({path:path.resolve(`work/withered-grass-source/${file}.jpg`),contentType:'image/jpeg'}));
+const meadowLabel=process.env.PACK_MEADOW_LABEL??'m40-ground-axes';assert.match(meadowLabel,/^[a-z0-9-]+$/);
+await page.route('**/__qa/meadow-reference.png',route=>route.fulfill({path:path.resolve(`artifacts/meadow-ground-${meadowLabel}/surface.png`),contentType:'image/png'}));
 for(const file of ['normal','roughness'])await page.route(`**/__qa/bark-${file}.png`,route=>route.fulfill({path:path.resolve(`work/palm-bark-source/${file}-512.png`),contentType:'image/png'}));
 await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));window.packObjects=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',e=>packObjects.push(e.detail));});
 try{
@@ -21,11 +23,13 @@ try{
   const sources=role==='palm-bark'?['PalmBark']:['Ground','Sand','Field'];
   try{
    for(const name of sources){
-    const stem=name.toLowerCase(),normal=await loader.loadAsync(name==='PalmBark'?'/__qa/bark-normal.png':stem==='field'?'/__qa/field-normal.jpg':`/assets/environment/${stem}-normal.jpg`),rough=await loader.loadAsync(name==='PalmBark'?'/__qa/bark-roughness.png':stem==='field'?'/__qa/field-roughness.jpg':`/assets/environment/${stem}-roughness.jpg`);
-    try{normal.colorSpace=rough.colorSpace=T.NoColorSpace;let packed,shared=true;if(name==='PalmBark'){const trunk=scene.getObjectByName('Curved palm trunks').children[0].material,u=renderer.properties.get(trunk).uniforms;packed=u.normalMap.value;shared=packed===u.roughnessMap.value;}else packed=uniforms[`u${name}Surface`].value;const dimensions=[packed.image.width,packed.image.height];target.setSize(...dimensions);samples.push({role:name,dimensions,shared,normal:compare(render(normal,false),render(packed,false)),roughness:compare(render(rough,false),render(packed,true))});}finally{normal.dispose();rough.dispose();}
+    let packed,shared=true;if(name==='PalmBark'){const trunk=scene.getObjectByName('Curved palm trunks').children[0].material,u=renderer.properties.get(trunk).uniforms;packed=u.normalMap.value;shared=packed===u.roughnessMap.value;}else packed=uniforms[`u${name}Surface`].value;
+    const stem=name.toLowerCase(),meadow=name==='Field'&&packed.image.currentSrc.includes('/meadow-surface.webp'),normalUrl=meadow?'/__qa/meadow-reference.png':name==='PalmBark'?'/__qa/bark-normal.png':stem==='field'?'/__qa/field-normal.jpg':`/assets/environment/${stem}-normal.jpg`,roughUrl=meadow?normalUrl:name==='PalmBark'?'/__qa/bark-roughness.png':stem==='field'?'/__qa/field-roughness.jpg':`/assets/environment/${stem}-roughness.jpg`;
+    const normal=await loader.loadAsync(normalUrl),rough=meadow?normal:await loader.loadAsync(roughUrl);
+    try{normal.colorSpace=rough.colorSpace=T.NoColorSpace;const dimensions=[packed.image.width,packed.image.height];target.setSize(...dimensions);samples.push({role:name,dimensions,shared,reference:normalUrl,normal:compare(render(normal,false),render(packed,false)),roughness:compare(render(rough,meadow),render(packed,true))});}finally{normal.dispose();if(rough!==normal)rough.dispose();}
    }
   }finally{renderer.setRenderTarget(previous);target.dispose();geometry.dispose();material.dispose();renderer.resetState();}
-  return{kind:'Full-resolution texelFetch/readRenderTargetPixels of actual game texture objects; references decoded/uploaded by the same browser; bark references are processed PNGs, not original-resolution JPEGs; not phone FPS',gpu:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),samples};
+  return{kind:'Full-resolution texelFetch/readRenderTargetPixels of actual game texture objects; references decoded/uploaded by the same browser; meadow and bark references are processed PNGs, not original-resolution sources; not phone FPS',gpu:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),samples};
  },role);
  result.browser=kind;result.bundle=await page.locator('script[type=module][src]').getAttribute('src');result.errors=errors;await writeFile(`${out}/result.json`,JSON.stringify(result,null,2),{flag:'wx'});console.log(JSON.stringify({out,...result}));assert.deepEqual(errors,[]);
  for(const sample of result.samples){assert.equal(sample.shared,true);assert.ok(sample.normal.maxByteError<=3);assert.ok(sample.roughness.maxByteError<=2);}

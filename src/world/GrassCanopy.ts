@@ -95,6 +95,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     uCanopyField: { value: field },
     uCanopyTerrainSize: { value: new THREE.Vector2(width, depth) },
     uCanopyOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
+    uCanopyFarOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
     uCanopyCarXZ: { value: new THREE.Vector2() },
     uCanopyTime: { value: 0 },
     uCanopyHiddenPoint: { value: new THREE.Vector3(0, minHeight - .1, 0) },
@@ -115,7 +116,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       return vec4(43.0,161.0,319.0,297.0);
     }
     uniform highp sampler2D uCanopyField;
-    uniform vec2 uCanopyTerrainSize, uCanopyOriginCell, uCanopyCarXZ;
+    uniform vec2 uCanopyTerrainSize, uCanopyOriginCell, uCanopyFarOriginCell, uCanopyCarXZ;
     uniform float uCanopyTime;
     uniform vec3 uCanopyHiddenPoint;
     attribute float aCanopyBlade;
@@ -183,21 +184,35 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     int row = slot / halfSide;
     ivec2 origin = ivec2(uCanopyOriginCell);
     uint sourceBlade=uint(aCanopyBlade);
-    // Each instance serves an even/odd cell pair. The low prefix retains
-    // eight complete photographed clumps (or sixteen fallback blades) per cell.
+    bool middleDistance=false;
+    float canopyCellSize=CANOPY_CELL;
+    // Each instance serves a world-cell pair in each band. The low prefix
+    // keeps every cell: six near clumps and two middle-distance clumps.
     int member=int(sourceBlade)/16;
-    int column = (slot % halfSide) * 2 + ((row + origin.x + origin.y + member) & 1);
-    ivec2 worldCell = origin + ivec2(column, row);
     uint blade = sourceBlade%16u+uint(group)*16u;
     #ifdef USE_MAP
-      blade=sourceBlade%16u/2u+uint(group)*8u;
+      middleDistance=sourceBlade>=24u;
+      if(middleDistance){
+        origin=ivec2(uCanopyFarOriginCell);canopyCellSize*=2.0;
+        member=int(sourceBlade-24u)/4;
+        blade=(sourceBlade-24u)%4u/2u+uint(group)*2u;
+      }else{
+        member=int(sourceBlade)/12;
+        blade=sourceBlade%12u/2u+uint(group)*6u;
+      }
     #endif
-    uint salt = blade * 97u;
-    vec2 bladeRoot=(vec2(worldCell)+vec2(canopyRandom(worldCell,salt+7u),canopyRandom(worldCell,salt+8u)))*CANOPY_CELL;
+    int column = (slot % halfSide) * 2 + ((row + origin.x + origin.y + member) & 1);
+    ivec2 worldCell = origin + ivec2(column, row);
+    uint salt = blade * 97u+(middleDistance?50000u:0u);
+    vec2 bladeRoot=(vec2(worldCell)+vec2(canopyRandom(worldCell,salt+7u),canopyRandom(worldCell,salt+8u)))*canopyCellSize;
     CanopySurface surface = canopySurface(bladeRoot);
     vec3 groundNormal = normalize(vec3(-surface.slope.x, 1.0, -surface.slope.y));
     float guard = length(uCanopyTerrainSize / float(CANOPY_SEGMENTS)) * .5 + .32;
-    float edgeFade = 1.0 - smoothstep(CANOPY_RADIUS - 8.0, CANOPY_RADIUS, distance(bladeRoot, uCanopyCarXZ));
+    float carDistance=distance(bladeRoot,uCanopyCarXZ);
+    float nearFade=1.0-smoothstep(CANOPY_RADIUS-8.0,CANOPY_RADIUS,carDistance);
+    float edgeFade=middleDistance
+      ? smoothstep(CANOPY_RADIUS-9.0,CANOPY_RADIUS-3.0,carDistance)*(1.0-smoothstep(CANOPY_RADIUS*2.0-10.0,CANOPY_RADIUS*2.0,carDistance))
+      : nearFade;
     float canopyVisibility = surface.inside * step(0.0, surface.minClearance)
       * smoothstep(guard, guard + 1.25, surface.clearance)
       * smoothstep(.68, .88, groundNormal.y) * smoothstep(.4, 2.8, surface.height);
@@ -215,7 +230,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     float stature = canopyRandom(worldCell, salt + 13u);
     float bladeHeight = stature < .85 ? .12 + stature * .24 : .38 + (stature - .85) * 1.5;
     #ifdef USE_MAP
-      bladeHeight=.15+stature*.22;
+      bladeHeight=(.15+stature*.22)*(middleDistance?1.3:1.0);
       float glyph=floor(canopyRandom(worldCell,salt+22u)*4.0);
       // Bounds of four connected photographed plants; avoid including a
       // neighbouring glyph's detached leaf in the same crop.
@@ -263,7 +278,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       '#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;',
     );
   };
-  material.customProgramCacheKey = () => `coast-grass-canopy-v4-${cellsPerSide}-${segments}-${material.map?'clumps':'blades'}`;
+  material.customProgramCacheKey = () => `coast-grass-canopy-v5-${cellsPerSide}-${segments}-${material.map?'clumps':'blades'}`;
 
   // Three initializes these matrices to identity once. They remain immutable throughout the lifetime.
   const mesh = new THREE.InstancedMesh(geometry, material, fullCount);
@@ -281,7 +296,8 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     fieldFormat: 'RG32F', fieldBytes: heightsAndClearance.byteLength,
     instanceBytes: mesh.instanceMatrix.array.byteLength,
     radius, clearanceGuard: spacing.length() / 2 + .32,
-    originCell: uniforms.uCanopyOriginCell.value, lowDetail: false,photographed:false,lowBladesPerCell:BLADES_PER_CELL/2,
+    originCell: uniforms.uCanopyOriginCell.value,farOriginCell:uniforms.uCanopyFarOriginCell.value,farCellSize:CELL_SIZE*2,farRadius:radius*2,
+    lowDetail: false,photographed:false,lowBladesPerCell:BLADES_PER_CELL/2,farBladesPerCell:0,lowFarBladesPerCell:0,
   };
   mesh.userData.grassCanopy = diagnostics;
   let disposed = false;
@@ -292,6 +308,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       uniforms.uCanopyTime.value = elapsed;
       uniforms.uCanopyCarXZ.value.set(carPosition.x, carPosition.z);
       uniforms.uCanopyOriginCell.value.set(Math.floor(carPosition.x / CELL_SIZE) - cellsPerSide / 2, Math.floor(carPosition.z / CELL_SIZE) - cellsPerSide / 2);
+      uniforms.uCanopyFarOriginCell.value.set(Math.floor(carPosition.x / (CELL_SIZE*2)) - cellsPerSide / 2, Math.floor(carPosition.z / (CELL_SIZE*2)) - cellsPerSide / 2);
     },
     setLowDetail(enabled) {
       if (disposed) return;
@@ -308,7 +325,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       }
       geometry.getAttribute('position').needsUpdate=true;geometry.getAttribute('uv').needsUpdate=true;
       material.map=texture;material.alphaTest=.43;material.alphaToCoverage=true;
-      diagnostics.photographed=true;diagnostics.bladesPerCell=16;diagnostics.lowBladesPerCell=8;
+      diagnostics.photographed=true;diagnostics.bladesPerCell=12;diagnostics.lowBladesPerCell=6;diagnostics.farBladesPerCell=4;diagnostics.lowFarBladesPerCell=2;
       const compile=material.onBeforeCompile;
       material.onBeforeCompile=(shader,renderer)=>{compile(shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('diffuseColor.rgb *= vCanopyTint;','float canopyPhotoLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));\ndiffuseColor.rgb=vCanopyTint*(.75+clamp(canopyPhotoLuma*4.0,0.0,.65));').replace('#include <alphatest_fragment>','diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');};
       centerPlantAlphaCoverage(material);material.needsUpdate=true;

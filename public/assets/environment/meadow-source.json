@@ -1,0 +1,118 @@
+{
+  "asset": "grass_medium_01",
+  "page": "https://polyhaven.com/a/grass_medium_01",
+  "license": "CC0-1.0",
+  "authors": {
+    "Rob Tuytel": "Photography",
+    "Rico Cilliers": "Modeling"
+  },
+  "method": "Top-down actual large a/b/c clumps, unlit photographed dry albedo, actual geometry/photo normals and fixed roughness; periodic world placements; linear-light 2x colour downsample and renormalized normals. RGB16 PNG decoded to high-byte RGB8; official separate Alpha16 converted to high-byte Alpha8. Underlay uses existing CC0 Withered Grass scan (dry-field-source.json). Separate sRGB/linear render targets, flat-normal calibration. PNG row zero is world +Z for runtime ground flipY=true and worldXZ UVs; normal RGB is world X/Z/up. No sun or backdrop baked.",
+  "sources": [
+    {
+      "file": "grass_medium_01_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_medium_01/grass_medium_01_1k.gltf",
+      "bytes": 27110,
+      "md5": "28dd8247f3faa749bf87a0b84be01e7e",
+      "sha256": "3e5e2a314c94e16de54fd7c28e41709731fbd2b1613ab539f1544f622ddb6a85"
+    },
+    {
+      "file": "grass_medium_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_medium_01/grass_medium_01.bin",
+      "bytes": 1006632,
+      "md5": "e0527a0561c2dae5b7b5c1b478d8c6bf",
+      "sha256": "f4587cabdb96a2e96d8be644923dc954a248edfaaa717a0ff224cacb898bee1f"
+    },
+    {
+      "file": "dry-color.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_dry_diff_1k.png",
+      "bytes": 2167830,
+      "md5": "6f5ae8d4f152542de30aad6b6a3ea327",
+      "sha256": "da85639d6eb8f029b50e7920aaf7e649940541bb24fe6ad239dbae7400af2eb2"
+    },
+    {
+      "file": "alpha.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_alpha_1k.png",
+      "bytes": 648718,
+      "md5": "6b5b251ef1ca9a69ab9f49def66d758a",
+      "sha256": "711a8e49af758d6a6ce1f610db858899a27be19da6d1866bd35c13bc7b8ffeff"
+    },
+    {
+      "file": "normal.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_01/grass_medium_01_nor_gl_1k.jpg",
+      "bytes": 956166,
+      "md5": "fcf43dd1253f56e4c361079f34155c37",
+      "sha256": "cae298d3d1d7ff7c7e210ad8ac772b96706e356f9315a6b04fde373ce01ccf1e"
+    }
+  ],
+  "bakerInputs": [
+    {
+      "file": "scripts/bake-meadow-ground.html",
+      "sha256": "0b742ca022f12e49a7cf05b90866724d1f6fc5f91e2bf42816f7704c3cd93773"
+    },
+    {
+      "file": "scripts/bake-meadow-ground.mjs",
+      "sha256": "27e7803b32304da4f238f858d16187b7871e2721ddcbeb72f209b00a6ae65ce8"
+    },
+    {
+      "file": "public/assets/environment/field-color.jpg",
+      "sha256": "3dfddd657c4bff92899b0bf778a2179813a5cfa6441b13069afd10cee831371a"
+    },
+    {
+      "file": "public/assets/environment/field-surface.webp",
+      "sha256": "9e7426544a07b373da5f0f556929cac7a910b6ccd5f88eb4badd2c1553523786"
+    }
+  ],
+  "metadata": {
+    "size": 2048,
+    "tile": 2,
+    "count": 288,
+    "submittedTriangles": 14681952,
+    "flatNormal": [
+      127,
+      127,
+      255,
+      255
+    ],
+    "tiltedNormal": [
+      173,
+      66,
+      229,
+      255
+    ],
+    "colorPeriodCheckX": {
+      "method": "Actual camera shift by half a world tile, compared to wrapped original pixels",
+      "maxError": 161,
+      "changedFraction": 0.00005221366882324219
+    },
+    "colorPeriodCheckZ": {
+      "method": "Actual camera shift by half a world tile, compared to wrapped original pixels",
+      "maxError": 142,
+      "changedFraction": 0.00005173683166503906
+    },
+    "normalPeriodCheckX": {
+      "method": "Actual camera shift by half a world tile, compared to wrapped original pixels",
+      "maxError": 240,
+      "changedFraction": 0.00005245208740234375
+    },
+    "normalPeriodCheckZ": {
+      "method": "Actual camera shift by half a world tile, compared to wrapped original pixels",
+      "maxError": 237,
+      "changedFraction": 0.0000514984130859375
+    },
+    "grassCoverage": 0.6652977466583252,
+    "maxNormalLengthError": 0.006636952745543434
+  },
+  "outputs": [
+    {
+      "file": "meadow-color.webp",
+      "bytes": 2133576,
+      "sha256": "148bef1e6736af588cd1d75091dd81ab1170b1b26919c59263f938cf2a991dcd"
+    },
+    {
+      "file": "meadow-surface.webp",
+      "bytes": 3049528,
+      "sha256": "e64d23f843cf1921b5d2e64ee51f9e39b46566ae9348664e7e203a9b57e28659"
+    }
+  ],
+  "errors": []
+}

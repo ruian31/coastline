@@ -84,7 +84,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const sandMaps = {
     color: surfaceTexture('sand-color.jpg', true), surface: surfaceTexture('sand-surface.webp'),
   };
-  const fieldMaps={color:surfaceTexture('field-color.jpg',true),surface:surfaceTexture('field-surface.webp')};
+  const fieldMaps={color:surfaceTexture('meadow-color.webp',true),surface:surfaceTexture('meadow-surface.webp')};
   const rockMaps = {
     color: surfaceTexture('rock-color.jpg', true), surface: surfaceTexture('rock-surface.png'),
   };

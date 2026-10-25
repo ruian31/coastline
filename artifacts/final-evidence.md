@@ -1,3 +1,28 @@
+# M40 · 连续干草地表与中距离草带
+
+2026-10-25，**index-dWqHp5uJ.js**，844.70kB/gzip236.04kB，已更新[5190试玩](http://10.158.204.114:5190/)。真实细叶干草模型离线烘成2m周期摄影地表，温和内陆坡面更连续、陡坡保留岩面。草毯固定32面预算按24/8分给近/中层，低档每格近6/中2簇，全档12/4，中层半径手机33m/桌面45m；两层均世界固定、两端密度渐退，没有新增运行draw、面数、实例容量或草图片。两张1k地表图替换旧field槽，GPU存储保持，下载约+1.61MB。
+
+地表单独候选仍过空，最终增加中层接续后近草边界改善；远坡大形、株型与整体自然感仍不足。保留此前世界1.5/3和空地构图未通过的结论，未重评其余九类，**Goal active**。这一步不代表达到用户要求的接近满分。
+
+- [8个正式桌面/横屏机位与18项辅助清单](/home/ryan/workspace/coastline/artifacts/evidence-meadow-release.json)
+- [实际摄影烘焙、平面/倾斜方向和X/Z周期验证](/home/ryan/workspace/coastline/artifacts/meadow-ground-m40-ground-axes/result.json)
+- [来源、输入与输出哈希](/home/ryan/workspace/coastline/public/assets/environment/meadow-source.json)
+- [三浏览器9项驾驶/切档/暂停与实际表面纹理检查](/home/ryan/workspace/coastline/artifacts/tests-m40-meadow.json)
+- [Chrome草接触、近中层及恢复](/home/ryan/workspace/coastline/artifacts/grass-canopy-m40-middle-mobile/result.json)、[WebKit](/home/ryan/workspace/coastline/artifacts/grass-canopy-m40-middle-webkit/result.json)、[桌面](/home/ryan/workspace/coastline/artifacts/grass-canopy-m40-middle-desktop/result.json)
+- [Chrome地表实际GPU逐像素读取](/home/ryan/workspace/coastline/artifacts/packed-ground-m40-chrome/result.json)与[WebKit同项](/home/ryan/workspace/coastline/artifacts/packed-ground-m40-webkit/result.json)
+- [实际触控前进/转向/制动/倒车和短恢复录像](/home/ryan/workspace/coastline/artifacts/vegetation-m40-phone/driving-and-recovery.webm)，[行进原始PNG](/home/ryan/workspace/coastline/artifacts/vegetation-m40-phone/moving-straight.png)与[轮迹PNG](/home/ryan/workspace/coastline/artifacts/vegetation-m40-phone/forward-tracks.png)
+- [普通无query入口与缓存核验](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m40-release/result.json)
+
+三配置实际编译顶点shader逐一射线检查1299个受压顶角读回（含矩形重复顶点），0埋地/根部位移0；法线与实际三角面点积最低.99999984，根点误差约20微米，道路0命中，全/低档和移窗稳定、近中层均可见。5簇轮点样本平均下降约.263m，20秒.246、45秒.067、65秒恢复；两侧平均约2.4cm外拨。Chrome/WebKit实际三种1024²地表纹理与参考法线/粗糙度GPU通道逐像素相同。独立只读审查指出的倾斜法线和Z周期验证缺口已补齐，源/烘焙输入/输出哈希再次核对，未以资产烘焙成功代替美术验收。
+
+9项三浏览器全过（2.6m），8正式图0错误。桌面峰145calls/857704tri/129geo/54tex，手机111/376919/127/51；原750k/300k面和手机40纹理建议预算仍超。像素熵桌面5.73–6.19、手机5.30–6.00，边缘密度.261–.630/.234–.542，最大主色份额.129/.162，只作非空/层次信号，不替代审美判断。
+
+同轮主机固定路草/内陆各90有效GPU样本、无disjoint，M39控制P50=2.315/3.672ms，新版2.524/3.493；P95=11.023/13.801→3.795/5.588。中位数分别约+9%/−5%，不以较低尾延迟宣布整体提速，详见[控制](/home/ryan/workspace/coastline/artifacts/ground-gpu-m40-control/result.json)和[最终候选](/home/ryan/workspace/coastline/artifacts/ground-gpu-m40-middle/result.json)。两机位实际map sampler共享已核验，draw/面数/纹理保持94/272386/48和111/376919/51。每帧仅增加中层原点的两次floor与vec2更新，本轮未重复CPU节流；不是一加12或iPhone硬件帧率。
+
+触控深压格7→276，倒车停止后275，随后实际5.08秒未暂停恢复，0错误；已看行进与轮迹原始画面，短片不替代M36原65秒实际等待。普通入口前进8.30m，摄影共享图/11级mip、中层窗口原点、压力图上传与车位、42投影体完整一次烘焙、测试全局undefined均通过。真实一加12/iPhone的新美术流畅度与用户对压草强弱的反馈仍待复核。
+
+---
+
 # M39 · 完整摄影草簇、连续近景覆盖与压伏接触
 
 2026-10-25，**index-D9XkvLL6.js**，843.74kB/gzip235.77kB，已更新5190。近草借用已有1k摄影图集，四种完整植物轮廓替换单根薄三角；16个矩形各2三角，仍为96顶点/32面每实例。低档每个世界格保留8簇、全档16簇，根点均匀覆盖格内，世界固定的密度渐退分散近景边界。两个受压顶角分别沿真实地形三角支撑，法线按实际三角计算；没有新增运行图片、纹理、draw、实例缓冲或每帧CPU扫描。

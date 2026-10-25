@@ -20,6 +20,7 @@ export type GrassCanopy = {
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   setLowDetail: (enabled: boolean) => void;
   usePhotographedClumps:(texture:THREE.Texture)=>void;
+  useFineGrass:(texture:THREE.Texture,farTexture:THREE.Texture)=>void;
   dispose: () => void;
 };
 
@@ -91,8 +92,10 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
   const cellsPerSide = mobile ? 48 : 64;
   const fullCount = cellsPerSide * cellsPerSide;
   const radius = (cellsPerSide / 2 - 2) * CELL_SIZE;
+  let fineGrass=false;
   const uniforms = {
     uCanopyField: { value: field },
+    uCanopyFarMap: { value: null as THREE.Texture|null },
     uCanopyTerrainSize: { value: new THREE.Vector2(width, depth) },
     uCanopyOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
     uCanopyFarOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
@@ -268,17 +271,84 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       ? (position.y>.5?canopyTip:canopyFoot)
       : uCanopyHiddenPoint;
   `;
+  const fineDeclarations = `varying float vFineLeaf;varying vec2 vCanopyFarUv;\n`;
+  const prepareFineLeaf = /* glsl */`
+ #include <beginnormal_vertex>
+ const int halfSide=CANOPY_SIDE/2;
+ const int halfCells=CANOPY_SIDE*halfSide;
+ int group=gl_InstanceID/halfCells,slot=gl_InstanceID%halfCells,row=slot/halfSide;
+ uint sourceBlade=uint(aCanopyBlade);bool middleDistance=sourceBlade>=24u;
+ int member=middleDistance?int(sourceBlade-24u)/4:int(sourceBlade)/12;
+ float cellSize=middleDistance?1.2:.45;
+ ivec2 origin=ivec2(middleDistance?uCanopyFarOriginCell:uCanopyOriginCell);
+ int column=(slot%halfSide)*2+((row+origin.x+origin.y+member)&1);
+ ivec2 worldCell=origin+ivec2(column,row);
+ uint leaf=middleDistance?(sourceBlade-24u)%4u/2u+uint(group)*2u:sourceBlade%12u+uint(group)*12u;uint salt=leaf*97u+(middleDistance?50000u:0u);
+ vec2 root=(vec2(worldCell)+vec2(canopyRandom(worldCell,salt+7u),canopyRandom(worldCell,salt+8u)))*cellSize;
+ CanopySurface surface=canopySurface(root);
+ vec3 groundNormal=normalize(vec3(-surface.slope.x,1.0,-surface.slope.y));
+ float guard=length(uCanopyTerrainSize/float(CANOPY_SEGMENTS))*.5+.4;
+ float nearRadius=float(CANOPY_SIDE/2-2)*.45,farRadius=float(CANOPY_SIDE/2-2)*1.2,d=distance(root,uCanopyCarXZ);
+ float edge=middleDistance?smoothstep(nearRadius-5.0,nearRadius-2.0,d)*(1.0-smoothstep(farRadius-8.0,farRadius,d)):1.0-smoothstep(nearRadius-5.0,nearRadius,d);
+ float canopyVisibility=surface.inside*step(0.0,surface.minClearance)*smoothstep(guard,guard+1.25,surface.clearance)*smoothstep(.68,.88,groundNormal.y)*smoothstep(.4,2.8,surface.height);
+ float threshold=canopyRandom(worldCell,salt+25u);canopyVisibility*=smoothstep(threshold,min(1.0,threshold+.12),edge);
+ vCanopyCoverage=canopyVisibility;vFineLeaf=middleDistance?0.0:1.0;
+ float angle=canopyRandom(worldCell,salt+11u)*6.283185307,c=cos(angle),s=sin(angle),stature=canopyRandom(worldCell,salt+13u),phase=canopyRandom(worldCell,salt+16u)*6.283185307;
+
+ vec3 force=coastPlantPressure(vec3(root.x,surface.height,root.y));
+ float gust=sin(uCanopyTime*1.15+float(worldCell.x)*.071+float(worldCell.y)*.053+phase);
+ vec3 canopyPosition;
+ if(!middleDistance){
+  float height=.15+stature*.25,width=.01+canopyRandom(worldCell,salt+12u)*.015;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust;
+  vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y),tip=canopyPressedTip(vec3(lean.x,height,lean.y),height,force,canopyVisibility,root,surface);
+  canopyPosition=vec3(root.x,surface.height,root.y)+(position.y>.5?tip:(position.x<0.0?left:right));objectNormal=normalize(cross(right-left,tip-left));
+  vMapUv=vec2(mix(.77,.79,uv.x),mix(.2,.58,uv.y));
+ }else{
+  float height=.16+stature*.2,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust,.025*sin(uCanopyTime*1.8+phase));
+  vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y);
+  vec3 topLeft=canopyPressedTip(vec3(lean.x-halfWidth.x,height,lean.y-halfWidth.y),height,force,canopyVisibility,root,surface),topRight=canopyPressedTip(vec3(lean.x+halfWidth.x,height,lean.y+halfWidth.y),height,force,canopyVisibility,root,surface);
+  vec3 offset=position.y>.5?(position.x<0.0?topLeft:topRight):(position.x<0.0?left:right);canopyPosition=vec3(root.x,surface.height,root.y)+offset;
+  objectNormal=normalize((int(sourceBlade)&1)==0?cross(right-left,topLeft-left):cross(topRight-right,topLeft-right));
+  vCanopyFarUv=vec2(uv.x,1.0-uv.y);
+ }
+ float dry=canopyRandom(worldCell,salt+19u);vCanopyTint=middleDistance?mix(vec3(.21,.19,.10),vec3(.34,.28,.15),dry):mix(vec3(.21,.19,.10),vec3(.36,.29,.15),dry);if(!middleDistance)vCanopyTint*=mix(.65,1.0,position.y);
+`;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = declarations + shader.vertexShader
-      .replace('#include <beginnormal_vertex>', prepareBlade)
-      .replace('#include <begin_vertex>', placeBlade);
+    shader.vertexShader = declarations + (fineGrass?fineDeclarations:'') + shader.vertexShader
+      .replace('#include <beginnormal_vertex>', fineGrass?prepareFineLeaf:prepareBlade)
+      .replace('#include <begin_vertex>', fineGrass?'#include <begin_vertex>\ntransformed=canopyVisibility>0.0?canopyPosition:uCanopyHiddenPoint;':placeBlade);
     interaction.setupShader(shader);
-    shader.fragmentShader = 'varying vec3 vCanopyTint;varying float vCanopyCoverage;\n' + shader.fragmentShader.replace(
-      '#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;',
-    );
+    shader.fragmentShader = 'varying vec3 vCanopyTint;varying float vCanopyCoverage;\n' + shader.fragmentShader;
+    if(fineGrass){
+      shader.fragmentShader='uniform sampler2D uCanopyFarMap;'+fineDeclarations+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
+        vec4 grassSample=vFineLeaf>.5?texture2D(map,vMapUv):texture2D(uCanopyFarMap,vCanopyFarUv);
+        // The near leaf silhouette is actual geometry. Only the far card uses
+        // alpha, with the existing procedural atlas's authored .46 cutoff.
+        grassSample.a=vFineLeaf>.5?1.0:grassSample.a*.43/.46;
+        diffuseColor*=grassSample;`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+        float grassValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=vFineLeaf>.5?vCanopyTint*(.7+clamp(grassValue*3.0,0.0,.5)):grassValue*vec3(1.5,1.3,.9);`);
+    }else{
+      shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',material.map
+        ? '#include <color_fragment>\nfloat canopyPhotoLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));\ndiffuseColor.rgb=vCanopyTint*(.75+clamp(canopyPhotoLuma*4.0,0.0,.65));'
+        : '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;');
+    }
+    if(material.map)shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>','diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');
   };
-  material.customProgramCacheKey = () => `coast-grass-canopy-v5-${cellsPerSide}-${segments}-${material.map?'clumps':'blades'}`;
+  const cacheKey=()=>`coast-grass-canopy-v6-${cellsPerSide}-${segments}-${fineGrass?'fine-leaves':material.map?'clumps':'blades'}`;
+  material.customProgramCacheKey=cacheKey;
+  let centeredCoverage=false;
+  function prepareCoverage(){
+    material.alphaTest=.43;material.alphaToCoverage=true;
+    if(!centeredCoverage){centerPlantAlphaCoverage(material);centeredCoverage=true;}
+    // The coverage helper captures a key, whereas this material may select its
+    // final asset mode later during loading. Preserve the live mode in the key.
+    material.customProgramCacheKey=()=>cacheKey()+'-plant-centered-alpha-v1';
+    material.needsUpdate=true;
+  }
 
   // Three initializes these matrices to identity once. They remain immutable throughout the lifetime.
   const mesh = new THREE.InstancedMesh(geometry, material, fullCount);
@@ -297,7 +367,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     instanceBytes: mesh.instanceMatrix.array.byteLength,
     radius, clearanceGuard: spacing.length() / 2 + .32,
     originCell: uniforms.uCanopyOriginCell.value,farOriginCell:uniforms.uCanopyFarOriginCell.value,farCellSize:CELL_SIZE*2,farRadius:radius*2,
-    lowDetail: false,photographed:false,lowBladesPerCell:BLADES_PER_CELL/2,farBladesPerCell:0,lowFarBladesPerCell:0,
+    lowDetail: false,photographed:false,fineLeaves:false,lowBladesPerCell:BLADES_PER_CELL/2,farBladesPerCell:0,lowFarBladesPerCell:0,
   };
   mesh.userData.grassCanopy = diagnostics;
   let disposed = false;
@@ -307,8 +377,8 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       if (disposed || !Number.isFinite(elapsed) || !Number.isFinite(carPosition.x) || !Number.isFinite(carPosition.z)) return;
       uniforms.uCanopyTime.value = elapsed;
       uniforms.uCanopyCarXZ.value.set(carPosition.x, carPosition.z);
-      uniforms.uCanopyOriginCell.value.set(Math.floor(carPosition.x / CELL_SIZE) - cellsPerSide / 2, Math.floor(carPosition.z / CELL_SIZE) - cellsPerSide / 2);
-      uniforms.uCanopyFarOriginCell.value.set(Math.floor(carPosition.x / (CELL_SIZE*2)) - cellsPerSide / 2, Math.floor(carPosition.z / (CELL_SIZE*2)) - cellsPerSide / 2);
+      uniforms.uCanopyOriginCell.value.set(Math.floor(carPosition.x / diagnostics.cellSize) - cellsPerSide / 2, Math.floor(carPosition.z / diagnostics.cellSize) - cellsPerSide / 2);
+      uniforms.uCanopyFarOriginCell.value.set(Math.floor(carPosition.x / diagnostics.farCellSize) - cellsPerSide / 2, Math.floor(carPosition.z / diagnostics.farCellSize) - cellsPerSide / 2);
     },
     setLowDetail(enabled) {
       if (disposed) return;
@@ -326,9 +396,26 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       geometry.getAttribute('position').needsUpdate=true;geometry.getAttribute('uv').needsUpdate=true;
       material.map=texture;material.alphaTest=.43;material.alphaToCoverage=true;
       diagnostics.photographed=true;diagnostics.bladesPerCell=12;diagnostics.lowBladesPerCell=6;diagnostics.farBladesPerCell=4;diagnostics.lowFarBladesPerCell=2;
-      const compile=material.onBeforeCompile;
-      material.onBeforeCompile=(shader,renderer)=>{compile(shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('diffuseColor.rgb *= vCanopyTint;','float canopyPhotoLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));\ndiffuseColor.rgb=vCanopyTint*(.75+clamp(canopyPhotoLuma*4.0,0.0,.65));').replace('#include <alphatest_fragment>','diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');};
-      centerPlantAlphaCoverage(material);material.needsUpdate=true;
+      prepareCoverage();
+    },
+    useFineGrass(texture,farTexture){
+      if(disposed||material.map)return;
+      fineGrass=true;
+      // 24 independent fine leaf triangles plus four complete far cards retain
+      // the fixed 32-triangle / 96-vertex budget, including the low prefix.
+      for(let leaf=0;leaf<24;leaf++){
+        vertices.set([-.5,0,0,.5,0,0,0,1,0],leaf*9);
+        uvs.set([0,1,1,1,.5,0],leaf*6);
+      }
+      for(let card=0;card<4;card++){
+        vertices.set([-.5,0,0,.5,0,0,-.5,1,0,.5,0,0,.5,1,0,-.5,1,0],24*9+card*18);
+        uvs.set([0,1,1,1,0,0,1,1,1,0,0,0],24*6+card*12);
+      }
+      geometry.getAttribute('position').needsUpdate=true;geometry.getAttribute('uv').needsUpdate=true;
+      geometry.name='Fine dry leaf triangles and middle distance grass cards';
+      material.map=texture;uniforms.uCanopyFarMap.value=farTexture;
+      Object.assign(diagnostics,{photographed:true,fineLeaves:true,cellSize:.45,farCellSize:1.2,radius:(cellsPerSide/2-2)*.45,farRadius:(cellsPerSide/2-2)*1.2,clearanceGuard:spacing.length()/2+.4,bladesPerCell:24,lowBladesPerCell:12,farBladesPerCell:4,lowFarBladesPerCell:2});
+      prepareCoverage();
     },
     dispose() {
       if (disposed) return;

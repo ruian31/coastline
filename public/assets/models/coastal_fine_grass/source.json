@@ -1,0 +1,109 @@
+{
+  "asset": "grass_medium_01",
+  "baker": {
+    "file": "scripts/prepare-fine-coastal-grass.mjs",
+    "sha256": "6a3e8dcdee8fec4efeb25d769bc89c2d32145c95713337152c7e5c4b7159414a"
+  },
+  "outputs": [
+    {
+      "file": "grass.gltf",
+      "bytes": 4669,
+      "sha256": "05f1f0fda0fb244800a0595e5cd31ef14a12810d54fa8ba15db7bf23d26f725c"
+    },
+    {
+      "file": "grass.bin",
+      "bytes": 36432,
+      "sha256": "8d499d8484110047439699a747936b19720a87c38a352fc9b11a978f6b2a8309"
+    },
+    {
+      "file": "grass-color.png",
+      "bytes": 837281,
+      "sha256": "efeeab6d856975fdd0702a2acb710e0618088551ad6686ebe1ae6360700b16b7"
+    }
+  ],
+  "page": "https://polyhaven.com/a/grass_medium_01",
+  "license": "CC0-1.0",
+  "authors": {
+    "Rob Tuytel": "Photography",
+    "Rico Cilliers": "Modeling"
+  },
+  "sources": [
+    {
+      "file": "grass_medium_01_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_medium_01/grass_medium_01_1k.gltf",
+      "bytes": 27110,
+      "md5": "28dd8247f3faa749bf87a0b84be01e7e",
+      "sha256": "3e5e2a314c94e16de54fd7c28e41709731fbd2b1613ab539f1544f622ddb6a85"
+    },
+    {
+      "file": "grass_medium_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_medium_01/grass_medium_01.bin",
+      "bytes": 1006632,
+      "md5": "e0527a0561c2dae5b7b5c1b478d8c6bf",
+      "sha256": "f4587cabdb96a2e96d8be644923dc954a248edfaaa717a0ff224cacb898bee1f"
+    },
+    {
+      "file": "dry-color.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_dry_diff_1k.png",
+      "bytes": 2167830,
+      "md5": "6f5ae8d4f152542de30aad6b6a3ea327",
+      "sha256": "da85639d6eb8f029b50e7920aaf7e649940541bb24fe6ad239dbae7400af2eb2"
+    },
+    {
+      "file": "alpha.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_alpha_1k.png",
+      "bytes": 648718,
+      "md5": "6b5b251ef1ca9a69ab9f49def66d758a",
+      "sha256": "711a8e49af758d6a6ce1f610db858899a27be19da6d1866bd35c13bc7b8ffeff"
+    },
+    {
+      "file": "normal.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_01/grass_medium_01_nor_gl_1k.jpg",
+      "bytes": 956166,
+      "md5": "fcf43dd1253f56e4c361079f34155c37",
+      "sha256": "cae298d3d1d7ff7c7e210ad8ac772b96706e356f9315a6b04fde373ce01ccf1e"
+    }
+  ],
+  "method": "Root all six complete native tiny sprigs, rotate and assemble three clumps. XZ ×4.7, Y ×5.5. Original UVs and transformed source normals, no simplification or new clump billboard.",
+  "variants": [
+    {
+      "variant": 0,
+      "parts": [
+        "tiny_a",
+        "tiny_b",
+        "tiny_c",
+        "tiny_d",
+        "tiny_e",
+        "tiny_f"
+      ],
+      "triangles": 301,
+      "vertices": 323
+    },
+    {
+      "variant": 1,
+      "parts": [
+        "tiny_a",
+        "tiny_b",
+        "tiny_c",
+        "tiny_d",
+        "tiny_e",
+        "tiny_f"
+      ],
+      "triangles": 301,
+      "vertices": 323
+    },
+    {
+      "variant": 2,
+      "parts": [
+        "tiny_a",
+        "tiny_b",
+        "tiny_c",
+        "tiny_d",
+        "tiny_e",
+        "tiny_f"
+      ],
+      "triangles": 301,
+      "vertices": 323
+    }
+  ]
+}

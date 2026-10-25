@@ -37,12 +37,12 @@ try{
    }finally{renderer.render=original;pending.forEach(q=>gl.deleteQuery(q));}
    times.sort((a,b)=>a-b);const debug=gl.getExtension('WEBGL_debug_renderer_info');
    const scene=groundObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')),canopy=scene.getObjectByName('World anchored dry grass canopy'),near=scene.getObjectByName('Photographed low coastal grass 0'),map=canopy.material.map;
-   const grassCanopy={key:canopy.material.customProgramCacheKey(),photographed:Boolean(map),sharedWithNear:Boolean(map)&&map===near?.material.map,actualSampler:Boolean(map)&&renderer.properties.get(canopy.material).uniforms.map?.value===map};
+   const grassCanopy={key:canopy.material.customProgramCacheKey(),photographed:Boolean(map),sharedWithNear:Boolean(map)&&map===near?.material.map,actualSampler:Boolean(map)&&renderer.properties.get(canopy.material).uniforms.map?.value===map,fineLeaves:Boolean(canopy.userData.grassCanopy.fineLeaves),farShared:renderer.properties.get(canopy.material).uniforms.uCanopyFarMap?.value===scene.getObjectByName('Dry inland patch grass clusters').material.map};
    return {supported:true,disjoint,count:times.length,gpuP50:times[Math.floor(times.length*.5)],gpuP95:times[Math.floor(times.length*.95)],mean:times.reduce((a,b)=>a+b,0)/times.length,renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),grassCanopy,diagnostics:window.__THREE_GAME_DIAGNOSTICS__.renderer};
   });
   samples.push({state,...sample});console.log(JSON.stringify(samples.at(-1)));
   assert.equal(sample.supported,true,'GPU timers required for this comparison');assert.equal(sample.disjoint,false);assert.equal(sample.count,90);
-  if(sample.grassCanopy.photographed){assert.equal(sample.grassCanopy.sharedWithNear,true);assert.equal(sample.grassCanopy.actualSampler,true);}
+  if(sample.grassCanopy.photographed){assert.equal(sample.grassCanopy.sharedWithNear,true);assert.equal(sample.grassCanopy.actualSampler,true);if(sample.grassCanopy.fineLeaves)assert.equal(sample.grassCanopy.farShared,true);}
  }
  assert.deepEqual(errors,[]);await writeFile(`${out}/result.json`,JSON.stringify({bundle,environment:'RTX4050 hardware GPU timer; Android 844×390 low tier; frozen actual views; not phone hardware',samples,errors},null,2),{flag:'wx'});
 }finally{await browser.close();}

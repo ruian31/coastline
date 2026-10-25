@@ -1,3 +1,20 @@
+# M41 · 细叶草地与完整干草簇
+
+2026-10-25，**index-D40x5E2c.js**，850.97kB/gzip237.71kB，已更新[5190试玩](http://10.158.204.114:5190/)。24个独立细叶三角与4个中层矩形仍占32面/96顶点，近格.45m、半径手机9.9m/桌面13.5m，低档每格12叶；中层复用原256²草图，1.2m格、半径26.4/36m。五米密度渐退与提前重叠减轻车周围的圈状边界，仍未完全解决近远草形态差异。
+
+三款摄影近草各301面，由六株完整原生细草组成，保留原UV/变换法线；替换旧328/321/341面草簇，成功路径不再创建90面补充主体，不请求旧Bermuda。1k照片与草毯共用，首次三文件878382B，较旧版+529439B，同尺寸GPU纹理槽不增。失败回退旧摄影草，再失败保留程序草。来源与哈希见[细草清单](../public/assets/models/coastal_fine_grass/source.json)及[CPU资产检查](fine-grass-m41-asset-check.json)。独立只读审查发现导出材质漏设非金属，已修并重生成；运行原本替换材质，未将此修正计为画质改善。
+
+[最终清单](evidence-fine-grass-final.json)声明8幅桌面/手机机位，全部0浏览器错误，已逐图查看。桌面峰144calls/849049tri/128geo/54tex，手机110/375822/126/51，三角形和手机纹理仍超起始预算。像素熵桌面5.59–6.03、手机5.05–6.00，边缘密度.261–.595/.234–.517，最大主色份额.162/.173；像素指标不代表真实风景达标。近叶更连续细密，但远处发白草团、裸坡和海岸整体构图仍不足；本轮不重评其余九类、不生成新均分，沿用世界1.5/3与空地构图未通过。Goal active。
+
+- [初接入30项三浏览器检查](tests-m41-fine.json)：7.4分钟全过，覆盖根部、近远互斥、作者前缀、材质共享、切档、实际驾驶、两层素材失败与暂停。该版DQQ在最终过渡调整前，未冒充最终机位。
+- [最终窗口/压力六项复核](tests-m41-fine-wide.json)：2.3分钟全过；只扩大格与重叠、保持资产及原摆放，因此未重跑已过的素材失败用例。30与6含重叠，不称36个不同用例。
+- 实际GPU编译shader读回：[Chrome手机](grass-canopy-m41-wide-phone/result.json)、[WebKit](grass-canopy-m41-wide-webkit/result.json)、[桌面](grass-canopy-m41-wide-desktop/result.json)。各2410个可见受压叶端读回全部用实际地形三角射线核对，埋地0，根部位移0，最低面法线点积.9999798、根误差约19微米，道路0命中；全/低密度、移窗与风动保持。24轮点样本压低约.222m，20秒.208、45秒.057、65秒0，两侧外拨保持。
+- [真实触控与65秒恢复](vegetation-m41-fine-phone/result.json)、[录像](vegetation-m41-fine-phone/driving-and-recovery.webm)、[转弯原始PNG](vegetation-m41-fine-phone/moving-turn.png)、[前进轮痕](vegetation-m41-fine-phone/forward-tracks.png)、[65秒](vegetation-m41-fine-phone/recovery-65.png)：前进/转向/制动/倒车0错误，深压格7→268，实际未暂停65.08秒。停车处继续受车压，不能用深压格仍非零否定旧路径恢复。另用Playwright自带ffmpeg解码3秒起连续12帧，查看[首帧](vegetation-m41-fine-phone/motion-01.png)、[中帧](vegetation-m41-fine-phone/motion-06.png)、[末帧](vegetation-m41-fine-phone/motion-12.png)，并对照原始运动PNG，未见叶根跳动或车身穿草的突变。
+- 同轮GPU各机位90有效样本、无disjoint：[M40控制](ground-gpu-m41-control/result.json)路草/内陆P50=2.122/3.135ms、P95=4.434/5.500；[最终M41](ground-gpu-m41-fine-final/result.json)P50=2.401/3.437ms、P95=6.787/5.120。中位数约+13%/+10%，不是提速；固定机位各少1draw，分别少3502/1097面，纹理数不变。此为RTX4050主机、Android视口，不是一加12或iPhone实测FPS。CPU取消补充主体复制，未再跑不相关节流回归。
+- [普通入口检查](fineleaf-grass-m41-release/result.json)：无query前进8.60m，新草ready、11/9级共享mip、32面模板、实际绘制后核对中层GPU sampler绑定、压力上传/车位、42投影体一次世界缓存、测试全局undefined、0错误。候选与正常dist同D40；车辆、横屏全屏及其他系统未改。
+
+此前几组整簇烘焙、面积Alpha、法线图、光照与升高山坡的试验均未采用，记录在game-progress，不用它们的截图/计时替代最终证据。待真实一加12/iPhone复测；反馈不阻塞下一阶段风景改进。
+
 # M40 · 连续干草地表与中距离草带
 
 2026-10-25，**index-dWqHp5uJ.js**，844.70kB/gzip236.04kB，已更新[5190试玩](http://10.158.204.114:5190/)。真实细叶干草模型离线烘成2m周期摄影地表，温和内陆坡面更连续、陡坡保留岩面。草毯固定32面预算按24/8分给近/中层，低档每格近6/中2簇，全档12/4，中层半径手机33m/桌面45m；两层均世界固定、两端密度渐退，没有新增运行draw、面数、实例容量或草图片。两张1k地表图替换旧field槽，GPU存储保持，下载约+1.61MB。

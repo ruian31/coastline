@@ -1,0 +1,260 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "max": [
+        0.3752318024635315,
+        0.618493378162384,
+        0.16836652159690857
+      ],
+      "min": [
+        -0.350787878036499,
+        0,
+        -0.2774215042591095
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 903,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 903,
+      "bufferView": 1,
+      "byteOffset": 1808
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 903,
+      "bufferView": 1,
+      "byteOffset": 3616
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "max": [
+        0.3465856909751892,
+        0.618493378162384,
+        0.27821746468544006
+      ],
+      "min": [
+        -0.3093965947628021,
+        0,
+        -0.2252175658941269
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "max": [
+        0.27696746587753296,
+        0.618493378162384,
+        0.22683104872703552
+      ],
+      "min": [
+        -0.18349844217300415,
+        0,
+        -0.2617298364639282
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 323,
+      "bufferView": 3,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 10336,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10336,
+      "byteLength": 5424,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15760,
+      "byteLength": 10336,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 26096,
+      "byteLength": 10336,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "samplers": [
+    {
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "uri": "grass-color.png"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "grass.bin",
+      "byteLength": 36432
+    }
+  ],
+  "materials": [
+    {
+      "name": "Photographed dry fine grass",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.43,
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Fine dry grass clump 0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Fine dry grass clump 1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7,
+            "TEXCOORD_0": 8
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    },
+    {
+      "name": "Fine dry grass clump 2",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 5
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Fine dry grass clump 0",
+      "mesh": 0
+    },
+    {
+      "name": "Fine dry grass clump 1",
+      "mesh": 1
+    },
+    {
+      "name": "Fine dry grass clump 2",
+      "mesh": 2
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Complete multidirectional dry grass sprigs",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ]
+}

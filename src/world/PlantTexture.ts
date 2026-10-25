@@ -50,6 +50,34 @@ export function preserveRooibosCutoutMips(texture:THREE.Texture):void {
  preservePlantCutoutMips(texture,[[0,0,662,160],[0,160,662,864]]);
 }
 
+/** Object-space normals stay opaque to avoid the browser's premultiplied-alpha
+ * rounding. Only the original colour coverage may contribute to their mips. */
+export function preservePlantNormalMips(texture:THREE.Texture,coverage:THREE.Texture):void {
+ const source=texture.image as HTMLImageElement,width=source.width,height=source.height,mask=coverage.image as HTMLCanvasElement;
+ if(width!==height||width<2||(width&(width-1))!==0||mask.width!==width||mask.height!==height)throw Error('Plant normals require a matching square power-of-two coverage atlas');
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const context=canvas.getContext('2d',{willReadFrequently:true})!;context.drawImage(source,0,0);
+ const base=context.getImageData(0,0,width,height).data,alpha=mask.getContext('2d',{willReadFrequently:true})!.getImageData(0,0,width,height).data;
+ let raw=new Float32Array(base.length),rawWidth=width;
+ for(let i=0;i<base.length;i+=4){const x=base[i]/127.5-1,y=base[i+1]/127.5-1,z=base[i+2]/127.5-1,length=Math.hypot(x,y,z);raw[i]=x/length;raw[i+1]=y/length;raw[i+2]=z/length;raw[i+3]=alpha[i+3]/255;}
+ texture.image=canvas;const mipmaps:HTMLCanvasElement[]=[canvas];texture.mipmaps=mipmaps;
+ for(let size=width/2;size>=1;size/=2){
+  const mip=document.createElement('canvas');mip.width=mip.height=size;const ctx=mip.getContext('2d')!,image=ctx.createImageData(size,size),nextRaw=new Float32Array(image.data.length);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+   const sum=[0,0,0],empty=[0,0,0];let weight=0;
+   for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const i=((y*2+dy)*rawWidth+x*2+dx)*4,a=raw[i+3];weight+=a;for(let c=0;c<3;c++){sum[c]+=raw[i+c]*a;empty[c]+=raw[i+c];}}
+   const i=(y*size+x)*4;for(let c=0;c<3;c++)nextRaw[i+c]=weight?sum[c]/weight:empty[c]/4;nextRaw[i+3]=weight/4;
+   // Keep the unnormalised resultant in the raw chain. Normalising each level
+   // would overweight cancelled vectors when the following level is reduced.
+   const length=Math.hypot(nextRaw[i],nextRaw[i+1],nextRaw[i+2]);
+   for(let c=0;c<3;c++)image.data[i+c]=127.5*((length>1e-8?nextRaw[i+c]/length:c===1?1:0)+1);image.data[i+3]=255;
+  }
+  ctx.putImageData(image,0,0);mipmaps.push(mip);raw=nextRaw;rawWidth=size;
+ }
+ texture.colorSpace=THREE.NoColorSpace;texture.generateMipmaps=false;texture.needsUpdate=true;
+ texture.userData.normalMips={levels:mipmaps.length,coverage:coverage.uuid,averaging:'original coverage weighted object XYZ',opaque:true};
+}
+
 /** Centre MSAA coverage on the authored cutoff. Three's forward-only smoothstep
  * removes subpixel needles even after their mip coverage has been preserved. */
 export function centerPlantAlphaCoverage(material:THREE.Material):void {

@@ -217,7 +217,7 @@ test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥�
    await page.evaluate(state=>window.__THREE_GAME_TEST_HOOKS__!.setState(state),state);const current=await inspect();expect(current.near+current.road.visible).toBeLessThanOrEqual(cap);expect(current.field.selected+current.road.selected).toBeLessThanOrEqual(cap);expect(current.field.visible).toBe(current.near);expect(current.unknown).toEqual([]);expect(current.outside).toEqual([]);expect(current.duplicates).toBe(0);expect(current.wrongLod).toEqual([]);expect(current.maxDistance).toBeLessThanOrEqual(current.field.range+.001);expect(current.shared&&current.ownAttributes).toBe(true);expect(current.textures).toEqual(initial.textures);expect(current.authors).toEqual(initial.authors);
   }
  }
- expect(requests).toHaveLength(2);expect(new Set(requests).size).toBe(2);expect(errors).toEqual([]);
+ expect(requests.map(url=>url.split('/').at(-1)).sort()).toEqual(['scrub-color.png','scrub-impostor-normals.png','scrub-impostors.png']);expect(errors).toEqual([]);
 });
 
 for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','invalid-atlas-size'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page},info)=>{
@@ -232,6 +232,20 @@ for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','inv
  expect(result.fallback&&result.original&&result.field&&result.running).toBe(true);expect(result.loaded).toBe(false);expect(result.count).toBeGreaterThan(0);expect(result.maxDistance).toBeLessThanOrEqual(result.range+.001);
  if(info.project.name.includes('chrome')&&resource==='scrub-impostors.png')expect(result.closed).toEqual([[1024,1024],[1024,1024]]);
  if(info.project.name.includes('chrome')&&resource==='invalid-atlas-size'){expect(result.closed.filter(size=>size[0]===16)).toEqual([[16,16]]);expect(result.closed.filter(size=>size[0]===1024)).toEqual([[1024,1024]]);}
+});
+
+for(const resource of ['ready','missing','invalid-size'])test('远灌丛法线共享与可选回退 '+resource,async({page})=>{
+ await page.setViewportSize({width:844,height:390});
+ if(resource==='missing')await page.route('**/coastal_rooibos/scrub-impostor-normals.png',route=>route.abort());
+ if(resource==='invalid-size'){const png=new PNG({width:16,height:16});png.data.fill(255);await page.route('**/coastal_rooibos/scrub-impostor-normals.png',route=>route.fulfill({body:PNG.sync.write(png),contentType:'image/png'}));}
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {normalObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.normalObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.normalObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
+ const result=await page.evaluate(()=>{const objects=(window as unknown as {normalObjects:unknown[]}).normalObjects,scene=objects.find(o=>(o as THREE.Scene).isScene&&(o as THREE.Scene).getObjectByName('Coastal landscape')) as THREE.Scene,root=scene.getObjectByName('Coastal landscape')!,renderer=objects.find(o=>(o as {isWebGLRenderer?:boolean}).isWebGLRenderer) as THREE.WebGLRenderer,ids=new Set<string>(),keys:string[]=[],mips:number[]=[],spaces:string[]=[];
+  for(const name of ['Grey green coastal scrub impostor 0','Inland grey green scrub impostor 0']){const mesh=root.getObjectByName(name) as THREE.Mesh,material=mesh.material as THREE.Material,props=renderer.properties.get(material) as {uniforms?:{uScrubProxyNormal?:{value:THREE.Texture}}};keys.push(material.customProgramCacheKey());const normal=props.uniforms?.uScrubProxyNormal?.value;if(normal){ids.add(normal.uuid);mips.push(normal.mipmaps.length);spaces.push(normal.colorSpace);}}
+  return{detail:root.userData.scrubProxyNormals,source:root.userData.scrubDetail.ready,field:root.userData.fieldScrubDetail.ready,ids:ids.size,keys,mips,spaces,running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
+ expect(result.source&&result.field&&result.running).toBe(true);expect(result.keys.every(key=>key.includes('plant-centered-alpha-v1'))).toBe(true);expect(result.detail.ready).toBe(resource==='ready');
+ if(resource==='ready'){expect(result.ids).toBe(1);expect(result.mips).toEqual([10,10]);expect(result.spaces).toEqual(['','']);}else{expect(result.detail.fallback).toBe(true);expect(result.ids).toBe(0);expect(result.keys.every(key=>key.includes('scrub-impostor-up'))).toBe(true);}
+ expect(errors).toEqual([]);
 });
 
 test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前缀',async({page},info)=>{

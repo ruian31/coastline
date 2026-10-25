@@ -1,3 +1,16 @@
+# M42 · 远灌丛原色与叶片受光
+
+2026-10-25，**index-B3sbJFCT.js**，854.27kB/gzip238.72kB，已更新[5190试玩](http://10.158.204.114:5190/)。保留M41作者摆放、密度、实体模型和LOD范围；重烘原生直通颜色与对象法线，减少远灌丛黑色剪影。颜色/法线源mask一致，输出法线保持不透明，运行10级mip按原颜色coverage加权。一个新512²槽含mip约1.33MiB，首次下载增加116846B；未增加draw或几何数量。细枝与枝冠分开保留覆盖，正常与低档代理共用材质图。
+
+- [24项三浏览器检查](scrub-m42-final-browser-tests.json)：桌面Chrome、Android尺寸Chrome、手机WebKit，4.3分钟全过。覆盖根部、三层互斥、前缀、预算共享、旧四种失败及新法线成功/缺失/尺寸错回退。
+- 实际GPU检查：[Chrome](scrub-normals-m42-chrome/result.json)、[WebKit](scrub-normals-m42-webkit/result.json)。10级全像素上传误差0、A255；9级独立直接原像素块求和误差0；8个实际生产shader旋转/非均匀Y缩放样本与Three normalMatrix误差<=1/0字节，绘制后sampler绑定正确，0错误。独立只读审查指出的自动mip污染已修复，没有递归审查。
+- [颜色/法线烘焙校准](scrub-impostor-bake-m42-weighted-normals/result.json)、[源几何/输入输出SHA](coastal-rooibos-validation-m42-weighted-normal/result.json)、[四路径资源销毁](scrub-disposal-m42-decoded/result.json)：实际已解码的两张代理图正常/错误尺寸/主色失败/加载中销毁均只释放一次。最初销毁探针对完全失败、未取得图像/GPU存储的临时Texture误要求dispose，已按拥有的资源修正，未改产品路径掩盖失败。
+- [最终正式清单](evidence-scrub-normals-final.json)：8机位0错误，逐图已看。桌面峰144calls/849049tri/128geo/55tex，手机110/375822/126/52；三角与手机纹理预算仍超额。另有[9个手机实际视角](inland-scrub-m42-proxy-phone/result.json)、[指针环顾录像](inland-scrub-m42-proxy-phone/page@f967a779d7ffa851f8d6fd5c9a336799.webm)、[连续首帧](inland-scrub-m42-proxy-phone/orbit-01.png)/[中帧](inland-scrub-m42-proxy-phone/orbit-06.png)/[末帧](inland-scrub-m42-proxy-phone/orbit-12.png)。原始PNG和连续帧已看，仍能见到远草团、空坡和细枝株型限制；未当作自然风景达标。
+- 同轮主机GPU各90有效样本/机位、无disjoint：[M41控制](ground-gpu-m42-m41-control/result.json)路草/内陆P50=2.611/3.999ms、P95=4.154/5.888；[M42最终](ground-gpu-m42-proxy-final/result.json)P50=2.638/3.229、P95=5.052/4.933。一升一降，不称整体提速；相同draw/三角，纹理+1，主机数据不是真机FPS。
+- [普通无query入口](fineleaf-m42-proxy-release/result.json)：同B3sb、前进8.45m，新资源各请求一次、草图共享/压力上传/42世界投影一次缓存、测试全局关闭、0错误。草毯/车辆互动未改，M41完整65秒实测证据保持适用；用户指定几十秒保留再恢复的要求不变。
+
+48片新群落及减半数量、缩短LOD、顶片淡出候选均因扁冠/开销没有采用。World仍1.5/3，其余九类不重评、不生成新均分，**Goal active**。更饱满的灌木与草地/裸土大尺度构图继续推进；一加12/iPhone新美术版真机反馈待补。
+
 # M41 · 细叶草地与完整干草簇
 
 2026-10-25，**index-D40x5E2c.js**，850.97kB/gzip237.71kB，已更新[5190试玩](http://10.158.204.114:5190/)。24个独立细叶三角与4个中层矩形仍占32面/96顶点，近格.45m、半径手机9.9m/桌面13.5m，低档每格12叶；中层复用原256²草图，1.2m格、半径26.4/36m。五米密度渐退与提前重叠减轻车周围的圈状边界，仍未完全解决近远草形态差异。

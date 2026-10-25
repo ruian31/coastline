@@ -8,7 +8,7 @@ const root='public/assets/models/coastal_rooibos',cache='work/coastal-shrub-cand
 const out='artifacts/coastal-rooibos-validation-'+label;await mkdir(out);
 const source=JSON.parse(await readFile(root+'/source.json','utf8')),proxy=JSON.parse(await readFile(root+'/impostor-source.json','utf8')),geometry=[];
 assert.equal(source.license,'CC0-1.0');assert.deepEqual(Object.keys(source.authors).sort(),['James Ray Cock','Jenelle van Heerden']);
-for(const [base,files]of [[cache,source.sourceFiles],[root,source.preparedAssets],[root,proxy.inputs],[root,[proxy.output]]])for(const file of files){const bytes=await readFile(base+'/'+file.path);if(file.bytes)assert.equal(bytes.length,file.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);}
+for(const [base,files]of [[cache,source.sourceFiles],[root,source.preparedAssets],[root,proxy.inputs],[root,[proxy.output,proxy.normalOutput]]])for(const file of files){const bytes=await readFile(base+'/'+file.path);if(file.bytes)assert.equal(bytes.length,file.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);}
 assert.equal(proxy.bakerInputs.length,3);for(const file of proxy.bakerInputs)assert.equal(createHash('sha256').update(await readFile(file.path)).digest('hex'),file.sha256);
 const originalJSON=JSON.parse(await readFile(cache+'/wild_rooibos_bush_1k.gltf','utf8')),materialNames=originalJSON.materials.map(m=>m.name);originalJSON.images=[];originalJSON.textures=[];originalJSON.materials=originalJSON.materials.map(()=>({}));
 const io=new NodeIO(),original=await io.readJSON({json:originalJSON,resources:{'wild_rooibos_bush.bin':await readFile(cache+'/wild_rooibos_bush.bin')}}),derived=await io.read(root+'/scrub.gltf');

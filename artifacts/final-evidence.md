@@ -1,3 +1,27 @@
+# M39 · 完整摄影草簇、连续近景覆盖与压伏接触
+
+2026-10-25，**index-D9XkvLL6.js**，843.74kB/gzip235.77kB，已更新5190。近草借用已有1k摄影图集，四种完整植物轮廓替换单根薄三角；16个矩形各2三角，仍为96顶点/32面每实例。低档每个世界格保留8簇、全档16簇，根点均匀覆盖格内，世界固定的密度渐退分散近景边界。两个受压顶角分别沿真实地形三角支撑，法线按实际三角计算；没有新增运行图片、纹理、draw、实例缓冲或每帧CPU扫描。
+
+首个收尖UV候选会裁掉10–27%有效叶片，已放弃。远草共用照片/增密候选仍有横向偏扁的轮廓，地表调色与受光候选也未形成有效改善，均未采用；最终地面及远草保留M38。近处体量与互动改善，但空坡、近密远疏及干草形态仍需继续，世界1.5/3和空地构图自动失败保留，其余九类未重评，**Goal active**。
+
+- [8个正式桌面/横屏机位及辅助证据清单](/home/ryan/workspace/coastline/artifacts/evidence-canopy-release.json)
+- [D9手机实际GPU接触、根点、法线、移窗和恢复](/home/ryan/workspace/coastline/artifacts/grass-canopy-m39-release-mobile/result.json)
+- [同一草簇几何/压力计算的WebKit读回](/home/ryan/workspace/coastline/artifacts/grass-canopy-m39-field-final-webkit/result.json)与[桌面读回](/home/ryan/workspace/coastline/artifacts/grass-canopy-m39-field-final-desktop/result.json)
+- [三浏览器共享/驾驶/切档/暂停6项](/home/ryan/workspace/coastline/artifacts/tests-m39-canopy-release.json)与[最终草图失败回退3项](/home/ryan/workspace/coastline/artifacts/tests-m39-fallback-release.json)
+- [最终真实触控前进、转向、制动、倒车及5秒短恢复](/home/ryan/workspace/coastline/artifacts/vegetation-m39-phone-motion-pixels/driving-and-recovery.webm)
+- [行进中原始画面](/home/ryan/workspace/coastline/artifacts/vegetation-m39-phone-motion-pixels/moving-straight.png)与[转向原始画面](/home/ryan/workspace/coastline/artifacts/vegetation-m39-phone-motion-pixels/moving-turn.png)
+- [D9普通无query入口、共享图集和世界阴影缓存](/home/ryan/workspace/coastline/artifacts/fineleaf-grass-m39-release/result.json)
+
+最终实际GPU逐一射线核对1743个受压顶角读回（含矩形共享顶点的重复），埋地0、根部位移0、实际面法线点积最低.99999984；根部最大误差约13微米，道路0命中。7簇轮点样本平均下降约.242m，20秒.227m、45秒.062m、65秒恢复到无压控制；两侧平均外拨约2.2–2.4cm，距离渐退与移窗/半密度前缀保持。这是轻量植物形变近似，不是逐叶刚体物理。长期寿命逻辑未改，M36原实际65秒等待视频保留；本轮短运动不冒充完整长等待。
+
+8个正式图0错误，桌面峰145calls/857704tri/129geo/54tex，手机111/376919/127/51；原750k/300k面及手机40纹理建议预算仍超。集合少于M38，不以较低峰值声称减少总体成本。像素熵桌面6.02–6.28、手机5.63–6.18，边缘密度.515–.688/.435–.574，最大主色份额.072/.119，只作非空白/层次证据，不替代美术评分。
+
+主机固定路草/内陆各90有效GPU样本，M38控制P50=2.185/3.313ms，最终D9=2.076/3.455；P95=3.747/5.904→5.403/13.896。D9额外确认实际map sampler确实共享近草摄影图；早期Bcd为2.448/3.866和6.546/20.243，未记录该绑定，原数据保留。不同轮次频率与尾延迟波动明显，不挑低数据宣布提速或零成本，详见[最终GPU记录](/home/ryan/workspace/coastline/artifacts/ground-gpu-m39-release-binding/result.json)和[较早控制](/home/ryan/workspace/coastline/artifacts/ground-gpu-m39-control/result.json)。CPU每帧逻辑未改，未重复节流；真实一加12/iPhone仍待复核。
+
+早期远草候选漏算新几何包围球，触发加载回退，已定位；修后18项17过/1桌面30秒记录超时，在浏览器完整逐值比较作者矩阵、只返回汇总后，该项三浏览器通过。最终远草试验放弃，单独保留原记录，不将它们合并成同版本独立验收。近草最终6项与GPU首次成本采自Bcd；D9只移除错误的灌木回调绑定，成功草图的渲染路径相同，最终3项失败回退与普通入口再次验证。普通入口前进8.45m，摄影图/11级mip和压力图实际上传、42投影体全部一次烘焙、测试全局undefined、0错误。当前试玩地址为[5190](http://10.158.204.114:5190/)。
+
+---
+
 # M38 · 扫描海岸树、分层枝叶和近镜头渐隐
 
 2026-10-25，**index-sZ71VLvZ.js**，841.40kB/gzip235.02kB，已更新5190。保留原内陆树的独立随机序列、根部XZ、尺度关系与旋转，替换伞状冠与直筒树干为CC0 Island Tree 01扫描树。近5371/远1431面，近188/远67个空间簇分别用自己的三个方向实模图像，三张正交片保留体积和视差；不是整树单片。树皮使用摄影颜色、扫描法线与粗糙度，叶簇使用体积法线和轻微风动，刚体树不接入车辆压草。实体树干仍可能短暂挡住第三人称镜头；极近叶簇在1.2→3.8m范围按像素渐隐，减少驶入树冠时的大张贴片遮挡。

@@ -533,6 +533,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     if(sources.length!==3||!map||sources.some(mesh=>!mesh.geometry.getAttribute('uv'))){discard();throw Error('Coastal grass needs three rooted variants and its alpha atlas');}
     try{const image=map.image as {width:number;height:number};if(image.width!==1024||image.height!==1024)throw Error('Coastal grass requires its authored 1024-square atlas');preservePlantCutoutMips(map,[[0,0,1024,1024]],.43);releaseDecodedImage();}catch(error){discard();throw error;}
     textures.push(map);map.anisotropy=mobile?4:8;
+    grassCanopy.usePhotographedClumps(map);
     const material=wind(0xffffff,.16);material.name='Photographed coastal grass cutout';material.map=map;material.alphaTest=.43;material.alphaToCoverage=true;
     groundFollowing(material);
     const fieldNearMaterial=wind(0xffffff,.16);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);

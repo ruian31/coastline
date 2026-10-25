@@ -21,7 +21,8 @@ try{
  // Raise the ordinary orbit camera through real pointer input.
  await page.mouse.move(600,150);await page.mouse.down();await page.mouse.move(600,220,{steps:20});await page.mouse.up();
  await input(['throttle']);await until(d=>Math.hypot(d.player.position.x-start.player.position.x,d.player.position.z-start.player.position.z)>3);
- await input(['throttle','right']);const turn=await until(d=>d.state.steer<-.5);await page.waitForTimeout(700);await input(['throttle']);await until(d=>Math.hypot(d.player.position.x-start.player.position.x,d.player.position.z-start.player.position.z)>8);
+ await page.screenshot({path:out+'/moving-straight.png',scale:'css'});
+ await input(['throttle','right']);const turn=await until(d=>d.state.steer<-.5);await page.waitForTimeout(700);await page.screenshot({path:out+'/moving-turn.png',scale:'css'});await input(['throttle']);await until(d=>Math.hypot(d.player.position.x-start.player.position.x,d.player.position.z-start.player.position.z)>8);
  await input(['brake']);await until(d=>d.player.speed<.3);await input([]);const forward=await read();await page.screenshot({path:out+'/forward-tracks.png',scale:'css'});
  // Reverse over part of the same path; input release must stop fresh movement.
  await input(['brake']);await until(d=>d.player.speed<-.8);await page.waitForTimeout(700);await input(['throttle']);await until(d=>d.player.speed>-.3);await input([]);await until(d=>Math.abs(d.player.speed)<.1);const reversed=await read();

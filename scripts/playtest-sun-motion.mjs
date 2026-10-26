@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,devices} from 'playwright';
 
 const label=process.env.SUN_LABEL??String(Date.now()),mobile=process.env.SUN_DEVICE!=='desktop';assert.match(label,/^[a-z0-9-]+$/);
-const startState=process.env.SUN_START_STATE??'tree-shadow';assert.ok(['tree-shadow','tunnel-exit'].includes(startState));
+const startState=process.env.SUN_START_STATE??'tree-shadow';assert.ok(['tree-shadow','tunnel-exit','town'].includes(startState));
 const dir=`artifacts/sun-motion-${label}`;await mkdir(dir);
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 const size=mobile?{width:844,height:390}:{width:1280,height:720};
@@ -12,7 +12,7 @@ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()
 await page.addInitScript(mobile=>{localStorage.setItem('coast-settings',JSON.stringify({quality:mobile?'low':'medium',muted:true}));window.sunObjects=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',e=>window.sunObjects.push(e.detail));},mobile);
 try{
  await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:4191')+'/?test=1');await page.evaluate(state=>window.__THREE_GAME_TEST_HOOKS__.setState(state),startState);
- // Tunnel exit already cruises; the tree-shadow fixture starts parked.
+ // Road fixtures already cruise; the tree-shadow fixture starts parked.
  if(startState==='tree-shadow')await page.click('#auto-button');
  const bundle=await page.locator('script[type=module][src]').getAttribute('src');
  const started=Date.now();

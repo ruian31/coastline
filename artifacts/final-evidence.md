@@ -1,3 +1,16 @@
+# M46 · 保留完整景点的空间分区
+
+2026-10-26，**index-CS9TI9rj.js**，856.38kB/gzip239.61，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi）。景点按96m空间分区，共用原材质并保留所有完整三角；相机可剔除离屏区域。草、地形、驾驶和素材保持。
+
+- [完整几何等价](landmark-geometry-m46-equivalence.json)：桌面/手机各21材质角色的全部三角属性bits、world transform规范排序SHA与M45全同，65638/51468总面保持。[原版](landmark-geometry-m46-m45-control/result.json)/[候选](landmark-geometry-m46-partition-candidate/result.json)。一次聚焦只读审查未发现新缺陷。
+- [工作分区对照](landmark-partition-m46/result.json)/[旧缓存像素](landmark-partition-m46/pixel-comparison.json)：12组像素0差。正式重新烘焙后[三机位比较](destination-m46-actual-shadow-comparison.json)分别736/347/426像素变化，包含UI/车辆边缘，不称最终像素完全一致。8正式机位[清单](evidence-destination-partition-final.json)已逐图看、0错误，未见建筑缺失或新接缝。
+- [三浏览器6项](destination-m46-behavior.json)1.7分钟全过。完整世界缓存投影手机42→115个，但仍只烘焙一次、局部pass为0。[小镇连续驾驶](sun-motion-m46-partition-town-phone/samples.json)/[视频](sun-motion-m46-partition-town-phone/drive.webm)219.70m、18.58秒，实际按钮切车内再返回追随，0错误。[间隔帧时间](sun-motion-m46-partition-town-phone/sampled-frames.json)与原始drive-10及3/9.5/17.3秒代表帧已看。
+- 手机内陆/原野/小镇/洞口分别减少23073/31352/22779/29131面，calls110/91/95/97→116/89/104/99。最终峰值桌面146calls/842692tri/201geo/56tex，手机116/370725/199/52；几何对象增加73个，既有面数/手机纹理超预算仍在。
+- 同轮主机GPU各90有效/无disjoint，[M45](ground-gpu-m46-m45-control/result.json)→[M46](ground-gpu-m46-partition/result.json)：内陆/小镇P50=3.995/3.713→2.739/3.574ms，P95=8.447/5.727→5.857/5.120。原样保留，不把主机波动说成确定百分比收益或真机FPS。
+- [普通无query入口](fineleaf-m46-partition-release/result.json)实际前进8.60m、草主体/共享图/压力上传/115投影一次缓存/测试全局关闭，0错误；[普通画面](fineleaf-m46-partition-release/normal.png)已看。
+
+World1.5、Lighting2.25保持，其余八类未重评，不计算新均分。自然风景仍未达用户要求，**Goal active**。草土调色试验拒绝，下一阶段继续实际岩土与植被形体；一加12/iPhone新版本反馈待回。
+
 # M45 · 云隙夕阳与连贯海面反射
 
 2026-10-26，**index-C9gz2Cw_.js**，855.64kB/gzip239.36kB，已更新[5190试玩](http://192.168.3.10:5190/)（当前接口复核，同一Wi-Fi）。[官方Kloppenheim06](https://polyhaven.com/a/kloppenheim_06_puresky)的2k/1k原HDR替换原天空，背景/IBL/海面同源，日照和固定阴影对应新图最亮方向；天空与海面同强度.26。远海长波法线按世界像素过滤、HDR开启mip，减少密集亮线，近岸高度/岸线及草地互动未改。

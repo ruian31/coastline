@@ -338,18 +338,44 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   cylinder(bay,wood,0,1.6,-1,.06,.07,3.2,8);
   const umbrella=new THREE.ConeGeometry(2.7,.8,10);add(umbrella,cream,bay.clone().multiply(local(0,3.5,-1)));
 
-  // Merge all opaque pieces by material, preserving individual sign textures only.
+  // Keep complete triangles together. Global material batches span the whole
+  // coast, so even one visible lamp otherwise submits an entire town's trim.
+  const cellSize=96;
+  function spatialPieces(geometry:THREE.BufferGeometry){
+    const position=geometry.getAttribute('position'),cells=new Map<string,number[]>();
+    for(let i=0;i<position.count;i+=3){
+      const x=(position.getX(i)+position.getX(i+1)+position.getX(i+2))/3,z=(position.getZ(i)+position.getZ(i+1)+position.getZ(i+2))/3;
+      const key=`${Math.floor(x/cellSize)},${Math.floor(z/cellSize)}`,vertices=cells.get(key)??[];
+      vertices.push(i,i+1,i+2);cells.set(key,vertices);
+    }
+    if(cells.size===1)return[{geometry,cell:cells.keys().next().value!}];
+    const pieces:{geometry:THREE.BufferGeometry;cell:string}[]=[];
+    for(const [cell,vertices]of cells){
+      const part=new THREE.BufferGeometry();
+      for(const [name,attribute]of Object.entries(geometry.attributes)){
+        const source=attribute as THREE.BufferAttribute,array=new Float32Array(vertices.length*source.itemSize);
+        for(let i=0;i<vertices.length;i++)for(let c=0;c<source.itemSize;c++)array[i*source.itemSize+c]=source.array[vertices[i]*source.itemSize+c];
+        part.setAttribute(name,new THREE.BufferAttribute(array,source.itemSize,source.normalized));
+      }
+      part.computeBoundingSphere();pieces.push({geometry:part,cell});
+    }
+    geometry.dispose();return pieces;
+  }
+  // Signs keep their individual textures. Shared materials and all authored
+  // surfaces also remain available to the one-time complete world shadow bake.
   for(const [material,geometries] of batches) {
     const geometry=mergeGeometries(geometries,false);
     for(const g of geometries)g.dispose();
     if(!geometry)continue;
-    const mesh=new THREE.Mesh(geometry,material);mesh.name=material.name;mesh.receiveShadow=true;
-    mesh.castShadow=material===rock||material===tunnelMaterial||walls.includes(material as THREE.MeshStandardMaterial);
-    root.add(mesh);
+    for(const {geometry:part,cell}of spatialPieces(geometry)){
+      const mesh=new THREE.Mesh(part,material);mesh.name=`${material.name} / ${cell}`;mesh.receiveShadow=true;
+      mesh.castShadow=material===rock||material===tunnelMaterial||walls.includes(material as THREE.MeshStandardMaterial);
+      root.add(mesh);
+    }
   }
   root.userData.tunnel={start:tunnelStart,end:tunnelEnd,interiorHalfWidth:6.4,interiorHeight:6.6};
   const meshes:THREE.Mesh[]=[];root.traverse(obj=>{if(obj instanceof THREE.Mesh)meshes.push(obj);});
-  root.userData.diagnostics={draws:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?mesh.geometry.index.count:mesh.geometry.getAttribute('position').count)/3,0)};
+  root.userData.diagnostics={draws:meshes.length,spatialCellSize:cellSize,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?mesh.geometry.index.count:mesh.geometry.getAttribute('position').count)/3,0)};
   return {
     update(_elapsed,_carPosition) {},
     dispose() {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createCoastalGroundMaterial,usePackedSurfaceRoughness} from './GroundMaterial';
+import {createCoastalGroundMaterial,createCoastalBoulderMaterial,usePackedSurfaceRoughness} from './GroundMaterial';
 import {scanSurface} from './SurfaceHeight';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createTunnelHeadland} from './TunnelHeadland';
@@ -12,6 +12,7 @@ import {createVegetationInteraction} from './VegetationInteraction';
 import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
+import boulderShapeText from './boulder-shape.json?raw';
 
 // Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
 // Background, water and fixed shadows use this same world direction.
@@ -396,14 +397,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const islandMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,vertexColors:true});
   for(let variant=0;variant<3;variant++)batch(offshoreRockGeometry(variant),islandMaterial,islandMatrices[variant],islandColors[variant]).name=`Weathered offshore rock ridge ${variant}`;
 
-  // Rocks are rounded limestone with deformed facets, never identical spheres.
-  const rockShape = new THREE.SphereGeometry(1,12,8);
-  const rp=rockShape.getAttribute('position');
-  for(let i=0;i<rp.count;i++) {
-    const x=rp.getX(i),y=rp.getY(i),z=rp.getZ(i),f=1+Math.sin(x*7+z*5)*.15;
-    rp.setXYZ(i,x*f,y*(.9+Math.sin(z*4)*.12),z*f);
-  }
-  rockShape.computeVertexNormals();
+  // Complete closed scan, with its horizontal proportions and fracture faces.
+  // Embedded geometry has no asynchronous swap or additional texture request.
+  const boulderShape=JSON.parse(boulderShapeText) as {position:string;normal:string;index:string;geometrySha256:string};
+  const boulderBytes=(encoded:string)=>Uint8Array.from(atob(encoded),c=>c.charCodeAt(0)).buffer;
+  const rockShape=new THREE.BufferGeometry();
+  rockShape.setAttribute('position',new THREE.BufferAttribute(new Float32Array(boulderBytes(boulderShape.position)),3));
+  rockShape.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(boulderBytes(boulderShape.normal)),3));
+  rockShape.setIndex(new THREE.BufferAttribute(new Uint16Array(boulderBytes(boulderShape.index)),1));
   const rocks:THREE.Matrix4[]=[],rockColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?90:145);i++) {
     const a=random()*Math.PI*2,r=.97+random()*.18,x=Math.cos(a)*355*r,z=Math.sin(a)*292*r;
@@ -419,16 +420,18 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     for(let piece=0;piece<2;piece++) {
       const x=inland.x+(random()-.5)*9,z=inland.z+(random()-.5)*8,y=groundHeight(x,z);
       const sx=4+random()*4,sy=3.5+random()*4.5,sz=2.6+random()*3.2;
-      rocks.push(matrix(x,y-2.2,z,sx,sy,sz,Math.atan2(sample.tangent.x,sample.tangent.z)+.5));
+      rocks.push(matrix(x,y-2.2,z,sx,sy,sz,Math.atan2(sample.tangent.x,sample.tangent.z)+.5+piece*.8+ridge*.17));
       rockColors.push(new THREE.Color('#d1cbb9').multiplyScalar(.85+random()*.22));
     }
   }
-  const rockMaterial=new THREE.MeshStandardMaterial({color:0xffffff,map:rockMaps.color,normalMap:rockMaps.surface,roughnessMap:rockMaps.surface,roughness:.95});
+  const rockMaterial=keep(new THREE.MeshStandardMaterial({color:0xffffff,map:rockMaps.color,normalMap:rockMaps.surface,roughnessMap:rockMaps.surface,roughness:.95}));
   usePackedSurfaceRoughness(rockMaterial);
   for(const texture of Object.values(rockMaps))texture.repeat.set(2,2);
   rockMaterial.normalScale.set(.72,.72);
   water.addWetness(rockMaterial);
-  batch(rockShape,rockMaterial,rocks,rockColors).name='Coastal limestone boulders';
+  const boulderMaterial=createCoastalBoulderMaterial(rockMaps);water.addWetness(boulderMaterial);
+  batch(rockShape,boulderMaterial,rocks,rockColors).name='Coastal limestone boulders';
+  root.userData.boulderAsset={id:'boulder_01',triangles:512,closed:true,metreScale:1.8,sharedMaps:true,geometrySha256:boulderShape.geometrySha256};
 
   // Procedural leaf atlases retain fine organic silhouettes without thousands of opaque triangles.
   function plantTexture(kind: 'grass' | 'shrub'): THREE.CanvasTexture {

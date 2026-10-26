@@ -1,3 +1,16 @@
+# M47 · 闭合石体与米制岩石表面
+
+2026-10-26，**index-WjARrULR.js**，874.25kB/gzip251.64，已更新[5190试玩](http://192.168.3.10:5190/)（接口复核，同一Wi-Fi）。采用[官方Boulder01](https://polyhaven.com/a/boulder_01)的512面闭合形体，Rico Cilliers/[CC0](https://polyhaven.com/license)；原照片UV未采用，继续共用旧两张岩石图，以1.8m世界投影给完整体积着色。保留原岩石数量/位置/尺度，双石岩脊yaw错开；植物随机序列、低档和碰撞半径保持。
+
+- [来源与精确打包](../src/world/boulder-shape.json)：gltf/bin MD5/SHA校验，66122→512面/310顶点，保留原比例。43394B数字JSON改15317B base64 Float32/Uint16，几何前后逐字节一致；实际SHA见普通入口检查。远礁高度、保UV的54122面版本及拉花原图方案全部拒绝，没有新增照片或纹理槽。
+- [独立几何检查](boulder-m47-geometry.json)：768边双面反向、单位法线、三轴146个厚度>.15m探针。双向最近表面采样2048/596点，P95=.026/.031m、最大.056/.046m，实例缩放前，不称世界误差上界。最初沿射线P95<.05失败，保留原轴向P95=.111/max=.348m；独立最近三角面距离用于区分掠射放大，不隐藏旧值。一次只读审查未发现实例坐标/法线、资源所有权或完整世界投影遗漏。
+- [初12项三浏览器](boulder-m47-browser-tests.json)2.5分钟全过；仅无损改变打包后，[最终另6项](boulder-m47-packed-browser-tests.json)1.1分钟全过，两组有重叠，不称18独立用例。[8最终机位](evidence-closed-boulders-final.json)已逐图看，0错误。峰值桌面166calls/951007tri/201geo/55tex、手机121/383109/199/52；已有面数/手机纹理超预算保留。
+- [横屏触控往返](offroad-m47-boulders-phone/android-touch.json)/[视频](offroad-m47-boulders-phone/android-touch.webm)：离路76.35m、四角环顾并返路，49.77秒，0错误。已看[原始环顾](offroad-m47-boulders-phone/android-touch-orbit-0.png)、[侧向](offroad-m47-boulders-phone/android-touch-orbit-2.png)、[返回](offroad-m47-boulders-phone/android-touch-returned.png)，以及[3秒](offroad-m47-boulders-phone/motion-01.png)/[23秒](offroad-m47-boulders-phone/motion-06.png)/[47秒](offroad-m47-boulders-phone/motion-12.png)。[12帧时间清单](offroad-m47-boulders-phone/sampled-frames.json)为间隔取样，非相邻帧；窄行程不能代表所有路线或真机。
+- 同轮主机GPU各90有效/无disjoint，[M46](ground-gpu-m47-m46-control/result.json)→[M47](ground-gpu-m47-boulders-final/result.json)：岩背/内陆P50=2.874/4.504→2.945/4.256ms，P95=6.975/8.055→3.724/6.034。一升一降，不称整体提速或真机FPS。确定手机两处+5504/+12384面，calls/geo/tex相同；内陆比M45仍少10689面。
+- [普通无query入口](fineleaf-m47-closed-boulders-release/result.json)：同WjAR，前进8.60m、实际几何SHA一致、两旧图与地形共用且真实GPU sampler正确、115世界投影单次缓存、测试全局关闭，0错误；[普通画面](fineleaf-m47-closed-boulders-release/normal.png)已看。
+
+World1.5、Lighting2.25保持，其他八类未重评，无新均分，空坡构图未通过。石体改善不等于自然风景达标，**Goal active**；继续草簇/地表的连续层次。一加12/iPhone草地与新版美术性能待反馈。
+
 # M46 · 保留完整景点的空间分区
 
 2026-10-26，**index-CS9TI9rj.js**，856.38kB/gzip239.61，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi）。景点按96m空间分区，共用原材质并保留所有完整三角；相机可剔除离屏区域。草、地形、驾驶和素材保持。

@@ -9,6 +9,38 @@ export function usePackedSurfaceRoughness(material:THREE.MeshStandardMaterial){
   material.customProgramCacheKey=()=> 'coast-packed-rock-v1';
 }
 
+/** Shared metre-sized rock detail on closed geometry, including instances with
+ * nonuniform scales. Scenery owns the two borrowed maps. No UV atlas needed. */
+export function createCoastalBoulderMaterial(maps:SurfaceMaps){
+  const material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.95});
+  material.name='Metre textured closed coastal boulders';
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.uBoulderColor={value:maps.color};shader.uniforms.uBoulderSurface={value:maps.surface};
+    shader.vertexShader='varying vec3 vBoulderPosition,vBoulderNormal;\n'+shader.vertexShader
+      .replace('#include <defaultnormal_vertex>','#include <defaultnormal_vertex>\nvBoulderNormal=inverseTransformDirection(transformedNormal,viewMatrix);')
+      .replace('#include <begin_vertex>',`#include <begin_vertex>
+        vec4 boulderPosition=vec4(position,1.0);
+        #ifdef USE_INSTANCING
+          boulderPosition=instanceMatrix*boulderPosition;
+        #endif
+        vBoulderPosition=(modelMatrix*boulderPosition).xyz;`);
+    shader.fragmentShader=`varying vec3 vBoulderPosition,vBoulderNormal;
+      uniform sampler2D uBoulderColor,uBoulderSurface;
+      vec3 boulderDetail(vec3 n){return normalize(vec3((n.xy*2.0-1.0)*.62,n.z*2.0-1.0));}
+      `+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        vec3 boulderN=normalize(vBoulderNormal),boulderWeights=pow(abs(boulderN),vec3(4.0));boulderWeights/=max(dot(boulderWeights,vec3(1.0)),.001);
+        vec3 boulderP=vBoulderPosition/1.8;
+        diffuseColor.rgb*=texture2D(uBoulderColor,boulderP.zy).rgb*boulderWeights.x+texture2D(uBoulderColor,boulderP.xz).rgb*boulderWeights.y+texture2D(uBoulderColor,boulderP.xy).rgb*boulderWeights.z;
+        vec4 boulderX=texture2D(uBoulderSurface,boulderP.zy),boulderY=texture2D(uBoulderSurface,boulderP.xz),boulderZ=texture2D(uBoulderSurface,boulderP.xy);
+        vec3 nx=boulderDetail(boulderX.xyz),ny=boulderDetail(boulderY.xyz),nz=boulderDetail(boulderZ.xyz);
+        vec3 boulderWorldNormal=normalize(vec3(abs(nx.z)*boulderN.x,nx.y+boulderN.y,nx.x+boulderN.z)*boulderWeights.x+vec3(ny.x+boulderN.x,abs(ny.z)*boulderN.y,ny.y+boulderN.z)*boulderWeights.y+vec3(nz.x+boulderN.x,nz.y+boulderN.y,abs(nz.z)*boulderN.z)*boulderWeights.z);
+      `).replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=clamp(dot(vec3(boulderX.a,boulderY.a,boulderZ.a),boulderWeights)*.95,.67,1.0);')
+      .replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\nnormal=normalize(mat3(viewMatrix)*boulderWorldNormal);');
+  };
+  material.customProgramCacheKey=()=> 'coast-closed-boulder-triplanar-v1';
+  return material;
+}
+
 // Shared by the terrain, tunnel cap and graded shoulders. Textures remain
 // owned by Scenery; this function owns only material shading.
 export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps,mobile:boolean){

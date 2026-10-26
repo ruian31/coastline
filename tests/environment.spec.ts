@@ -408,6 +408,11 @@ test('离岸岩岛具有闭合厚度和海下基座，三种山脊保持绘制�
     expect(actual[12]).toBeCloseTo(sample.matrix[12],4);expect(actual[14]).toBeCloseTo(sample.matrix[14],4);expect(Math.hypot(actual[0],actual[2])).toBeCloseTo(size*1.3,4);
     expect(actual[13]+placement.treeSinks[sample.index]).toBeCloseTo(sample.matrix[13]-(name==='Stone pine trunks'?0:4.7*size),4);
     if(name==='Sheltered stone pine boughs'){const a=new THREE.Matrix4().fromArray(actual),b=new THREE.Matrix4().fromArray(sample.matrix),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();a.decompose(new THREE.Vector3(),qa,new THREE.Vector3());b.decompose(new THREE.Vector3(),qb,new THREE.Vector3());expect(qa.angleTo(qb)).toBeLessThan(.001);}
+   }else if(name==='Coastal limestone boulders'&&sample.index>=expected.count-(info.project.name.includes('mobile')?12:20)){
+    // M47 varies only the ledge yaw; keep the historical origin/scale fixture.
+    const ledge=sample.index-(expected.count-(info.project.name.includes('mobile')?12:20)),angle=(ledge%2)*.8+Math.floor(ledge/2)*.17,c=Math.cos(angle),s=Math.sin(angle),m=sample.matrix.slice();
+    for(const column of[0,8]){m[column]=c*sample.matrix[column]+s*sample.matrix[column+2];m[column+2]=-s*sample.matrix[column]+c*sample.matrix[column+2];}
+    for(let i=0;i<16;i++)expect(actual[i],name+' authored origin/scale and ledge yaw '+sample.index).toBeCloseTo(m[i],4);
    }else for(let i=0;i<16;i++)expect(actual[i],name+' original transform '+sample.index).toBeCloseTo(sample.matrix[i],4);
   }
  }

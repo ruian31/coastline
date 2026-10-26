@@ -1,4 +1,16 @@
-# M52 · 连续干草地表颜色
+# M57 · 内陆脊谷与最终格网约束
+
+- 最终Dg2Kz38n已更新[试玩地址](http://192.168.3.10:5190/)，[HTTP双构建核对](inland-relief-m57-http-release.json)同SHA b9444069…；906372B，较M52 raw+28833B，同Node默认gzip估计+11753B。
+- [原高程、输入与配方](../source-assets/inland-relief-v1.source.json)保留，生成数据按两端最终顶点索引读取，无新纹理或地形面数。[逐字重建](inland-relief-m57-reproduction.json)通过；[实际顶点/边检查](inland-relief-m57-source-final/result.json)保护12736/22522点零位移，57840/102720边无超过2.1mm量化容差的越界，应用误差<4微米。[道路](roadbanks-m57-source-final/)两端各4648样本无侵入。一次独立审查指出的128格重采样缺陷已据此修正，没有递归审查。
+- [18项三浏览器](inland-relief-m57-browser-tests.json)全过、无失败/跳过/重试；[手机GPU草毯](grass-canopy-m57-inland-final-phone/result.json)三机位实际shader回读，根误差<.04mm、无埋尖，bank2470叶受压、双侧外拨及0/20/45/65秒GPU年龄恢复通过，非本轮真实等待65秒。
+- [12正式机位清单](evidence-inland-relief-final.json)与[手机](inland-relief-m57-final-mobile-contact.png)/[桌面](inland-relief-m57-final-desktop-contact.png)均已看。峰桌面149/818478/201/57、手机116/357477/199/53；真实离路峰桌面927313tri/手机398842tri，已有超预算保留。
+- [键盘往返](offroad-m57-final/desktop-keyboard.json)/[触控往返](offroad-m57-final/android-touch.json)分别离路64.47/64.15m并返回，视频25.68/27.20秒，[六个实际时间样本](offroad-m57-final/sampled-frames.json)和两组filmstrip均已看，0错误。[横屏暂停署名](inland-relief-m57-menu/result.json)可滚动查看、无横向溢出。
+- [同主机M52](ground-gpu-m57-m52-control/result.json)→[M57](ground-gpu-m57-inland-candidate/result.json)，路草/内陆GPU P50=1.086/1.270→1.110/1.255ms，P95=2.859/5.755→5.800/6.728；90有效样本/状态、无disjoint，中位接近但尾部上升，不当真实手机FPS。
+- [普通5190入口](fineleaf-m57-inland-release/result.json)前进8.45m、测试全局关闭、115投影一次缓存、原八表面/草/压力/岩石/棕榈绑定正常，0错误；普通截图已看。
+- 首张手机bank左上黑块[原图](terrain-m57-bank-cold-audit/initial-formal.png)/原报告已保留；[四个独立零等待冷context](terrain-m57-bank-cold-audit/result.json)均0近黑像素/0错误，两次分离观察与正式复拍正常。未查明根因、未修改天空或相机，不称已修，继续观察。
+- 自然形体有可见脊谷，平顶、均匀坡面和近草平贴仍不足。World1.5、Lighting2.25保持，其余八类未重评，无新均分。Goal未完成，工具仍显示usageLimited；镜头、物理/悬挂、灯镜、四季昼夜天气继续保留文档11。
+
+# 历史M52 · 连续干草地表颜色
 
 2026-10-26，**index-Dj-QjOG3.js**，877.53kB/gzip252.41，已更新[5190试玩](http://192.168.3.10:5190/)；接口与候选HTTP字节SHA已核对。生成的16m草土基色替换旧颜色sampler，保留2m摄影微法线/粗糙度、八张表面纹理、全部地形/道路/植物布局及压草规则。
 

@@ -1,0 +1,71 @@
+{
+  "source": "source-assets/inland-terrarium-13-1323-3207.png",
+  "sourceSha256": "0d531a5542c0c1706b25c1fb7202358b0ca831d8aee4c67d3c4a8622d9de415f",
+  "inputsSha256": "5341b326bb368385f088b864b3bcea1f5411417e1df7e8adc66c72ab916bda82",
+  "baselineBundle": "/assets/index-Dj-QjOG3.js",
+  "baselineBundleSha256": "a23ed90051a9388547378595d17a4287ccdde5ddefd9d6d66d085da156d6302a",
+  "cropPixels": [
+    98,
+    178,
+    192
+  ],
+  "horizontalGameSize": [
+    600,
+    560
+  ],
+  "verticalScale": 0.12,
+  "edgeGradeLimit": 0.5,
+  "quantizationMetres": 0.002,
+  "outputSha256": "ce2a1a99719edb859505a0747ca343994161f5b472b6e0c2aa7936d2149198a6",
+  "outputBytes": 28468,
+  "tiers": {
+    "mobile": {
+      "segments": 120,
+      "vertices": 14641,
+      "freeVertices": 1905,
+      "changedVertices": 1820,
+      "harmonicIterations": 209,
+      "harmonicResidual": 1.946788130283039e-05,
+      "gradeProjectionIterations": 201,
+      "gradeResidual": 1.8693168712502484e-05,
+      "maxQuantizedEdgeExcessMetres": 0.0019027557373032522,
+      "protectedError": 0.0,
+      "minDelta": -15.856,
+      "maxDelta": 23.94,
+      "minFreeHeight": 6.242497520446777,
+      "maxFreeHeight": 61.53456866455078,
+      "storedSamples": 3819,
+      "runtimeSha256": "f7b31c7b1d0a120b70d3c00df4980e0a751414c596d630eb506d427fe08f38da",
+      "sourceCropClampedFreeAndBoundaryPoints": 0
+    },
+    "desktop": {
+      "segments": 160,
+      "vertices": 25921,
+      "freeVertices": 3399,
+      "changedVertices": 3250,
+      "harmonicIterations": 360,
+      "harmonicResidual": 1.9965347690913403e-05,
+      "gradeProjectionIterations": 375,
+      "gradeResidual": 1.9065269576401533e-05,
+      "maxQuantizedEdgeExcessMetres": 0.0019390121125422155,
+      "protectedError": 0.0,
+      "minDelta": -15.554,
+      "maxDelta": 24.404,
+      "minFreeHeight": 6.25510612487793,
+      "maxFreeHeight": 61.64456866455078,
+      "storedSamples": 6764,
+      "runtimeSha256": "779377ce8e05c8e3274798d17b56d0ab55aeabd0c9075ee6cd13d837d67b573b",
+      "sourceCropClampedFreeAndBoundaryPoints": 0
+    }
+  },
+  "method": "DEM curvature added to the existing fictional island. Harmonic correction and protected-vertex/edge-grade constraints solved independently on the exact final 120/160 grids. Direct index application, cropped binary storage without resampling. Existing shore, road, town, tunnel and cliff boundaries preserved at protected grid vertices. Not a geographical reconstruction or calibrated erosion model.",
+  "output": "src/world/inland-relief.json",
+  "inputSnapshot": "source-assets/inland-relief-inputs.json",
+  "sourceUrl": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/13/1323/3207.png",
+  "datasetUrl": "https://registry.opendata.aws/terrain-tiles/",
+  "attributionUrl": "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+  "formatUrl": "https://www.mapzen.com/blog/terrain-tile-service/",
+  "attribution": "Terrain data courtesy of the U.S. Geological Survey. Terrain Tiles by Mapzen.",
+  "accessed": "2026-10-26",
+  "inputSnapshotMethod": "Actual M52 final terrain Float32 positions (120/160 grids), observed from frozen baseline bundle SHA above. Protection formula evaluated at those final vertices. Original x/z, baseline y and protection flags retained; this snapshot is an input, not recomputed from the new terrain."
+}

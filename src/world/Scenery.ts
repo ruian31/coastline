@@ -13,6 +13,7 @@ import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 import boulderShapeText from './boulder-shape.json?raw';
+import inlandReliefText from './inland-relief.json?raw';
 
 // Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
 // Background, water and fixed shadows use this same world direction.
@@ -191,13 +192,23 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
 
   // Ground: muted limestone, dry coastal grass, pale sand, darker sheltered gullies.
   const subdivisions = mobile ? 120 : 160;
+  // Each tier is solved on its final grid. Resampling a different grid would
+  // move protected road/landmark vertices and invalidate its slope constraints.
+  type Relief={segments:number;metresPerUnit:number;originColumn:number;originRow:number;columns:number;rows:number;deltaBase64:string};
+  const relief=(JSON.parse(inlandReliefText) as {mobile:Relief;desktop:Relief})[mobile?'mobile':'desktop'];
+  if(relief.segments!==subdivisions)throw new Error('Inland relief must match the final terrain grid.');
+  const reliefBytes=Uint8Array.from(atob(relief.deltaBase64),c=>c.charCodeAt(0)),reliefData=new DataView(reliefBytes.buffer);
+  const vertexRelief=(index:number)=>{
+    const column=index%(subdivisions+1)-relief.originColumn,row=Math.floor(index/(subdivisions+1))-relief.originRow;
+    return column<0||column>=relief.columns||row<0||row>=relief.rows?0:reliefData.getInt16((row*relief.columns+column)*2,true)*relief.metresPerUnit;
+  };
   const terrain = new THREE.PlaneGeometry(1060, 940, subdivisions, subdivisions);
   terrain.rotateX(-Math.PI / 2);
   const tp = terrain.getAttribute('position');
   const terrainColors: number[] = [];
   for (let i = 0; i < tp.count; i++) {
     const x = tp.getX(i), z = tp.getZ(i);
-    const y = groundHeight(x, z);
+    const y = groundHeight(x, z)+vertexRelief(i);
     // Cut the hillside back at road edges: a flat-width road would otherwise be
     // swallowed by the uphill slope, particularly with the mobile terrain mesh.
     tp.setY(i, y);

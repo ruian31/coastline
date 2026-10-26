@@ -42,12 +42,12 @@ float coastWave(vec2 p,float distance,float t){float phase=coastPhase(p,distance
 `;
 
 /** A flat far sea plus a real, local wave mesh; shared wet-shore uniforms. */
-export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:number},sun:THREE.Vector3){
+export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:number},sun:THREE.Vector3,skyIntensity:number){
  let disposed=false,fieldTexture=new THREE.DataTexture(new Uint8Array(4),1,1),ready=false;
  const field={value:fieldTexture},texel={value:new THREE.Vector2(1,1)},hasField={value:0},sky={value:null as THREE.Texture|null},hasSky={value:0},patchCenter={value:new THREE.Vector2()};
  const uniforms={uShoreField:field,uShoreTexel:texel,uShoreReady:hasField,uShoreTime:time,uShorePatchCenter:patchCenter,uShoreHarmonic:{value:mobile?0:.035}};
  fieldTexture.needsUpdate=true;
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyMap:sky,uHasSky:hasSky},
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
   vertexShader:`${shoreGLSL}
    varying vec3 vWaterPlane;void main(){vec4 p=modelMatrix*vec4(position,1.0);
    #if WATER_PATCH == 1
@@ -55,7 +55,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
    #endif
    vWaterPlane=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
   fragmentShader:`${shoreGLSL}
-   uniform sampler2D uSkyMap;uniform float uHasSky;uniform vec3 uSun;varying vec3 vWaterPlane;
+   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity;uniform vec3 uSun;varying vec3 vWaterPlane;
    float waterHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    float waterNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(waterHash(i),waterHash(i+vec2(1,0)),f.x),mix(waterHash(i+vec2(0,1)),waterHash(i+1.0),f.x),f.y);}
    void main(){
@@ -73,13 +73,13 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
     float phase=coastPhase(p,distance,t),amplitude=(1.0-smoothstep(10.0,30.0,abs(distance)))*coastPatch(p);
     vec2 slope=gradient*(.27*cos(phase)+uShoreHarmonic*2.0*cos(phase*2.0-.4))*.78*amplitude;
     float warp=waterNoise(p*.025+t*.012)*6.0,w1=sin(p.x*.17+p.y*.11-t*.73+warp),w2=sin(p.x*-.13+p.y*.23+t*.51+warp*.71);
-    float footprint=max(length(dFdx(p)),length(dFdy(p))),rippleFilter=1.0/(1.0+footprint*.6),w3=sin(p.x*.51-p.y*.39-t*1.13+warp*.8)*rippleFilter;
+    float footprint=max(length(dFdx(p)),length(dFdy(p))),rippleFilter=1.0/(1.0+footprint*.6),longRippleFilter=1.0/(1.0+footprint*.16),w3=sin(p.x*.51-p.y*.39-t*1.13+warp*.8)*rippleFilter;
     vec2 fine=(vec2(waterNoise(p*.76+vec2(t*.10,-t*.07)),waterNoise(p.yx*.63+vec2(18.3-t*.08,9.7+t*.11)))-.5)*rippleFilter;
-    vec3 normal=normalize(vec3(-slope.x+w1*.022+w2*.011+w3*.018+fine.x*.055,1.0,-slope.y+w2*.024-w1*.012-w3*.014+fine.y*.050));
+    vec3 normal=normalize(vec3(-slope.x+(w1*.022+w2*.011)*longRippleFilter+w3*.018+fine.x*.055,1.0,-slope.y+(w2*.024-w1*.012)*longRippleFilter-w3*.014+fine.y*.050));
     vec3 view=normalize(cameraPosition-world);float fresnel=pow(1.0-max(dot(normal,view),0.0),4.0);
     float opticalDepth=max(depth,max(0.0,-distance)*.13);
     vec3 water=mix(vec3(.008,.038,.057),vec3(.022,.115,.108),exp(-opticalDepth*.65)),reflection=vec3(.18,.23,.31);
-    if(uHasSky>.5){vec3 reflected=reflect(-view,normal);vec2 uv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);reflection=min(texture2D(uSkyMap,uv).rgb,vec3(6.0))*.28;}
+    if(uHasSky>.5){vec3 reflected=reflect(-view,normal);vec2 uv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);reflection=min(texture2D(uSkyMap,uv).rgb,vec3(6.0))*uSkyIntensity;}
     vec3 color=mix(water,reflection,.025+fresnel*.88),halfway=normalize(view+uSun);
     float glitter=pow(max(dot(normal,halfway),0.0),220.0)*(.45+waterNoise(p*1.1+t*.14)*.55);color+=vec3(2.5,1.35,.49)*glitter;
     color+=vec3(.025,.035,.038)*(waterNoise(p*.31+warp*.05)-.5);

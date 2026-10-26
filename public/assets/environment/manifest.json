@@ -261,39 +261,39 @@
       "colorSpace": "NoColorSpace"
     },
     {
-      "asset": "qwantani_sunset_puresky",
+      "asset": "kloppenheim_06_puresky",
       "file": "sky.hdr",
-      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/qwantani_sunset_puresky_2k.hdr",
-      "sourceMd5": "b918af5fefb341535961ffdad5fab7bc",
-      "sourceBytes": 4171959,
-      "bytes": 4171959,
+      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/kloppenheim_06_puresky_2k.hdr",
+      "sourceMd5": "590a829b3cf71216451655e601d542c6",
+      "sourceBytes": 4434394,
+      "bytes": 4434394,
       "resolution": "2048x1024",
       "license": "CC0",
-      "sourcePage": "https://polyhaven.com/a/qwantani_sunset_puresky",
+      "sourcePage": "https://polyhaven.com/a/kloppenheim_06_puresky",
       "authors": [
-        "Greg Zaal (Photography)",
-        "Jarod Guest (Processing)"
+        "Greg Zaal (Original)",
+        "Jarod Guest (Sky Edits)"
       ],
-      "sha256": "d66e08231e9c09ca40c6d035214ae8efb638782745c82addbb2a063fa32cabef",
-      "processing": "Unmodified Radiance HDR; pure sky background without ground objects",
+      "sha256": "99451201586489ef3288c97bfac2a2ac232a5491c51a1faf0ec8ea39f3ccd533",
+      "processing": "Unmodified Radiance HDR; pure sky with photographed broken clouds and warm sun opening; same background, PBR environment and water reflection source",
       "colorSpace": "Linear HDR"
     },
     {
-      "asset": "qwantani_sunset_puresky",
+      "asset": "kloppenheim_06_puresky",
       "file": "sky-mobile.hdr",
-      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_sunset_puresky_1k.hdr",
-      "sourceMd5": "fe79b1b213166a70871eaddf7fce8c4e",
-      "sourceBytes": 1061624,
-      "bytes": 1061624,
+      "source": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloppenheim_06_puresky_1k.hdr",
+      "sourceMd5": "995d68b1656f26452572645c0ffe898b",
+      "sourceBytes": 1173154,
+      "bytes": 1173154,
       "resolution": "1024x512",
       "license": "CC0",
-      "sourcePage": "https://polyhaven.com/a/qwantani_sunset_puresky",
+      "sourcePage": "https://polyhaven.com/a/kloppenheim_06_puresky",
       "authors": [
-        "Greg Zaal (Photography)",
-        "Jarod Guest (Processing)"
+        "Greg Zaal (Original)",
+        "Jarod Guest (Sky Edits)"
       ],
-      "sha256": "e90f2130848de0364b76d2b3da7a72ce31bbb95d66bd86d5b4f85f0626421b8d",
-      "processing": "Unmodified Radiance HDR; pure sky background without ground objects",
+      "sha256": "206c67e3a1b992282821cf06662bdd69bbb4915c1c4444a66338a40d6a7d4e34",
+      "processing": "Unmodified Radiance HDR; pure sky with photographed broken clouds and warm sun opening; same background, PBR environment and water reflection source",
       "colorSpace": "Linear HDR"
     }
   ],

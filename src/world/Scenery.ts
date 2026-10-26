@@ -13,6 +13,11 @@ import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 
+// Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
+// Background, water and fixed shadows use this same world direction.
+export const GOLDEN_HOUR_SUN=new THREE.Vector3(.7557054630227001,.08121144680959244,.6498568719839308);
+export const GOLDEN_HOUR_SKY_INTENSITY=.26;
+
 /** Sampled from the existing photographed CC0 reef; the underwater edge and
  * bottom form a closed body. Different crops retain broken natural ridges. */
 const offshoreHeights=JSON.parse(offshoreHeightsText) as {width:number;height:number;variants:number[][]};
@@ -59,8 +64,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   scene.add(root);
   let random = createSeededRandom(864203);
   const time = { value: 0 };
-  const sun = new THREE.Vector3(.8058, .1072, .5824).normalize();
-  const water=createCoastalWater(scene,mobile,time,sun);
+  const sun = GOLDEN_HOUR_SUN.clone();
+  const water=createCoastalWater(scene,mobile,time,sun,GOLDEN_HOUR_SKY_INTENSITY);
   const windMaterials: THREE.MeshStandardMaterial[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const textures: THREE.Texture[] = [];

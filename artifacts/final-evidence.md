@@ -1,3 +1,16 @@
+# M45 · 云隙夕阳与连贯海面反射
+
+2026-10-26，**index-C9gz2Cw_.js**，855.64kB/gzip239.36kB，已更新[5190试玩](http://192.168.3.10:5190/)（当前接口复核，同一Wi-Fi）。[官方Kloppenheim06](https://polyhaven.com/a/kloppenheim_06_puresky)的2k/1k原HDR替换原天空，背景/IBL/海面同源，日照和固定阴影对应新图最亮方向；天空与海面同强度.26。远海长波法线按世界像素过滤、HDR开启mip，减少密集亮线，近岸高度/岸线及草地互动未改。
+
+- [来源校验](sky-m45-source-validation.json)与[运行清单](../public/assets/environment/manifest.json)：官方原文件MD5/SHA、4434394/1173154B均一致，无重编码，Greg Zaal/Jarod Guest，[CC0](https://polyhaven.com/license)。新文件较M44桌面+262435B/手机+111530B；同2k/1k尺寸与槽数，mip新增估算5.33/1.33MiB。
+- [三浏览器专项](sky-m45-sun-final.json)：8通过/1桌面跳过，1.6分钟。实际加载HDR独立解码太阳方向、水面同源/同强度、世界缓存一次、手机低帧率保护和缺失照片回退均过。[原生GPU mip/方向附件](sky-m45-gpu-mips-and-sun.json)：桌面12/手机11级浮点FBO均完整、GL0，方向点积>=.99999765。初回退测试未按横屏点击、WebKit5秒加载等待不足的失败记录保留；改测试为横屏和20秒等待后通过，运行逻辑未改。
+- [8正式机位](evidence-golden-hour-final.json)已逐图看，0错误；峰值桌面142calls/872700tri/128geo/55tex，手机110/393798/126/52，已有面数/手机纹理超预算保留。一次只读独立审查未见新坐标/所有权缺陷，最终手机/运动/mip边界直接补验。
+- [手机行驶](sun-motion-m45-sky-phone/samples.json)/[视频](sun-motion-m45-sky-phone/drive.webm)、[桌面行驶](sun-motion-m45-sky-desktop/samples.json)/[视频](sun-motion-m45-sky-desktop/drive.webm)：洞口起步沿海216.99/221.91m、18.588/19.098秒，实际按钮切车内再返回追随，0错误、世界阴影只烘焙一次。两端原始drive-10车内PNG、间隔帧与14.00–14.44秒12帧中1/6/12代表帧已看，窄窗口未见明显反射跳闪，不据此声称所有机位或真机表现。
+- 同轮主机GPU每状态90有效/无disjoint，[M44](ground-gpu-m45-m44-control/result.json)→[M45](ground-gpu-m45-golden-hour/result.json)：洞口/原野P50=3.185/3.419→2.770/3.593ms，P95=10.488/11.160→3.838/5.264。中位数一降一升，不称整体提速或真机FPS；draw/面数/纹理在各对应状态相同。
+- [普通无query入口](fineleaf-m45-golden-hour-release/result.json)：同C9gz，前进8.60m、草主体保留/共享图/压力实际上传/42世界投影单次缓存、测试全局关闭、0错误。[普通画面](fineleaf-m45-golden-hour-release/normal.png)。
+
+重看scene-1/2/3校准锚点和完整桌面/手机集，Lighting/render **2.0→2.25**（云隙、海面冷暖与驾驶室深度改善）；World **1.5→1.5**（重复裸坡与白草斑仍明显，空坡构图自动失败不变）。其余八类未重评，无新总均分。整体自然风景未达用户要求，**Goal active**；真实一加12/iPhone的草地连续性和新版天空性能待反馈。当前云形/光束来自固定照片，后续四季、天气、昼夜继续按需求推进。
+
 # M44 · 长草保留、矮草连续过渡
 
 2026-10-26，**index-DsRsS9Pk.js**，855.39kB/gzip239.25kB，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi）。保留长草主体，近模添加细茎；矮草中层取消近处空洞，细叶以8m距离带过渡覆盖率，同一世界叶片保持原尺寸。无新贴图、批次或草毯容量；近草共享48/96上限、原作者位置及低档前缀保持。

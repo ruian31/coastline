@@ -638,7 +638,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }
     const proxy=new THREE.BufferGeometry();proxy.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));proxy.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));proxy.setIndex(indices);proxy.computeVertexNormals();return proxy;
   }
-  const scrubReady=new GLTFLoader(loadingManager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_rooibos/scrub.gltf`).then(async gltf=>{
+  function loadScrubAsset(searsia:boolean){
+    const assetBase=`${import.meta.env.BASE_URL}assets/models/${searsia?'coastal_searsia':'coastal_rooibos'}/`,nearCap=searsia?(mobile?2:4):(mobile?8:16);
+    return new GLTFLoader(loadingManager).loadAsync(assetBase+'scrub.gltf').then(async gltf=>{
     const sources:THREE.Mesh[]=[];gltf.scene.traverse(object=>{if((object as THREE.Mesh).isMesh)sources.push(object as THREE.Mesh);});
     const sourceMaterials=new Set(sources.map(mesh=>mesh.material as THREE.MeshStandardMaterial)),map=(sources[0]?.material as THREE.MeshStandardMaterial|undefined)?.map;
     // This fresh loader owns the decoded atlas; replacing its image with Canvas
@@ -649,8 +651,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const expectedNames=new Set(['Coastal_scrub_0_near','Coastal_scrub_0_far','Coastal_scrub_1_near','Coastal_scrub_1_far']);
     if(disposed||sources.length!==4||!map||sources.some(mesh=>!expectedNames.delete(mesh.name)||!mesh.geometry.getAttribute('uv'))){discard();if(!disposed)throw Error('Coastal scrub needs two near/far pairs and its alpha atlas');return;}
     const [proxyResult,normalResult]=await Promise.allSettled([
-      textureLoader.loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_rooibos/scrub-impostors.png`),
-      textureLoader.loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_rooibos/scrub-impostor-normals.png`),
+      textureLoader.loadAsync(assetBase+'scrub-impostors.png'),
+      textureLoader.loadAsync(assetBase+'scrub-impostor-normals.png'),
     ]);
     if(proxyResult.status==='rejected'){if(normalResult.status==='fulfilled')normalResult.value.dispose();discard();throw proxyResult.reason;}
     const proxyMap=proxyResult.value;
@@ -661,7 +663,14 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       proxyMap.colorSpace=THREE.SRGBColorSpace;
       const proxyRegions=Array.from({length:10},(_,i)=>{const x=i%4*128,y=Math.floor(i/4)*128;return i%5===4?[[x,y,128,128] as const]:[[x,y,128,80] as const,[x,y+80,128,48] as const];}).flat();
       preservePlantCutoutMips(proxyMap,proxyRegions,.12);
-      preserveRooibosCutoutMips(map);releaseDecodedImage();
+      if(searsia){
+        const native=map.image as {width:number;height:number};if(native.width!==1024||native.height!==1024)throw Error('Searsia cutouts require the authored 1024-square atlas');
+        // Seven leaves and nine isolated twig domains occupy unused source UV
+        // space. Keep each glyph separate from its neighbours and opaque bark.
+        const glyphs=Array.from({length:16},(_,i)=>[640+i%3*80,Math.floor(i/3)*160,80,160] as const);
+        preservePlantCutoutMips(map,[[0,0,625,420],[0,420,625,604],...glyphs]);
+      }else preserveRooibosCutoutMips(map);
+      releaseDecodedImage();
     }catch(error){discard(proxyMap,normalAtlas);throw error;}
     root.userData.scrubProxyNormals={ready:false,fallback:true};
     if(normalAtlas){
@@ -712,22 +721,27 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     centerPlantAlphaCoverage(proxyMaterial);centerPlantAlphaCoverage(fieldProxyMaterial);
     for(const field of [false,true]){
       const placements=field?fieldBushes:bushes,tints=field?fieldBushColors:bushColors,source=field?fieldBushRecord:sourceRecord,near=field?fieldScrubNear:new Uint8Array(placements.length),distant=new Uint8Array(placements.length),range=field?fieldScrubRange:undefined,label=field?'Inland grey green scrub':'Grey green coastal scrub';
-      const key=field?'fieldScrubDetail':'scrubDetail',enter=field?(mobile?22:32):(mobile?30:45),exit=field?(mobile?28:40):(mobile?36:53),impostorRange=field?(mobile?34:75):(mobile?52:110);
+      const key=field?'fieldScrubDetail':'scrubDetail',enter=field?(mobile?22:32):(mobile?30:45),exit=field?(mobile?28:40):(mobile?36:53),impostorRange=searsia?(field?(mobile?24:45):(mobile?40:75)):(field?(mobile?34:75):(mobile?52:110));
       for(const model of sources){
         const match=/Coastal_scrub_([01])_(near|far)$/.exec(model.name);if(!match)throw Error('Unknown scrub variant '+model.name);
         const variant=Number(match[1]),detail=match[2] as 'near'|'far',indices=Array.from({length:placements.length},(_,i)=>i).filter(i=>variantFor(i)===variant),matrices=indices.map(i=>placements[i]),colors=indices.map(i=>tints[i]);
         const mesh=batch(field?model.geometry.clone():model.geometry,field?fieldMaterial:material,matrices,colors,{near,detail,indices,source,distant,range:field&&detail==='near'?exit:range,impostorRange:field?impostorRange:undefined});mesh.name=`${label} ${detail} ${variant}`;groundSlopes(mesh,matrices);if(field)partitionField(mesh);
         if(detail==='near'){const proxy=batch(scrubImpostorGeometry(model.geometry,variant),field?fieldProxyMaterial:proxyMaterial,matrices,colors,{near,detail:'impostor',indices,source,distant,range,impostorRange:field?impostorRange:undefined});proxy.name=`${label} impostor ${variant}`;groundSlopes(proxy,matrices);if(field)partitionField(proxy);}
       }
-      foliageDetails.push({key,near,source,anchors:placements.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter,exit,cap:mobile?8:16,visible:0,budget:'photographedScrub',distant,impostorRange});
-      root.userData[key]={...root.userData[key],ready:true,nearLimit:mobile?8:16,enterRange:enter,exitRange:exit,impostorRange,budget:'photographedScrub',selected:0,visible:0};
+      foliageDetails.push({key,near,source,anchors:placements.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter,exit,cap:nearCap,visible:0,budget:'photographedScrub',distant,impostorRange});
+      root.userData[key]={...root.userData[key],ready:true,nearLimit:nearCap,enterRange:enter,exitRange:exit,impostorRange,budget:'photographedScrub',selected:0,visible:0};
     }
+    root.userData.scrubAsset={id:searsia?'searsia_lucida':'rooibos',nearTriangles:sources.filter(mesh=>mesh.name.endsWith('_near')).map(mesh=>mesh.geometry.getIndex()!.count/3),nearCap};
     bushMesh.visible=fieldBushMesh.visible=false;sourceMaterials.forEach(material=>material.dispose());
     // The procedural atlas is only a loading/failure fallback. Once both real
     // LOD pairs are valid, release it instead of retaining an unused GPU map.
     const fallbackMap=bushMaterial.map!;bushMaterial.map=null;fallbackMap.dispose();textures.splice(textures.indexOf(fallbackMap),1);
     bushMaterial.dispose();resources.delete(bushMaterial);windMaterials.splice(windMaterials.indexOf(bushMaterial),1);
     fieldBushMaterial.map=null;fieldBushMaterial.dispose();resources.delete(fieldBushMaterial);windMaterials.splice(windMaterials.indexOf(fieldBushMaterial),1);
+    });
+  }
+  const scrubReady=loadScrubAsset(true).catch(error=>{
+    root.userData.scrubAssetPrimaryError=String(error);if(!disposed)return loadScrubAsset(false);
   }).catch(error=>{root.userData.scrubDetail={ready:false,fallback:true,error:String(error)};root.userData.fieldScrubDetail={...root.userData.fieldScrubDetail,ready:false,fallback:true};});
 
   // Sculpted low fern rosettes provide a second silhouette between the fine grasses and shrubs.

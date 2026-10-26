@@ -6,11 +6,11 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 
-const asset=process.env.SCRUB_ASSET??'coastal_scrub';assert.ok(['coastal_scrub','coastal_rooibos'].includes(asset));
+const asset=process.env.SCRUB_ASSET??'coastal_scrub';assert.ok(['coastal_scrub','coastal_rooibos','coastal_searsia'].includes(asset));
 const root='public/assets/models/'+asset,label=process.env.SCRUB_BAKE_LABEL??String(Date.now());assert.match(label,/^[a-z0-9-]+$/);
 const out='artifacts/scrub-impostor-bake-'+label;await mkdir(out);
 const inputs=[],bakerInputs=[];
-for(const path of ['scrub.gltf','scrub.bin','scrub-color.png'])inputs.push({path,sha256:createHash('sha256').update(await readFile(root+'/'+path)).digest('hex')});
+for(const path of ['scrub.gltf','scrub.bin','scrub-color.png',...asset==='coastal_searsia'?['source.json']:[]])inputs.push({path,sha256:createHash('sha256').update(await readFile(root+'/'+path)).digest('hex')});
 for(const path of ['scripts/bake-coastal-scrub-impostors.mjs','scripts/bake-coastal-scrub.html','src/world/PlantTexture.ts'])bakerInputs.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),page=await browser.newPage(),errors=[],captures=[];
 let calibration,normalCalibration;

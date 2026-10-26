@@ -1,0 +1,155 @@
+{
+  "kind": "Unlit source albedo and per-view face-oriented object XYZ normals. No MSAA, opaque authored alpha cutoff, 4x raster then linear-light alpha-weighted colour and renormalized normals. Byte-identical source masks checked before setting normal alpha opaque; full tile RGB dilation. Colour carries coverage, normal data stays opaque. No sun baked.",
+  "inputs": [
+    {
+      "path": "scrub.gltf",
+      "sha256": "86e42cb879efad606cbfe8e75920ac283394eaf6e80a1ee9a3fa12ea533fba8f"
+    },
+    {
+      "path": "scrub.bin",
+      "sha256": "3d313f538d2e5e6a73207fd73d30856a517eabc05fe86589e07b0c76ed0bb77d"
+    },
+    {
+      "path": "scrub-color.png",
+      "sha256": "fc961a0562834789ab69d640a3b7aa1d26f94f1e79a9127b40b9cdfc3d90f5c8"
+    },
+    {
+      "path": "source.json",
+      "sha256": "b133c0530653b79d27c46700f576e30dc6a73c610da2d7dbdbbc7bd0ca09ffd8"
+    }
+  ],
+  "bakerInputs": [
+    {
+      "path": "scripts/bake-coastal-scrub-impostors.mjs",
+      "sha256": "677e7a2e7144565f0ba89bfdaccd11da0108015f780678a98bc6c920b897e313"
+    },
+    {
+      "path": "scripts/bake-coastal-scrub.html",
+      "sha256": "05ba95abf60ee576cd6608be0050089823364e73df8a385a1cb182203be43d7f"
+    },
+    {
+      "path": "src/world/PlantTexture.ts",
+      "sha256": "d13dd9df66b047d9f9d06b41ba3b3d848ab0cd9736bd87fc09223697a2bf7d89"
+    }
+  ],
+  "size": [
+    512,
+    512
+  ],
+  "tileSize": 128,
+  "sourceRasterSize": 512,
+  "views": [
+    {
+      "variant": 0,
+      "view": 0,
+      "tile": 0,
+      "covered": 2839,
+      "width": 1.103184199333191,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 0,
+      "view": 1,
+      "tile": 1,
+      "covered": 2476,
+      "width": 1.103184199333191,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 0,
+      "view": 2,
+      "tile": 2,
+      "covered": 2839,
+      "width": 1.103184199333191,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 0,
+      "view": 3,
+      "tile": 3,
+      "covered": 2476,
+      "width": 1.103184199333191,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 0,
+      "view": 4,
+      "tile": 4,
+      "covered": 2633,
+      "width": 1.103184199333191,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 1,
+      "view": 0,
+      "tile": 5,
+      "covered": 2895,
+      "width": 0.6780867338180542,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 1,
+      "view": 1,
+      "tile": 6,
+      "covered": 2742,
+      "width": 0.6780867338180542,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 1,
+      "view": 2,
+      "tile": 7,
+      "covered": 2895,
+      "width": 0.6780867338180542,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 1,
+      "view": 3,
+      "tile": 8,
+      "covered": 2742,
+      "width": 0.6780867338180542,
+      "height": 1.0100000262260438
+    },
+    {
+      "variant": 1,
+      "view": 4,
+      "tile": 9,
+      "covered": 2847,
+      "width": 0.6780867338180542,
+      "height": 1.0100000262260438
+    }
+  ],
+  "controls": {
+    "color": {
+      "checked": 4120,
+      "maxError": 0,
+      "expected": [
+        137,
+        170,
+        89
+      ]
+    },
+    "normal": {
+      "checked": 4120,
+      "maxError": 1,
+      "expected": [
+        173,
+        230,
+        66
+      ]
+    }
+  },
+  "maxNormalLengthError": 0.006636952745543656,
+  "output": {
+    "path": "scrub-impostors.png",
+    "bytes": 143374,
+    "sha256": "75e4f3e5de9d6ec7b12abd8c01291b5f7f705f68a23aa18863ea629b2d7bb298"
+  },
+  "normalOutput": {
+    "path": "scrub-impostor-normals.png",
+    "bytes": 134796,
+    "sha256": "d321bd2f43a5944416405b1666b10964b2643562de198c3e0541a6684851f384"
+  },
+  "errors": []
+}

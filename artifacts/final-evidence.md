@@ -1,3 +1,16 @@
+# M43 · 完整叶形与立体干燥灌丛
+
+2026-10-26，**index-C_hraUJb.js**，854.79kB/gzip238.96kB，已更新[5190试玩](http://10.158.204.114:5190/)。Searsia f/g完整近景7232/6302面，保留全部源叶、细枝、木质表面；远景2129/1735面使用16个原三角域隔离照片及完整木质部分。手机/桌面共享近上限2/4、较早切入五方向对象法线代理，原作者位置、密度、车辆草压不变。失败先回退旧Rooibos，再回退程序灌丛。五运行文件2104204B，较M42增加578921B；同1k+两个512尺寸、纹理槽不增。
+
+- [独立原表面/边界/Alpha/来源SHA](coastal-searsia-validation-m43-native-final/result.json)：7232/6302近景面缺失、多余、反向均0，最大属性误差3.57e-8；远木质371/339组件均保留，1113/1005边界根点全在。原有效RGB/Alpha字节不变，16隔离域Alpha积分误差最大.3564%、有限像素的裁切面积误差3.853%。四准备文件独立复建逐字节相同。
+- [39项三浏览器检查](searsia-m43-behavior.json)：6.1分钟全过，切档、三层互斥、前缀/根部/共享预算、18区mip、新资源四失败恢复旧模型、旧资源四失败保留程序景观、可选法线回退与驾驶均覆盖。
+- 实际GPU：[Chrome](scrub-normals-m43-searsia-chrome-final/result.json)、[WebKit](scrub-normals-m43-searsia-webkit-final/result.json)10级全像素上传0误差/A255，9级独立原块求和0误差，8组实际shader实例方向<=1/0字节，sampler绑定正确。初oracle未处理相反方向抵消，两级各一像素误差128；Float64残差5.55e-17无方向，已补向上兜底判定，产品代码未改。[原失败](scrub-normals-m43-searsia-chrome/failure.json)保留。[四路径资源销毁](scrub-disposal-m43-searsia/result.json)均只释放实际拥有的纹理一次。
+- [正式清单](evidence-searsia-final.json)8图0错误，逐图已看，桌面峰142calls/872250tri/128geo/55tex，手机110/393732/126/52，仍超三角与手机纹理预算。另有[9手机视角和环顾](inland-scrub-m43-searsia-final-phone/result.json)，以及[横屏真实触控](vegetation-m43-searsia-mobile/result.json)/[驾驶视频](vegetation-m43-searsia-mobile/driving-and-recovery.webm)：前进、右转、制动、倒车0错误，深压格7→263，短恢复5.083秒；原始PNG及两段运动的1/6/12代表帧已看。长期草压规则不改，M41完整65秒证据沿用。
+- 同轮主机GPU各90有效样本/机位、无disjoint。[正序M42](ground-gpu-m43-m42-control/result.json)→[M43](ground-gpu-m43-searsia-final/result.json)：路草/内陆P50=2.189/3.401→2.270/4.667ms，P95=7.638/4.213→3.797/6.528。首轮内陆增加，追加一次[反序M43](ground-gpu-m43-searsia-reverse/result.json)→[M42](ground-gpu-m43-m42-reverse-control/result.json)：P50=2.700/2.156→2.251/3.992，P95=11.187/9.566→15.532/12.689。未重现同样增幅，完整保留四组，不挑低结果称提速，亦不代表实机FPS。确定路草+9733面、内陆+17910（约4.8%），同纹理49/52。
+- [普通入口](fineleaf-m43-searsia-release/result.json)：同C_hraUJb，实际前进8.45m、新五资源各一次/旧资源0请求，草图共享与压力实际上传、42世界投影一次缓存、测试全局关闭、0错误。[最终普通画面](fineleaf-m43-searsia-release/normal.png)。
+
+旧像素方案虽保留组件，却裁掉25%叶片及约51%远细枝，全部拒绝；完整双株配对增加手机6万面也拒绝。当前单株叶形更明确，远草发白、空坡与海岸整体构图仍不足，**World继续1.5/3，Goal active**，其余九类不重评、不生成新均分。真实一加12/iPhone新版美术性能待复核，下一阶段先改善地表与植被的大尺度连续层次。
+
 # M42 · 远灌丛原色与叶片受光
 
 2026-10-25，**index-B3sbJFCT.js**，854.27kB/gzip238.72kB，已更新[5190试玩](http://10.158.204.114:5190/)。保留M41作者摆放、密度、实体模型和LOD范围；重烘原生直通颜色与对象法线，减少远灌丛黑色剪影。颜色/法线源mask一致，输出法线保持不透明，运行10级mip按原颜色coverage加权。一个新512²槽含mip约1.33MiB，首次下载增加116846B；未增加draw或几何数量。细枝与枝冠分开保留覆盖，正常与低档代理共用材质图。

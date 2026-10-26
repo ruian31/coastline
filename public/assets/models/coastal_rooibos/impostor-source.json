@@ -17,11 +17,11 @@
   "bakerInputs": [
     {
       "path": "scripts/bake-coastal-scrub-impostors.mjs",
-      "sha256": "8ec2908d278b20539b9318d701c91046d75d2ab3c71eccd546482fbbe71bc040"
+      "sha256": "677e7a2e7144565f0ba89bfdaccd11da0108015f780678a98bc6c920b897e313"
     },
     {
       "path": "scripts/bake-coastal-scrub.html",
-      "sha256": "e5384dccd6b4e58dd219ac0d900c7aa3a148a04e298e7d14a1a2b746a8ced86c"
+      "sha256": "05ba95abf60ee576cd6608be0050089823364e73df8a385a1cb182203be43d7f"
     },
     {
       "path": "src/world/PlantTexture.ts",

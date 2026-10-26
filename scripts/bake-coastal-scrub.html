@@ -1,11 +1,12 @@
 <!doctype html><meta charset="utf-8"><link rel="icon" href="data:,"><script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {preserveRooibosCutoutMips} from '/src/world/PlantTexture.ts';
+import {preserveRooibosCutoutMips,preservePlantCutoutMips} from '/src/world/PlantTexture.ts';
 const size=512,renderer=new THREE.WebGLRenderer({alpha:true,antialias:false,preserveDrawingBuffer:true,premultipliedAlpha:false});
 renderer.setSize(size,size);renderer.setPixelRatio(1);renderer.setClearColor(0,0);renderer.toneMapping=THREE.NoToneMapping;document.body.append(renderer.domElement);
 const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,20),asset=new URLSearchParams(location.search).get('asset')??'coastal_rooibos',gltf=await new GLTFLoader().loadAsync('/assets/models/'+asset+'/scrub.gltf'),models=[],maps=new Set(),mode={value:0};scene.add(gltf.scene);
-gltf.scene.traverse(o=>{if(!o.isMesh)return;if(!o.name.endsWith('_near')){o.visible=false;return;}if(asset==='coastal_rooibos'&&!maps.has(o.material.map)){preserveRooibosCutoutMips(o.material.map);maps.add(o.material.map);}const material=new THREE.MeshBasicMaterial({map:o.material.map,side:THREE.DoubleSide,alphaTest:.45,alphaToCoverage:false,toneMapped:false});
+const regions=asset==='coastal_searsia'?(await fetch('/assets/models/'+asset+'/source.json').then(r=>r.json())).nativeAtlasRegions:null;
+gltf.scene.traverse(o=>{if(!o.isMesh)return;if(!o.name.endsWith('_near')){o.visible=false;return;}if(!maps.has(o.material.map)){if(regions)preservePlantCutoutMips(o.material.map,regions);else if(asset==='coastal_rooibos')preserveRooibosCutoutMips(o.material.map);maps.add(o.material.map);}const material=new THREE.MeshBasicMaterial({map:o.material.map,side:THREE.DoubleSide,alphaTest:.45,alphaToCoverage:false,toneMapped:false});
 material.onBeforeCompile=shader=>{shader.uniforms.uBakeMode=mode;shader.vertexShader='varying vec3 vBakeNormal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvBakeNormal=normal;');shader.fragmentShader='uniform float uBakeMode;varying vec3 vBakeNormal;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
  if(uBakeMode>2.5)diffuseColor.rgb=vec3(.36,.8,-.48)*.5+.5;
  else if(uBakeMode>1.5)diffuseColor.rgb=vec3(.25,.4,.1);

@@ -193,7 +193,7 @@ test('灰绿灌木近远互斥且遵守低档原始前缀，切档复用图集',
 test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥并贴地',async({page},info)=>{
  await page.setViewportSize({width:844,height:390});
  await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {scrubObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.scrubObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.scrubObjects.push((e as CustomEvent).detail));});
- const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/coastal_rooibos/')&&r.url().endsWith('.png'))requests.push(r.url());});
+ const errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/coastal_searsia/')&&r.url().endsWith('.png'))requests.push(r.url());});
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
  const inspect=()=>page.evaluate(async()=>{
   const scene=(window as unknown as {scrubObjects:THREE.Scene[]}).scrubObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,source=root.getObjectByName('Inland grey green maquis colonies') as THREE.InstancedMesh,authors=source.userData.authoredInstances as THREE.Matrix4[],low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low',limit=low?Math.floor(authors.length*.65):authors.length;
@@ -207,7 +207,7 @@ test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥�
   const land=root.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh,verges=scene.getObjectByName('road-network')!.children.filter(o=>o.name.startsWith('Graded ')) as THREE.Mesh[];
   return{road:{...root.userData.scrubDetail},field:{...root.userData.fieldScrubDetail},authors:authors.map(m=>m.toArray()),near,far,impostor,unknown,outside,duplicates,maxDistance,shared,ownAttributes,textures,wrongLod,samples,parts:[land,...verges].map(m=>({positions:Array.from(m.geometry.getAttribute('position').array as ArrayLike<number>),indices:Array.from(m.geometry.index!.array)}))};
  });
- const initial=await inspect(),cap=info.project.name.includes('mobile')?8:16;expect(initial.field.ready).toBe(true);expect(initial.field.placements).toBeGreaterThan(500);expect(initial.near).toBeGreaterThan(0);expect(initial.far+initial.impostor).toBeGreaterThan(0);
+ const initial=await inspect(),cap=info.project.name.includes('mobile')?2:4;expect(initial.field.ready).toBe(true);expect(initial.field.placements).toBeGreaterThan(500);expect(initial.near).toBeGreaterThan(0);expect(initial.far+initial.impostor).toBeGreaterThan(0);
  const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),surfaces=initial.parts.map(p=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p.positions,3));g.setIndex(p.indices);return new THREE.Mesh(g,material);}),ray=new THREE.Raycaster(),height=(x:number,z:number)=>{ray.set(new THREE.Vector3(x,120,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(surfaces)[0];expect(hit).toBeDefined();return hit.point.y;};
  for(const s of initial.samples){expect(height(s.x,s.z)-(s.y+s.lift)).toBeCloseTo(.04,3);expect(s.gx).toBeCloseTo((height(s.x+.15,s.z)-height(s.x-.15,s.z))/.3,2);expect(s.gz).toBeCloseTo((height(s.x,s.z+.15)-height(s.x,s.z-.15))/.3,2);}
  surfaces.forEach(m=>m.geometry.dispose());material.dispose();
@@ -220,8 +220,19 @@ test('内陆灌丛共享近景预算、贴图与前缀，实际三层LOD互斥�
  expect(requests.map(url=>url.split('/').at(-1)).sort()).toEqual(['scrub-color.png','scrub-impostor-normals.png','scrub-impostors.png']);expect(errors).toEqual([]);
 });
 
+for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','invalid-atlas-size'])test('完整叶灌丛失败后恢复旧实拍模型 '+resource,async({page},info)=>{
+ await page.setViewportSize({width:844,height:390});
+ if(resource==='invalid-atlas-size'){const image=new PNG({width:16,height:16});image.data.fill(255);await page.route('**/coastal_searsia/scrub-color.png',route=>route.fulfill({body:PNG.sync.write(image),contentType:'image/png'}));}
+ else await page.route('**/coastal_searsia/'+resource,route=>route.abort());
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {fallbackObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fallbackObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fallbackObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('scrub-field'));
+ const result=await page.evaluate(()=>{const root=(window as unknown as {fallbackObjects:THREE.Scene[]}).fallbackObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!.getObjectByName('Coastal landscape')!,mesh=root.getObjectByName('Grey green coastal scrub near 0') as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>;return{asset:root.userData.scrubAsset,error:root.userData.scrubAssetPrimaryError,ready:root.userData.fieldScrubDetail.ready,nearLimit:root.userData.fieldScrubDetail.nearLimit,regions:mesh.material.map!.userData.alphaCoverage.regions,copies:root.children.filter(o=>o.name==='Grey green coastal scrub near 0').length,running:window.__THREE_GAME_DIAGNOSTICS__!.state!.running};});
+ expect(result.asset.id).toBe('rooibos');expect(result.asset.nearTriangles).toEqual([2344,1058]);expect(result.error).toBeTruthy();expect(result.ready&&result.running).toBe(true);expect(result.nearLimit).toBe(info.project.name.includes('mobile')?8:16);expect(result.regions).toEqual([[0,0,662,160],[0,160,662,864]]);expect(result.copies).toBe(1);expect(errors).toEqual([]);
+});
+
 for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','invalid-atlas-size'])test('灌木载入失败保留原景观并允许开始 '+resource,async({page},info)=>{
  await page.setViewportSize({width:844,height:390});
+ await page.route('**/coastal_searsia/scrub.gltf',route=>route.abort());
  if(resource==='invalid-atlas-size'){
   const image=new PNG({width:16,height:16});image.data.fill(255);
   await page.route('**/assets/models/coastal_rooibos/scrub-color.png',route=>route.fulfill({body:PNG.sync.write(image),contentType:'image/png'}));
@@ -236,8 +247,8 @@ for(const resource of ['scrub.gltf','scrub-color.png','scrub-impostors.png','inv
 
 for(const resource of ['ready','missing','invalid-size'])test('远灌丛法线共享与可选回退 '+resource,async({page})=>{
  await page.setViewportSize({width:844,height:390});
- if(resource==='missing')await page.route('**/coastal_rooibos/scrub-impostor-normals.png',route=>route.abort());
- if(resource==='invalid-size'){const png=new PNG({width:16,height:16});png.data.fill(255);await page.route('**/coastal_rooibos/scrub-impostor-normals.png',route=>route.fulfill({body:PNG.sync.write(png),contentType:'image/png'}));}
+ if(resource==='missing')await page.route('**/coastal_searsia/scrub-impostor-normals.png',route=>route.abort());
+ if(resource==='invalid-size'){const png=new PNG({width:16,height:16});png.data.fill(255);await page.route('**/coastal_searsia/scrub-impostor-normals.png',route=>route.fulfill({body:PNG.sync.write(png),contentType:'image/png'}));}
  await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {normalObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.normalObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.normalObjects.push((e as CustomEvent).detail));});
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('field-verge'));
  const result=await page.evaluate(()=>{const objects=(window as unknown as {normalObjects:unknown[]}).normalObjects,scene=objects.find(o=>(o as THREE.Scene).isScene&&(o as THREE.Scene).getObjectByName('Coastal landscape')) as THREE.Scene,root=scene.getObjectByName('Coastal landscape')!,renderer=objects.find(o=>(o as {isWebGLRenderer?:boolean}).isWebGLRenderer) as THREE.WebGLRenderer,ids=new Set<string>(),keys:string[]=[],mips:number[]=[],spaces:string[]=[];

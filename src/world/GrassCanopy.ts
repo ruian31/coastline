@@ -289,9 +289,12 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
  vec3 groundNormal=normalize(vec3(-surface.slope.x,1.0,-surface.slope.y));
  float guard=length(uCanopyTerrainSize/float(CANOPY_SEGMENTS))*.5+.4;
  float nearRadius=float(CANOPY_SIDE/2-2)*.45,farRadius=float(CANOPY_SIDE/2-2)*1.2,d=distance(root,uCanopyCarXZ);
- float edge=middleDistance?smoothstep(nearRadius-5.0,nearRadius-2.0,d)*(1.0-smoothstep(farRadius-8.0,farRadius,d)):1.0-smoothstep(nearRadius-5.0,nearRadius,d);
+ // The short tuft remains under close leaf detail. Removing its inner
+ // ring made one grass body vanish just as the independent leaves appeared.
+ float edge=middleDistance?1.0-smoothstep(farRadius-8.0,farRadius,d):1.0-smoothstep(max(0.0,nearRadius-8.0),nearRadius,d);
  float canopyVisibility=surface.inside*step(0.0,surface.minClearance)*smoothstep(guard,guard+1.25,surface.clearance)*smoothstep(.68,.88,groundNormal.y)*smoothstep(.4,2.8,surface.height);
- float threshold=canopyRandom(worldCell,salt+25u);canopyVisibility*=smoothstep(threshold,min(1.0,threshold+.12),edge);
+ // Distance changes pixel coverage only; a fixed world leaf keeps its height.
+ float canopyShape=canopyVisibility;canopyVisibility*=edge;
  vCanopyCoverage=canopyVisibility;vFineLeaf=middleDistance?0.0:1.0;
  float angle=canopyRandom(worldCell,salt+11u)*6.283185307,c=cos(angle),s=sin(angle),stature=canopyRandom(worldCell,salt+13u),phase=canopyRandom(worldCell,salt+16u)*6.283185307;
 
@@ -300,13 +303,13 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
  vec3 canopyPosition;
  if(!middleDistance){
   float height=.15+stature*.25,width=.01+canopyRandom(worldCell,salt+12u)*.015;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust;
-  vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y),tip=canopyPressedTip(vec3(lean.x,height,lean.y),height,force,canopyVisibility,root,surface);
+  vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y),tip=canopyPressedTip(vec3(lean.x,height,lean.y),height,force,canopyShape,root,surface);
   canopyPosition=vec3(root.x,surface.height,root.y)+(position.y>.5?tip:(position.x<0.0?left:right));objectNormal=normalize(cross(right-left,tip-left));
   vMapUv=vec2(mix(.77,.79,uv.x),mix(.2,.58,uv.y));
  }else{
   float height=.16+stature*.2,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust,.025*sin(uCanopyTime*1.8+phase));
   vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y);
-  vec3 topLeft=canopyPressedTip(vec3(lean.x-halfWidth.x,height,lean.y-halfWidth.y),height,force,canopyVisibility,root,surface),topRight=canopyPressedTip(vec3(lean.x+halfWidth.x,height,lean.y+halfWidth.y),height,force,canopyVisibility,root,surface);
+  vec3 topLeft=canopyPressedTip(vec3(lean.x-halfWidth.x,height,lean.y-halfWidth.y),height,force,canopyShape,root,surface),topRight=canopyPressedTip(vec3(lean.x+halfWidth.x,height,lean.y+halfWidth.y),height,force,canopyShape,root,surface);
   vec3 offset=position.y>.5?(position.x<0.0?topLeft:topRight):(position.x<0.0?left:right);canopyPosition=vec3(root.x,surface.height,root.y)+offset;
   objectNormal=normalize((int(sourceBlade)&1)==0?cross(right-left,topLeft-left):cross(topRight-right,topLeft-right));
   vCanopyFarUv=vec2(uv.x,1.0-uv.y);
@@ -336,9 +339,14 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
         ? '#include <color_fragment>\nfloat canopyPhotoLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));\ndiffuseColor.rgb=vCanopyTint*(.75+clamp(canopyPhotoLuma*4.0,0.0,.65));'
         : '#include <color_fragment>\ndiffuseColor.rgb *= vCanopyTint;');
     }
-    if(material.map)shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>','diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');
+    if(material.map)shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>',fineGrass?`
+      // Single-sample mobile targets need coverage, rather than an alpha value
+      // that crosses .43 and switches a whole blade on in one frame.
+      #include <alphatest_fragment>
+      float canopyThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
+      if(vCanopyCoverage<=canopyThreshold)discard;`:'diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');
   };
-  const cacheKey=()=>`coast-grass-canopy-v6-${cellsPerSide}-${segments}-${fineGrass?'fine-leaves':material.map?'clumps':'blades'}`;
+  const cacheKey=()=>`coast-grass-canopy-v6-${cellsPerSide}-${segments}-${fineGrass?'fine-leaves-continuous-body-v1':material.map?'clumps':'blades'}`;
   material.customProgramCacheKey=cacheKey;
   let centeredCoverage=false;
   function prepareCoverage(){

@@ -244,7 +244,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   sky.renderOrder = -10;
 
   // Geometry assembly helpers keep repeated coastal assets in a handful of draw calls.
-  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number;impostorRange?:number;nearRange?:number};
+  type InstanceLod={near:Uint8Array;detail:'near'|'far'|'impostor';anchors?:THREE.Vector3[];indices?:number[];source?:{limit:number};distant?:Uint8Array;range?:number;impostorRange?:number;nearRange?:number;keepBody?:boolean};
   type InstanceBatch={mesh:THREE.InstancedMesh;matrices:THREE.Matrix4[];colors?:THREE.Color[];bounds:THREE.Sphere[];slots:Int32Array;limit:number;lod?:InstanceLod;groundSlopes?:{source:Float32Array;attribute:THREE.InstancedBufferAttribute};spatial?:{cells:{bounds:THREE.Sphere;indices:number[]}[];candidates:number[]}};
   const visibleBatches:InstanceBatch[]=[];
   type FoliageDetail={key:string;near:Uint8Array;anchors:THREE.Vector3[];source:typeof visibleBatches[number];enter:number;exit:number;cap:number;visible:number;budget?:string;distant?:Uint8Array;impostorRange?:number};
@@ -585,11 +585,13 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       const field=batch(source.geometry.clone(),fieldNearMaterial,fieldMatrices,fieldTints,{near:fieldNear,detail:'near',indices:fieldIndices,source:fieldRecord,range:mobile?24:35});field.name='Photographed dry inland grass '+variant;groundSlopes(field,fieldMatrices);partitionField(field);
       fieldBladeBody?.sources.push(field);
     });
-    farRecord.lod={near,detail:'far'};foliageDetails.push({key:'grassDetail',near,source:farRecord,anchors:grasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
+    // The photographed sprigs add fine stems; they cover only a fraction of
+    // the distant tuft. Keep its body instead of deleting the whole plant.
+    farRecord.lod={near,detail:'far',keepBody:fine};fieldRecord.lod!.keepBody=fine;foliageDetails.push({key:'grassDetail',near,source:farRecord,anchors:grasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
     foliageDetails.push({key:'fieldGrassDetail',near:fieldNear,source:fieldRecord,anchors:fieldGrasses.map(matrix=>new THREE.Vector3().setFromMatrixPosition(matrix)),enter:mobile?20:30,exit:mobile?24:35,cap:mobile?48:96,visible:0,budget:'photographedGrass'});
     sourceMaterials.forEach(material=>material.dispose());
-    root.userData.grassDetail={ready:true,nearLimit:mobile?48:96,enterRange:mobile?20:30,exitRange:mobile?24:35,selected:0,budget:'photographedGrass'};
-    root.userData.fieldGrassDetail.ready=true;
+    root.userData.grassDetail={ready:true,retainedBody:fine,nearLimit:mobile?48:96,enterRange:mobile?20:30,exitRange:mobile?24:35,selected:0,budget:'photographedGrass'};
+    root.userData.fieldGrassDetail.ready=true;root.userData.fieldGrassDetail.retainedBody=fine;
   }).catch(error=>{root.userData.grassDetail={ready:false,fallback:true,error:String(error)};root.userData.fieldGrassDetail.fallback=true;});
 
   const bushGeometry=crossedCards(2.6,1.9,4),bushMaterial=wind(0xffffff,.035);
@@ -1022,7 +1024,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
             // Spatial colonies update their far/proxy state only among actual
             // draw candidates; selecting a near bush need not scan the horizon.
             if(lod.impostorRange&&lod.distant){const e=matrices[i].elements,distance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2,range=lod.impostorRange;if(distance>(range+6)**2)lod.distant[index]=1;else if(distance<(range-6)**2)lod.distant[index]=0;}
-            const near=Boolean(lod.near[index]);if(lod.detail==='near'?!near:near||Boolean(lod.distant?.[index])!==(lod.detail==='impostor'))continue;}
+            const near=Boolean(lod.near[index]),wrongDetail=lod.detail==='near'?!near:near&&!lod.keepBody;
+            const wrongDistance=lod.detail!=='near'&&Boolean(lod.distant?.[index])!==(lod.detail==='impostor');
+            if(wrongDetail||wrongDistance)continue;}
           // Retain off-screen casters if a later lighting pass enables their shadows.
           if(!mesh.castShadow&&!viewFrustum.intersectsSphere(bounds[i]))continue;
           if(slots[count]!==i){mesh.setMatrixAt(count,matrices[i]);if(colors)mesh.setColorAt(count,colors[i]);if(groundSlopes)groundSlopes.attribute.setXYZ(count,groundSlopes.source[i*3],groundSlopes.source[i*3+1],groundSlopes.source[i*3+2]);slots[count]=i;changed=true;}count++;

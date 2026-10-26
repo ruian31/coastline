@@ -1,3 +1,17 @@
+# M44 · 长草保留、矮草连续过渡
+
+2026-10-26，**index-DsRsS9Pk.js**，855.39kB/gzip239.25kB，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi）。保留长草主体，近模添加细茎；矮草中层取消近处空洞，细叶以8m距离带过渡覆盖率，同一世界叶片保持原尺寸。无新贴图、批次或草毯容量；近草共享48/96上限、原作者位置及低档前缀保持。
+
+- [实际轮廓定位](plant-lod-coverage-m44/result.json)：远长草4178/3376覆盖像素，近模242–301，旧互斥会移除约92–94%体量。[源工厂接近](grass-approach-m44-body/result.json)：桌面/手机、全/低档、路边/原野8配置128样本，38m→2m主体均保留且细节真正进入。
+- [初候选33项三浏览器](grass-m44-behavior.json)8.3分钟全过，覆盖LOD、根部、前缀、切档、资源回退与输入。独立只读审查后修正双重渐退及轮廓alpha/距离筛选顺序，最终shader[另6项三浏览器](grass-m44-final-shader.json)2.3分钟全过，不称39个独立用例。
+- 最终实际shader GPU：[手机Chrome](grass-canopy-m44-full-fade-phone/result.json)、[WebKit](grass-canopy-m44-full-fade-webkit/result.json)、[桌面](grass-canopy-m44-full-fade-desktop/result.json)。移动LOD中心6m，同一世界叶位置误差0；手机实际1152绘制前缀中，近部中草76个三角样本仍存在。非零渐退带另查根点/法线/接触，手机912受压叶端0埋地，根点不动、道路0命中、移窗与半密度前缀稳定，受控20/45/65秒恢复保持。重复顶点/三角样本不称独立草株。
+- [8正式机位清单](evidence-grass-continuity-final.json)已逐图看，0错误；峰值桌面142calls/872700tri/128geo/55tex、手机110/393798/126/52，既有三角和手机纹理超预算保留。草地形体的近远连续改善，整体空坡与远草颜色仍不足，World维持1.5/3、其余九类未重评，Goal active。
+- [实际横屏双指驾驶](vegetation-m44-grass-continuity-mobile/result.json)/[运动视频](vegetation-m44-grass-continuity-mobile/driving-and-recovery.webm)：前进/右转/制动/倒车及5.083秒未暂停恢复0错误，深压格7→280。[抽帧记录](vegetation-m44-grass-continuity-mobile/sampled-frames.json)覆盖3.00–10.15秒，已看[3.00秒](vegetation-m44-grass-continuity-mobile/drive-01.png)、[6.25秒](vegetation-m44-grass-continuity-mobile/drive-06.png)、[10.15秒](vegetation-m44-grass-continuity-mobile/drive-12.png)及原始移动/转向/轮迹PNG；这些是间隔取样，非相邻帧。原压力时钟未改，M41完整65秒实际记录继续适用，本轮新shader另有受控65秒检查。
+- 同轮主机GPU各90有效样本、无disjoint：[M43](ground-gpu-m44-m43-control/result.json)→[M44](ground-gpu-m44-grass-continuity/result.json)，路草/内陆P50为2.284/3.668→2.356/3.937ms，P95为7.187/6.121→3.177/4.812。不称提速或真机FPS。确定路草+216tri、内陆+66tri，同calls/纹理；保留主体上限最多+288手机/+576桌面tri，取消空洞增加实际覆盖。
+- [普通无query入口](fineleaf-m44-grass-continuity-release/result.json)：实际前进8.30m、主体保留标记、共享草图及实际压力上传、42世界投影单次缓存、测试全局关闭，0错误。[普通画面](fineleaf-m44-grass-continuity-release/normal.png)。当前接口192.168.3.10已复核，已询问一加12消失/突现与流畅度。
+
+同源照片远草候选因画面更空而拒绝，未进入产品。接下来改善整张风景的天空夕阳、远草/裸土层次；用户后续的四季/天气/昼夜已写入需求。整体自然风景尚未达到用户要求。
+
 # M43 · 完整叶形与立体干燥灌丛
 
 2026-10-26，**index-C_hraUJb.js**，854.79kB/gzip238.96kB，已更新[5190试玩](http://192.168.3.10:5190/)。Searsia f/g完整近景7232/6302面，保留全部源叶、细枝、木质表面；远景2129/1735面使用16个原三角域隔离照片及完整木质部分。手机/桌面共享近上限2/4、较早切入五方向对象法线代理，原作者位置、密度、车辆草压不变。失败先回退旧Rooibos，再回退程序灌丛。五运行文件2104204B，较M42增加578921B；同1k+两个512尺寸、纹理槽不增。

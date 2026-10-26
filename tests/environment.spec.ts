@@ -73,7 +73,7 @@ test('植被根部和坡度覆盖实际绘制的路肩与地形',async({page})=>
  meshes.forEach(m=>m.geometry.dispose());material.dispose();
 });
 
-test('摄影低草可见、近远互斥，切换质量后保留原始摆放与资源',async({page},info)=>{
+test('近草细节保留长草主体，切换质量后保留原始摆放与资源',async({page},info)=>{
  await page.addInitScript(()=>{
   localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));
   const w=window as unknown as {grassObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.grassObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.grassObjects.push((e as CustomEvent).detail));
@@ -86,21 +86,21 @@ test('摄影低草可见、近远互斥，切换质量后保留原始摆放与�
   let slopesFinite=true;
   const key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),authored=new Set(original.map(key)),farKeys=new Set<string>(),nearKeys=new Set<string>(),unknown:string[]=[];let duplicates=0;
   for(const mesh of [far,...near])for(let i=0;i<mesh.count;i++){
-   const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m);if(!authored.has(k))unknown.push(k);if(farKeys.has(k)||nearKeys.has(k))duplicates++;(mesh===far?farKeys:nearKeys).add(k);
+   const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m);if(!authored.has(k))unknown.push(k);const own=mesh===far?farKeys:nearKeys;if(own.has(k))duplicates++;own.add(k);
    if(mesh!==far){const slope=mesh.geometry.getAttribute('instanceGroundSlope');slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);}
   }
   const material=near[0].material as THREE.MeshStandardMaterial,image=material.map!.image as {width:number;height:number};
-  return{detail:root.userData.grassDetail,near:near.map(m=>m.count),far:far.count,duplicates,unknown,slopesFinite,texture:material.map!.uuid,dimensions:[image.width,image.height],alpha:material.alphaTest,doubleSided:material.side===2,shared:near.every(m=>(m.material as THREE.MeshStandardMaterial).map===material.map),triangles:near.map(m=>m.geometry.index!.count/3),grounded:near.every(m=>{m.geometry.computeBoundingBox();return Math.abs(m.geometry.boundingBox!.min.y)<.001;}),memory:window.__THREE_GAME_DIAGNOSTICS__!.renderer};
+  return{missingBody:[...nearKeys].filter(k=>!farKeys.has(k)),detail:root.userData.grassDetail,near:near.map(m=>m.count),far:far.count,duplicates,unknown,slopesFinite,texture:material.map!.uuid,dimensions:[image.width,image.height],alpha:material.alphaTest,doubleSided:material.side===2,shared:near.every(m=>(m.material as THREE.MeshStandardMaterial).map===material.map),triangles:near.map(m=>m.geometry.index!.count/3),grounded:near.every(m=>{m.geometry.computeBoundingBox();return Math.abs(m.geometry.boundingBox!.min.y)<.001;}),memory:window.__THREE_GAME_DIAGNOSTICS__!.renderer};
  });
  const low=await inspect(),limit=info.project.name.includes('mobile')?48:96;
  expect(low.detail.ready).toBe(true);expect(low.near.reduce((a,b)=>a+b,0)).toBeGreaterThan(0);expect(low.detail.selected).toBeLessThanOrEqual(limit);expect(low.detail.visible).toBe(low.near.reduce((a,b)=>a+b,0));
- expect(low.duplicates).toBe(0);expect(low.unknown).toEqual([]);expect(low.slopesFinite).toBe(true);expect(low.shared).toBe(true);expect(low.dimensions).toEqual([1024,1024]);expect(low.alpha).toBeGreaterThan(.4);expect(low.doubleSided).toBe(true);expect(low.grounded).toBe(true);expect(low.triangles).toEqual([301,301,301]);
+ expect(low.detail.retainedBody).toBe(true);expect(low.missingBody).toEqual([]);expect(low.duplicates).toBe(0);expect(low.unknown).toEqual([]);expect(low.slopesFinite).toBe(true);expect(low.shared).toBe(true);expect(low.dimensions).toEqual([1024,1024]);expect(low.alpha).toBeGreaterThan(.4);expect(low.doubleSided).toBe(true);expect(low.grounded).toBe(true);expect(low.triangles).toEqual([301,301,301]);
  // Use the real settings control; all quality tiers must reuse the atlas and
- // retain disjoint near/far sets when the low-density prefix changes.
+ // retain each long-grass body under its added close detail as prefixes change.
  for(const quality of ['high','low','high','low']){
   await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');
   await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
-  const current=await inspect();expect(current.texture).toBe(low.texture);expect(current.detail.selected).toBeLessThanOrEqual(limit);expect(current.duplicates).toBe(0);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);
+  const current=await inspect();expect(current.texture).toBe(low.texture);expect(current.detail.selected).toBeLessThanOrEqual(limit);expect(current.missingBody).toEqual([]);expect(current.duplicates).toBe(0);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);
  }
  expect(errors).toEqual([]);
 });
@@ -115,8 +115,9 @@ test('原野与路边共用摄影近草总限额，保留前缀、距离裁剪�
   scene.onAfterRender=(_renderer,_scene,camera)=>{scene.userData.fieldCamera=camera.position.toArray();};await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
   const camera=scene.userData.fieldCamera as number[],low=window.__THREE_GAME_DIAGNOSTICS__!.state!.renderTier==='low',nearMeshes=[0,1,2].map(i=>root.getObjectByName('Photographed dry inland grass '+i) as THREE.InstancedMesh),roadside=[0,1,2].map(i=>root.getObjectByName('Photographed low coastal grass '+i) as THREE.InstancedMesh),far=root.getObjectByName('Dry inland patch grass clusters') as THREE.InstancedMesh,body=root.getObjectByName('Modeled dry grass blade bodies') as THREE.InstancedMesh,authors=far.userData.authoredInstances as THREE.Matrix4[],limit=low?Math.floor(authors.length*.55):authors.length,key=(m:THREE.Matrix4)=>Array.from(new Float32Array(m.elements),v=>v.toFixed(3)).join(','),lookup=new Map(authors.map((m,i)=>[key(m),i])),baseSeen=new Set<string>(),bodySeen=new Set<string>(),fineSeen=new Set<string>(),missingBase:string[]=[],outside:number[]=[],unknown:string[]=[],farDistances:number[]=[];let duplicates=0,slopesFinite=true;
   for(const mesh of [far,...(body?[body]:[]),...nearMeshes])for(let i=0;i<mesh.count;i++){
-   const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);const own=mesh===far?baseSeen:mesh===body?bodySeen:fineSeen;if(own.has(k))duplicates++;own.add(k);if(mesh!==far&&baseSeen.has(k))duplicates++;if(body&&mesh!==far&&mesh!==body&&!bodySeen.has(k))missingBase.push(k);const slope=mesh.geometry.getAttribute('instanceGroundSlope');slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);if(mesh===far)farDistances.push(Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));
+   const m=mesh.matrix.clone();mesh.getMatrixAt(i,m);const k=key(m),index=lookup.get(k);if(index===undefined)unknown.push(k);else if(index>=limit)outside.push(index);const own=mesh===far?baseSeen:mesh===body?bodySeen:fineSeen;if(own.has(k))duplicates++;own.add(k);if(!root.userData.fineGrass.ready&&mesh!==far&&baseSeen.has(k))duplicates++;if(body&&mesh!==far&&mesh!==body&&!bodySeen.has(k))missingBase.push(k);const slope=mesh.geometry.getAttribute('instanceGroundSlope');slopesFinite&&=[slope.getX(i),slope.getY(i),slope.getZ(i)].every(Number.isFinite);if(mesh===far)farDistances.push(Math.hypot(m.elements[12]-camera[0],m.elements[14]-camera[2]));
   }
+  if(root.userData.fineGrass.ready)for(const k of fineSeen)if(!baseSeen.has(k))missingBase.push(k);
   const material=nearMeshes[0].material as THREE.MeshStandardMaterial,roadMap=(roadside[0].material as THREE.MeshStandardMaterial).map;
   // Compare every authored number in-browser; repeatedly serialising tens of
   // thousands of matrices into the Playwright trace obscures the actual check.
@@ -130,7 +131,7 @@ test('原野与路边共用摄影近草总限额，保留前缀、距离裁剪�
   await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');
   for(const state of ['grass-verge','field-verge','rock-back']){
    await page.evaluate(state=>window.__THREE_GAME_TEST_HOOKS__!.setState(state),state);const current=await inspect();roadVisible+=current.roadNear;fieldVisible+=current.near;
-   expect(current.near+current.roadNear).toBeLessThanOrEqual(cap);expect(current.field.selected+current.road.selected).toBeLessThanOrEqual(cap);expect(current.field.visible).toBe(current.near);expect(current.road.visible).toBe(current.roadNear);expect(current.duplicates).toBe(0);expect(current.fine.ready).toBe(true);expect(current.fine.triangles).toEqual([301,301,301]);expect(current.body).toBe(0);expect(current.bodyTriangles).toBe(0);expect(current.missingBase,'legacy photographed grass retains its supplemental body').toEqual([]);expect(current.outside).toEqual([]);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);expect(current.shared).toBe(true);expect(current.ownAttributes).toBe(true);expect(current.texture).toBe(first.texture);expect(current.maxFarDistance).toBeLessThanOrEqual(current.field.range+.001);expect(current.authorsStable).toBe(true);expect(current.authorsCount).toBe(first.authorsCount);
+   expect(current.near+current.roadNear).toBeLessThanOrEqual(cap);expect(current.field.selected+current.road.selected).toBeLessThanOrEqual(cap);expect(current.field.visible).toBe(current.near);expect(current.road.visible).toBe(current.roadNear);expect(current.duplicates).toBe(0);expect(current.fine.ready).toBe(true);expect(current.fine.triangles).toEqual([301,301,301]);expect(current.body).toBe(0);expect(current.bodyTriangles).toBe(0);expect(current.field.retainedBody&&current.road.retainedBody).toBe(true);expect(current.missingBase,'close sprigs retain the same long-grass body').toEqual([]);expect(current.outside).toEqual([]);expect(current.unknown).toEqual([]);expect(current.slopesFinite).toBe(true);expect(current.shared).toBe(true);expect(current.ownAttributes).toBe(true);expect(current.texture).toBe(first.texture);expect(current.maxFarDistance).toBeLessThanOrEqual(current.field.range+.001);expect(current.authorsStable).toBe(true);expect(current.authorsCount).toBe(first.authorsCount);
   }
  }
  expect(roadVisible).toBeGreaterThan(0);expect(fieldVisible).toBeGreaterThan(0);expect(requests.length).toBe(1);expect(errors).toEqual([]);

@@ -1,0 +1,44 @@
+{
+  "provider": "Built-in image_gen tool",
+  "transparentBackground": true,
+  "source": {
+    "file": "source-assets/palm-fronds-v1.png",
+    "bytes": 2373324,
+    "sha256": "350f95ec96ab4782f3598190cd17f0d16916e0994c9ed2753a3287bd884faccc",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "prompt": {
+    "file": "source-assets/palm-fronds-v1.prompt.txt",
+    "sha256": "b74cf6f64b871034050a075cd699df23bdaa62324105bfa447b2f58cc4f08482"
+  },
+  "recipe": {
+    "file": "scripts/prepare-palm-fronds.mjs",
+    "sha256": "0600e07193e67f3da6ec3cd1480671f2d6243142845b58b2c8abd84bfe4a0df8",
+    "sharp": "0.35.5",
+    "resize": "Lanczos3 power-of-two resize, RGBA alpha resampled and preserved",
+    "encoding": "lossless WebP; resampling changes source pixels"
+  },
+  "outputs": [
+    {
+      "file": "palm-fronds-512.webp",
+      "bytes": 314894,
+      "sha256": "6431f04b406463103a702c45beece9f32d80e814fa2a9f3a03cea60bf77ea642",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "file": "palm-fronds-1024.webp",
+      "bytes": 1151738,
+      "sha256": "5c04c2ed73f1b35dbf675913a19cffa5c5dc81af80c3fb16224363cd4e29df2d",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ]
+}

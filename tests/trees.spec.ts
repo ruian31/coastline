@@ -1,5 +1,35 @@
 import {test,expect} from '@playwright/test';
 import * as THREE from 'three';
+import {PNG} from 'pngjs';
+
+test('棕榈完整羽状叶共用分区贴图，近远互斥且切档复用资源',async({page},info)=>{
+ test.setTimeout(60000);await page.setViewportSize({width:844,height:390});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {palmObjects:THREE.Scene[];__THREE_DEVTOOLS__:EventTarget};w.palmObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.palmObjects.push((e as CustomEvent).detail));});
+ await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const inspect=()=>page.evaluate(()=>{
+  const scene=(window as unknown as {palmObjects:THREE.Scene[]}).palmObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,root=scene.getObjectByName('Coastal landscape')!,group=root.getObjectByName('Wind moving palm fronds')!,meshes=group.children as THREE.InstancedMesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[],material=meshes[0].material,map=material.map!,authors=meshes[0].userData.authoredInstances as THREE.Matrix4[],key=(a:ArrayLike<number>)=>Array.from(a,n=>n.toFixed(3)).join(','),authorKeys=new Set(authors.map(m=>key(m.elements))),seen=new Set<string>();let valid=true,duplicates=0,unknown=0;
+  for(const mesh of meshes){const p=mesh.geometry.getAttribute('position'),n=mesh.geometry.getAttribute('normal'),uv=mesh.geometry.getAttribute('uv');for(let i=0;i<p.count;i++)if(![p.getX(i),p.getY(i),p.getZ(i)].every(Number.isFinite)||Math.abs(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))-1)>.001||uv.getX(i)<0||uv.getX(i)>1||uv.getY(i)<0||uv.getY(i)>1)valid=false;for(let i=0;i<mesh.count;i++){const k=key(mesh.instanceMatrix.array.slice(i*16,i*16+16));if(!authorKeys.has(k))unknown++;if(seen.has(k))duplicates++;seen.add(k);}}
+  return{detail:root.userData.palmFronds,shared:meshes.every(m=>m.material===material),map:map.uuid,mips:map.mipmaps.length,regions:map.userData.alphaCoverage.regions.length,coverage:map.userData.alphaCoverage.coverage,manual:!map.generateMipmaps,space:map.colorSpace,alpha:material.alphaTest,centered:material.customProgramCacheKey().includes('plant-centered-alpha-v1'),rigid:material.userData.rigidTree,valid,duplicates,unknown,visible:seen.size,triangles:meshes.map(m=>m.geometry.getAttribute('position').count/3),sun:{...scene.userData.sunShadows}};
+ });
+ const initial=await inspect(),mobile=info.project.name.includes('mobile');expect(initial.detail.ready).toBe(true);expect(initial.detail.size).toBe(mobile?512:1024);expect(initial.mips).toBe(mobile?10:11);expect(initial.regions).toBe(4);expect(initial.coverage.every((n:number)=>n>.1&&n<.8)).toBe(true);expect(initial.triangles).toEqual(mobile?[625,345]:[801,441]);
+ for(const state of ['field-verge','active-play','grass-verge']){
+  await page.evaluate(async state=>{await window.__THREE_GAME_TEST_HOOKS__!.setState(state);window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true);},state);const current=await inspect();expect(current.shared&&current.manual&&current.centered&&current.rigid&&current.valid).toBe(true);expect(current.space).toBe('srgb');expect(current.alpha).toBe(.4);expect(current.duplicates+current.unknown).toBe(0);expect(current.visible).toBeGreaterThan(0);expect(current.map).toBe(initial.map);expect(current.sun.bakes).toBe(1);
+ }
+ await page.click('#menu-button');for(const quality of ['high','low']){await page.selectOption('#quality-select',quality);await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));expect((await inspect()).map).toBe(initial.map);}
+ expect(errors).toEqual([]);
+});
+
+for(const failure of ['request','dimensions'])test('棕榈叶图失效恢复实体旧树冠并仍可驾驶 '+failure,async({page},info)=>{
+ test.setTimeout(60000);await page.setViewportSize({width:844,height:390});
+ if(failure==='request')await page.route('**/assets/environment/palm-fronds-*.webp',r=>r.abort());
+ else{const image=new PNG({width:16,height:16});image.data.fill(255);await page.route('**/assets/environment/palm-fronds-*.webp',r=>r.fulfill({body:PNG.sync.write(image),contentType:'image/png'}));}
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {palmObjects:THREE.Scene[];__THREE_DEVTOOLS__:EventTarget};w.palmObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.palmObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+ const before=await page.evaluate(()=>{const root=(window as unknown as {palmObjects:THREE.Scene[]}).palmObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!.getObjectByName('Coastal landscape')!,meshes=root.getObjectByName('Wind moving palm fronds')!.children as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[];return{detail:root.userData.palmFronds,plain:meshes.every(m=>!m.material.map&&m.material.alphaTest===0),triangles:meshes.map(m=>m.geometry.getAttribute('position').count/3),position:window.__THREE_GAME_DIAGNOSTICS__!.player!.position!};});
+ expect(before.detail.fallback&&before.plain).toBe(true);expect(before.triangles).toEqual(info.project.name.includes('mobile')?[1185,401]:[2673,729]);
+ await page.keyboard.down('ArrowUp');try{await expect.poll(async()=>page.evaluate(start=>{const p=window.__THREE_GAME_DIAGNOSTICS__!.player!.position!;return Math.hypot(p.x-start.x,p.z-start.z);},before.position),{timeout:15000}).toBeGreaterThan(2);}finally{await page.keyboard.up('ArrowUp');}expect(errors).toEqual([]);
+});
 
 test('扫描海岸树共用材质与逐簇图集，近远LOD互斥且树根埋入真实坡面',async({page})=>{
  test.setTimeout(100000);await page.setViewportSize({width:844,height:390});

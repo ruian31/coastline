@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,devices} from 'playwright';
 
 const label=process.env.SUN_LABEL??String(Date.now()),mobile=process.env.SUN_DEVICE!=='desktop';assert.match(label,/^[a-z0-9-]+$/);
-const startState=process.env.SUN_START_STATE??'tree-shadow';assert.ok(['tree-shadow','tunnel-exit','town'].includes(startState));
+const startState=process.env.SUN_START_STATE??'tree-shadow';assert.ok(['tree-shadow','tunnel-exit','town','offroad-start'].includes(startState));
 const dir=`artifacts/sun-motion-${label}`;await mkdir(dir);
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 const size=mobile?{width:844,height:390}:{width:1280,height:720};

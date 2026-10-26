@@ -1,3 +1,15 @@
+# M49 · 完整羽状棕榈叶面
+
+2026-10-26，**index-C9JfYe3-.js**，877.04kB/gzip252.23，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi，接口已复核）。树冠由完整透明叶图、弯曲主叶轴与中央折脊组成；原树干、位置、数量及叶轴随机形体保持。近/远面数手机1185/401→625/345、桌面2673/729→801/441。
+
+- 来源为内置image_gen工具生成的[原始RGBA](../source-assets/palm-fronds-v1.png)，[完整提示词](../source-assets/palm-fronds-v1.prompt.txt)与[转换记录](../public/assets/environment/palm-fronds-source.json)保留。手机512²314894B、桌面1024²1151738B，各只加载一张，4区覆盖mip与中心裁切；新增GPU槽+1，约1.33/5.33MiB（手机/桌面）。初程序叶面过于重叠与M48草簇方案未采用。
+- [15项三浏览器](palm-m49-browser-tests.json)2.77分钟全过，0失败/跳过/重试：成功、请求失败、尺寸错误回退及继续驾驶，近远共享/互斥、质量切换、树根与首帧世界阴影。一次聚焦只读审查未见明确缺陷；[8最终机位](evidence-palm-fronds-final.json)已逐图看，重新烘焙缓存，0错误。峰桌面150calls/853236tri/201geo/56tex、手机116/381989/199/53；原面/手机纹理预算仍超。
+- [实际海湾巡航](sun-motion-m49-palm-coast-phone/samples.json)/[视频](sun-motion-m49-palm-coast-phone/drive.webm)：234.87m、18.597秒，按钮切车内再回追随，世界缓存一次、0错误。[原始车内](sun-motion-m49-palm-coast-phone/drive-10.png)及视频[6秒](sun-motion-m49-palm-coast-phone/motion-1.png)/[13秒](sun-motion-m49-palm-coast-phone/motion-2.png)/[20.5秒](sun-motion-m49-palm-coast-phone/motion-3.png)已看；[时间清单](sun-motion-m49-palm-coast-phone/sampled-frames.json)是22.28秒完整录制中的间隔取样，非相邻帧。
+- 同轮主机RTX4050、Android横屏低档，各90有效GPU样本、无disjoint，[M47](ground-gpu-m49-m47-control/result.json)→[M49](ground-gpu-m49-photo-candidate/result.json)：路草/原野P50=2.169/3.528→2.007/3.016ms，P95=4.773/7.590→7.640/10.197。中位数降低、尾部升高，不称整体提速或真机帧率。实际面数254705/272628→250738/267532、calls88/90保持；包围界变化会改变边缘实例提交。
+- [5190普通入口](fineleaf-m49-palm-fronds-release/result.json)：同C9Jf、前进8.45m，512叶图一次请求/实际sampler/两层共享/10级mip，草主体/压力上传/岩石共用图与SHA/115世界投影单次缓存、测试全局关闭，0错误；[普通画面](fineleaf-m49-palm-fronds-release/normal.png)已看。新旧草互动代码保持，M41完整65秒恢复证据继续适用。
+
+World1.5、Lighting2.25保持，其余八类未重评，无新均分，原野发白中草/重复裸坡仍未达标，**Goal active**。用户新增的镜头遮挡/惯性、悬挂、车灯、后视镜及四季昼夜天气已写入[后续计划](../docs/11-后续驾驶与动态世界计划.md)，按用户顺序留在当前工作之后。
+
 # M47 · 闭合石体与米制岩石表面
 
 2026-10-26，**index-WjARrULR.js**，874.25kB/gzip251.64，已更新[5190试玩](http://192.168.3.10:5190/)（接口复核，同一Wi-Fi）。采用[官方Boulder01](https://polyhaven.com/a/boulder_01)的512面闭合形体，Rico Cilliers/[CC0](https://polyhaven.com/license)；原照片UV未采用，继续共用旧两张岩石图，以1.8m世界投影给完整体积着色。保留原岩石数量/位置/尺度，双石岩脊yaw错开；植物随机序列、低档和碰撞半径保持。

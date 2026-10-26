@@ -5,7 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createTunnelHeadland} from './TunnelHeadland';
 import { heightAt, coast, hill, roads } from './roads';
 import { createSeededRandom } from '../utils/random';
-import {createPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
+import {createPalmCrown,createPhotographedPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
 import {createGrassCanopy} from './GrassCanopy';
 import {createVegetationInteraction} from './VegetationInteraction';
@@ -866,8 +866,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       #endif`);
   };
   trunkMaterial.customProgramCacheKey=()=>barkKey+'-palm-photo-phase-v1';
-  const frondGeometry=createPalmCrown(mobile);
-  const frondMaterial=wind(0xd3d5ad,.014,true);frondMaterial.vertexColors=true;
+  const frondGeometry=createPhotographedPalmCrown(mobile);
+  const frondMaterial=wind(0xffffff,.014,true);frondMaterial.vertexColors=true;
   random=createSeededRandom(864208);
   const palms:THREE.Matrix4[]=[],palmColors:THREE.Color[]=[];
   for(let i=0;i<(mobile?48:82);i++) {
@@ -887,7 +887,38 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     palms.push(matrix(x,groundHeight(x,z),z,size,size,size,i*.87));palmColors.push(new THREE.Color('#c6cca6'));
   }
   treeBatch(trunkGeometry,trunkMaterial,palms).name='Curved palm trunks';
-  treeBatch(frondGeometry,frondMaterial,palms,palmColors,createPalmCrown(mobile,true)).name='Wind moving palm fronds';
+  const frondGroup=treeBatch(frondGeometry,frondMaterial,palms,palmColors,createPhotographedPalmCrown(mobile,true));frondGroup.name='Wind moving palm fronds';
+  // Per-instance bounds own culling, including a possible texture fallback.
+  frondGroup.children.forEach(mesh=>mesh.frustumCulled=false);
+  root.userData.palmFronds={ready:false};
+  const frondsReady=new Promise<void>(resolve=>{
+    const fallback=()=>{
+      if(!disposed){
+        frondMaterial.map=null;frondMaterial.alphaTest=0;frondMaterial.alphaToCoverage=false;frondMaterial.color.setHex(0xd3d5ad);frondMaterial.needsUpdate=true;
+        frondGroup.children.forEach((object,i)=>{
+          const mesh=object as THREE.InstancedMesh,previous=mesh.geometry,geometry=keep(createPalmCrown(mobile,i===1));mesh.geometry=geometry;geometry.computeBoundingSphere();
+          const record=visibleBatches.find(record=>record.mesh===mesh)!;
+          record.matrices.forEach((matrix,j)=>{record.bounds[j].copy(geometry.boundingSphere!).applyMatrix4(matrix);record.bounds[j].radius+=.8;});
+          resources.delete(previous);previous.dispose();
+        });
+        root.userData.palmFronds={ready:false,fallback:true};
+      }
+      resolve();
+    };
+    const size=mobile?512:1024;
+    const map=textureLoader.load(`${import.meta.env.BASE_URL}assets/environment/palm-fronds-${size}.webp`,loaded=>{
+      if(disposed){resolve();return;}
+      try{
+        const image=loaded.image as HTMLImageElement;if(image.width!==size||image.height!==size)throw Error('Palm fronds need their square atlas');
+        loaded.colorSpace=THREE.SRGBColorSpace;loaded.anisotropy=mobile?4:8;
+        preservePlantCutoutMips(loaded,Array.from({length:4},(_,i)=>[i%2*size/2,Math.floor(i/2)*size/2,size/2,size/2] as const),.4);
+        frondMaterial.map=loaded;frondMaterial.alphaTest=.4;frondMaterial.alphaToCoverage=true;centerPlantAlphaCoverage(frondMaterial);frondMaterial.needsUpdate=true;
+        root.userData.palmFronds={ready:true,size,mipLevels:loaded.mipmaps.length,triangles:frondGroup.children.map(object=>(object as THREE.Mesh).geometry.getAttribute('position').count/3)};
+        resolve();
+      }catch{fallback();}
+    },undefined,fallback);
+    textures.push(map);
+  });
 
   // Inland stone-pine silhouettes break the hill contour, leaving the coastal road open.
   random=createSeededRandom(864209);
@@ -966,7 +997,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     ...rocks.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.max(Math.hypot(m.elements[0],m.elements[2]),Math.hypot(m.elements[8],m.elements[10]))*.85+.78})),
   ];
   return {
-    ready:Promise.all([grassReady,scrubReady,barkReady,treeReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
+    ready:Promise.all([grassReady,scrubReady,barkReady,frondsReady,treeReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
     prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
     groundHeight:cameraGroundHeight,

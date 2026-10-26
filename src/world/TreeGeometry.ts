@@ -49,6 +49,36 @@ export function createPalmCrown(mobile:boolean,distant=false):THREE.BufferGeomet
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.computeVertexNormals();return geometry;
 }
 
+/** Curved, ridged full-frond surfaces. The photographic alpha keeps every
+ * feather silhouette in both LODs; the petiole scaffold stays unchanged. */
+export function createPhotographedPalmCrown(mobile:boolean,distant=false){
+ const random=createSeededRandom(864212),positions:number[]=[],colors:number[]=[],uvs:number[]=[],crown=new THREE.Vector3(.65,7.8,0),fronds=mobile?14:18;
+ function tri(a:THREE.Vector3,b:THREE.Vector3,c:THREE.Vector3,tint:number,dry:number,uv:number[][]=[[.25,.25],[.25,.25],[.25,.25]]){
+  for(const [i,v] of [a,b,c].entries()){positions.push(v.x,v.y,v.z);colors.push((.98+dry*.08)*tint,(1-dry*.03)*tint,(1-dry*.20)*tint);uvs.push(...uv[i]);}
+ }
+ for(let frond=0;frond<fronds;frond++){
+  const tier=frond%3,angle=frond*2.399963+random()*.21,dir=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)),side=new THREE.Vector3(-dir.z,0,dir.x);
+  const length=[4.25,3.95,3.1][tier]+random()*.55,arch=[.55,.7,.75][tier]+random()*.3,droop=[2.4,1.35,.6][tier]+random()*.4,sweep=(random()-.5)*.65,dry=tier===0?.30+random()*.28:random()*.1;
+  const center=(t:number)=>crown.clone().addScaledVector(dir,t*length).addScaledVector(side,Math.sin(t*Math.PI)*sweep).add(new THREE.Vector3(0,Math.sin(t*Math.PI)*arch+t*[0,.6,1.8][tier]-t*t*droop,0));
+  const segments=distant?4:8,tile=frond%4;
+  const point=(row:number,column:number)=>{const t=row/segments,p=center(t),span=1.08;p.addScaledVector(side,column*span);p.y+=column===0?.06*Math.sin(t*Math.PI):-.09*span;return p;};
+  const uv=(row:number,column:number)=>[(tile%2+(column+1)*.5)/2,(1-Math.floor(tile/2)+row/segments)/2];
+  for(let row=0;row<segments;row++)for(let col=-1;col<1;col++){
+   const a=point(row,col),b=point(row,col+1),c=point(row+1,col),d=point(row+1,col+1);
+   tri(a,b,c,.88,dry,[uv(row,col),uv(row,col+1),uv(row+1,col)]);tri(b,d,c,.88,dry,[uv(row,col+1),uv(row+1,col+1),uv(row+1,col)]);
+  }
+  for(let row=0;row<(distant?4:6);row++){
+   const t=row/(distant?4:6),u=(row+1)/(distant?4:6),a=center(t),b=center(u),width=.052*(1-t)*.9+.006,endWidth=.052*(1-u)*.9+.006,left=a.clone().addScaledVector(side,width),right=a.clone().addScaledVector(side,-width),endLeft=b.clone().addScaledVector(side,endWidth),endRight=b.clone().addScaledVector(side,-endWidth);
+   tri(left,right,endLeft,.82,dry);tri(right,endRight,endLeft,.82,dry);
+  }
+ }
+ for(let spear=0;spear<3;spear++){
+  const a=spear*2.399,side=new THREE.Vector3(Math.cos(a),0,Math.sin(a)),tip=crown.clone().addScaledVector(side,.55).add(new THREE.Vector3(0,1.8+spear*.12,0)),left=crown.clone().addScaledVector(side,.07),right=crown.clone().addScaledVector(side,-.07),ridge=crown.clone().lerp(tip,.5).add(new THREE.Vector3(-side.z*.07,0,side.x*.07));tri(left,right,ridge,.86,0);tri(left,ridge,tip,.86,0);tri(ridge,right,tip,.8,0);
+ }
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.computeVertexNormals();return g;
+}
+
+
 /** One local atlas serves needle sprays and the opaque branch swatch. */
 export function createPineNeedleAtlas():THREE.CanvasTexture {
  const canvas=document.createElement('canvas');canvas.width=canvas.height=512;

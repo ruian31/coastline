@@ -70,7 +70,7 @@ npm run dev -- --host 0.0.0.0
 
 电脑访问 `http://localhost:5188/`。手机与电脑在同一局域网时使用终端输出的 Network 地址。验证命令：`npm run build`、`npm test`。测试使用已安装的 Chrome；当前开发环境在 Playwright 启动参数中启用硬件 GPU，避免软件渲染误导性能结果。
 
-手机稳定试玩：当前网络中打开 `http://10.158.204.114:5190/`（`npm run build` 后以 `npm run preview -- --host 0.0.0.0 --port 5190` 启动；主机换网时地址会变化）。点击开始自动尝试横屏全屏；手机默认流畅档，设置中可提高画质。早期性能版经一加12 Chrome复测确认明显更流畅与横屏全屏正常；本轮新美术版和iPhone真机表现仍待复核。
+手机稳定试玩：与主机连接同一 Wi-Fi 后打开 [192.168.3.10:5190](http://192.168.3.10:5190/)；电脑本机打开 [localhost:5190](http://localhost:5190/)（2026-10-26已复核）。`npm run build` 后以 `npm run preview -- --host 0.0.0.0 --port 5190` 启动；主机换网时请使用终端输出的实际 Network 地址。点击开始自动尝试横屏全屏；手机默认流畅档，设置中可提高画质。早期性能版经一加12 Chrome复测确认明显更流畅与横屏全屏正常；本轮新美术版和iPhone真机表现仍待复核。
 
 ## GitHub Pages 发布
 

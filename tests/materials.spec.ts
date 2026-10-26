@@ -64,7 +64,7 @@ for(const file of ['palm-bark-color.jpg','palm-bark-surface.webp'])test('树皮�
  expect(result.bark).toEqual({ready:false,fallback:true});expect(result.plain).toBe(true);expect(result.geometry).toBeGreaterThan(100);expect(errors).toEqual([]);
 });
 
-test('干草地、海砂与岩岸共用八张实际GPU表面纹理',async({page})=>{
+test('干草地、海砂与岩岸共用八张实际GPU表面纹理',async({page},info)=>{
  await page.setViewportSize({width:844,height:390});
  await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {surfaceObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.surfaceObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.surfaceObjects.push((e as CustomEvent).detail));});
  const requests:string[]=[],errors:string[]=[];page.on('request',r=>{if(r.url().includes('/assets/environment/'))requests.push(new URL(r.url()).pathname.split('/').at(-1)!);});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -74,13 +74,26 @@ test('干草地、海砂与岩岸共用八张实际GPU表面纹理',async({page}
   // Inspect the uniforms of the program actually prepared by WebGLRenderer;
   // unreferenced files in public/ must not count as integrated PBR surfaces.
   const {uniforms}=renderer.properties.get(ground) as {uniforms:Record<string,{value:THREE.Texture}>},roles=['GroundColor','GroundSurface','SandColor','SandSurface','FieldColor','FieldSurface','RockColor','RockSurface'];
-  return{key:ground.customProgramCacheKey(),textures:roles.map(role=>{const texture=uniforms['u'+role].value,image=texture.image as HTMLImageElement;return{role,id:texture.uuid,width:image.width,height:image.height,colorSpace:texture.colorSpace,src:image.currentSrc,mipmaps:texture.generateMipmaps};}),shoulders:scene.getObjectByName('road-network')!.children.filter(o=>(o as THREE.Mesh).material===ground).length};
+  return{key:ground.customProgramCacheKey(),fieldAvailable:(uniforms.uFieldAvailable as unknown as {value:number}).value,textures:roles.map(role=>{const texture=uniforms['u'+role].value,image=texture.image as HTMLImageElement;return{role,id:texture.uuid,width:image.width,height:image.height,colorSpace:texture.colorSpace,src:image.currentSrc,mipmaps:texture.generateMipmaps,wrap:[texture.wrapS,texture.wrapT]};}),shoulders:scene.getObjectByName('road-network')!.children.filter(o=>(o as THREE.Mesh).material===ground).length};
  });
- expect(result.key).toContain('coastal-dry-field-rock-v8');expect(result.shoulders).toBe(6);expect(new Set(result.textures.map(t=>t.id)).size).toBe(8);
- for(const texture of result.textures){expect([texture.width,texture.height]).toEqual([1024,1024]);expect(texture.colorSpace).toBe(texture.role.endsWith('Color')?'srgb':'');expect(texture.mipmaps).toBe(true);}
- for(const file of ['ground-surface.webp','sand-surface.webp','meadow-color.webp','meadow-surface.webp'])expect(requests.filter(r=>r===file).length).toBe(1);
- for(const file of ['ground-normal.jpg','ground-roughness.jpg','sand-normal.jpg','sand-roughness.jpg','field-color.jpg','field-surface.webp'])expect(requests).not.toContain(file);
+ expect(result.key).toContain('coastal-dry-field-rock-v9');expect(result.fieldAvailable).toBe(1);expect(result.shoulders).toBe(6);expect(new Set(result.textures.map(t=>t.id)).size).toBe(8);
+ const fieldSize=info.project.name.includes('mobile')?512:1024;
+ for(const texture of result.textures){const size=texture.role==='FieldColor'?fieldSize:1024;expect([texture.width,texture.height]).toEqual([size,size]);expect(texture.colorSpace).toBe(texture.role.endsWith('Color')?'srgb':'');expect(texture.mipmaps).toBe(true);expect(texture.wrap).toEqual(texture.role==='FieldColor'?[1002,1002]:[1000,1000]);}
+ for(const file of ['ground-surface.webp','sand-surface.webp',`coastal-field-v1-${fieldSize}.webp`,'meadow-surface.webp'])expect(requests.filter(r=>r===file).length).toBe(1);
+ for(const file of ['ground-normal.jpg','ground-roughness.jpg','sand-normal.jpg','sand-roughness.jpg','field-color.jpg','field-surface.webp','meadow-color.webp',`coastal-field-v1-${fieldSize===512?1024:512}.webp`])expect(requests).not.toContain(file);
  expect(errors).toEqual([]);
+});
+
+for(const failure of ['color-request','color-dimensions','surface-dimensions'])test('地表图失败时回退土壤并能实际巡航 '+failure,async({page})=>{
+ await page.setViewportSize({width:844,height:390});
+ const pattern=failure==='surface-dimensions'?'**/meadow-surface.webp':'**/coastal-field-v1-*.webp';
+ const tiny=PNG.sync.write(new PNG({width:2,height:2}));
+ await page.route(pattern,route=>failure==='color-request'?route.abort():route.fulfill({status:200,contentType:'image/png',body:tiny}));
+ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {fieldObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fieldObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fieldObjects.push((e as CustomEvent).detail));});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?test=1');await page.click('#start-auto');
+ await expect.poll(()=>page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__!.state!.distance)).toBeGreaterThan(3);
+ const available=await page.evaluate(()=>{const observed=(window as unknown as {fieldObjects:unknown[]}).fieldObjects,scene=observed.find(o=>(o as THREE.Scene).isScene&&(o as THREE.Scene).getObjectByName('Coastal landscape')) as THREE.Scene,renderer=observed.find(o=>(o as {isWebGLRenderer?:boolean}).isWebGLRenderer) as THREE.WebGLRenderer,material=(scene.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh).material as THREE.Material;return(renderer.properties.get(material) as {uniforms:{uFieldAvailable:{value:number}}}).uniforms.uFieldAvailable.value;});
+ expect(available).toBe(0);expect(errors).toEqual([]);
 });
 
 const region=(buffer:Buffer,box:[number,number,number,number])=>{

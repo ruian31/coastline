@@ -1,0 +1,45 @@
+{
+  "provider": "Built-in image_gen tool",
+  "transparentBackground": false,
+  "source": {
+    "file": "source-assets/coastal-field-v1.png",
+    "bytes": 4571206,
+    "sha256": "c697e00b1b0efba640c6ce7ab67ab73d13fc2dbaffdc02bafef2b7be86ca82bf",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "prompt": {
+    "file": "source-assets/coastal-field-v1.prompt.txt",
+    "sha256": "66d5da4b46602f81f8a7338e3e460aea7b0e31a57d52e7f2c5711dba8b73938c"
+  },
+  "recipe": {
+    "file": "scripts/prepare-coastal-field.mjs",
+    "sha256": "bf636f7c620c95055dea89d7947be370654c0f2a3e38a5eed7bf20b5a3bbce31",
+    "sharp": "0.35.5",
+    "resize": "Lanczos3 power-of-two resize",
+    "encoding": "lossy WebP quality 92; no recoloring or generated normal/height map"
+  },
+  "usage": "16m world-XZ field base color with mirrored repeat and small existing macro warp. Replaces the previous field color sampler; existing 2m photographed grass micro-normal and roughness remain. This is generated albedo, not a scan or a source-matched PBR set. Mirroring hides edge discontinuity; original edges are not claimed to be seamless.",
+  "outputs": [
+    {
+      "file": "coastal-field-v1-512.webp",
+      "bytes": 142726,
+      "sha256": "53b95245d2050370565100ce16dd7cc4f1a714f8ec7fdc87cebe14dfcffd3d82",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "file": "coastal-field-v1-1024.webp",
+      "bytes": 601158,
+      "sha256": "e782e9d3574755870bb7a9993932d52f57603215bffb20200cf0325429042a67",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ]
+}

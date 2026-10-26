@@ -43,7 +43,7 @@ export function createCoastalBoulderMaterial(maps:SurfaceMaps){
 
 // Shared by the terrain, tunnel cap and graded shoulders. Textures remain
 // owned by Scenery; this function owns only material shading.
-export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps,mobile:boolean){
+export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps&{available:{value:number}},mobile:boolean){
   const groundMaterial = new THREE.MeshStandardMaterial({ roughness: .96, metalness: 0 });
   groundMaterial.onBeforeCompile = shader => {
     for (const [prefix, maps] of Object.entries({ Ground:groundMaps, Sand:sandMaps, Field:fieldMaps })) {
@@ -51,9 +51,11 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       shader.uniforms[`u${prefix}Surface`] = { value:maps.surface };
     }
     shader.uniforms.uRockColor={value:rockMaps.color};shader.uniforms.uRockSurface={value:rockMaps.surface};
+    shader.uniforms.uFieldAvailable=fieldMaps.available;
     shader.vertexShader = 'varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPosition = (modelMatrix*vec4(position,1.0)).xyz;vGroundWorldNormal=normalize(mat3(modelMatrix)*normal);');
     shader.fragmentShader = `varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;
       uniform sampler2D uGroundColor,uGroundSurface,uSandColor,uSandSurface,uFieldColor,uFieldSurface,uRockColor,uRockSurface;
+      uniform float uFieldAvailable;
       float coastHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float coastNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(coastHash(i),coastHash(i+vec2(1,0)),f.x),mix(coastHash(i+vec2(0,1)),coastHash(i+1.0),f.x),f.y);}
       vec3 coastTriplanar(sampler2D source,vec3 point,float size,vec3 weights){return texture2D(source,point.zy/size).rgb*weights.x+texture2D(source,point.xz/size).rgb*weights.y+texture2D(source,point.xy/size).rgb*weights.z;}
@@ -82,7 +84,7 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       float rockWeight=clamp(smoothstep(.13,.48,slope)*.9+smoothstep(.76,.95,macro)*.06,0.0,.92);
       float inland=1.0-smoothstep(.84,.96,length(vGroundPosition.xz/vec2(355.0,292.0)));
       float fieldPatch=smoothstep(.24,.62,macro*.65+meadowPattern*.35);
-      float fieldWeight=inland*smoothstep(3.0,7.0,vGroundPosition.y)*(1.0-smoothstep(.20,.48,slope))*mix(.80,.98,fieldPatch);
+      float fieldWeight=inland*smoothstep(3.0,7.0,vGroundPosition.y)*(1.0-smoothstep(.20,.48,slope))*mix(.80,.98,fieldPatch)*uFieldAvailable;
       vec2 fieldUv=vGroundPosition.xz/2.0+vec2(macro-.5,meadowPattern-.5)*.23;
       vec3 soil=texture2D(uGroundColor,soilUv).rgb;
       vec3 sand=texture2D(uSandColor,sandUv).rgb;
@@ -95,7 +97,8 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       float soilLuma=dot(soil,vec3(.25,.60,.15));
       vec3 dryGrass=soilLuma*vec3(1.23,1.12,.72);
       soil=mix(soil,dryGrass,moss*(.48+.32*meadowPattern));
-      soil=mix(soil,texture2D(uFieldColor,fieldUv).rgb*vec3(.92,.97,.85),fieldWeight);
+      vec2 fieldColorUv=vGroundPosition.xz/16.0+vec2(macro-.5,meadowPattern-.5)*.19;
+      soil=mix(soil,texture2D(uFieldColor,fieldColorUv).rgb*vec3(.92,.97,.85),fieldWeight);
       vec3 albedo=mix(mix(soil,sand,sandWeight),stone,rockWeight);
       float damp=1.0-smoothstep(-.7,1.4,vGroundPosition.y);
       diffuseColor.rgb=albedo*mix(.91,1.16,macro)*mix(1.0,.65,damp);
@@ -116,6 +119,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v8-${mobile}`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}`;
   return groundMaterial;
 }

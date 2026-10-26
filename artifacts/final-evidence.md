@@ -1,3 +1,16 @@
+# M52 · 连续干草地表颜色
+
+2026-10-26，**index-Dj-QjOG3.js**，877.53kB/gzip252.41，已更新[5190试玩](http://192.168.3.10:5190/)；接口与候选HTTP字节SHA已核对。生成的16m草土基色替换旧颜色sampler，保留2m摄影微法线/粗糙度、八张表面纹理、全部地形/道路/植物布局及压草规则。
+
+- 内置image_gen生成的[原图](../source-assets/coastal-field-v1.png)、[完整提示词](../source-assets/coastal-field-v1.prompt.txt)、[转换/哈希记录](../public/assets/environment/coastal-field-source.json)齐全；原1254²RGB4571206B，手机512²142726B、桌面1024²601158B。非扫描或配套摄影PBR；镜像寻址缓解边缘，不声称生成图严格周期无缝。M50草簇及M51地形工作候选未采用。
+- [最终12项三浏览器](landcover-m52-browser-tests.json)115秒全过，0失败/跳过/重试。初版同12项另存，非24独立用例。一次只读审查发现通用加载完成回调在dispose后被跳过，会悬挂树皮ready；修复后[四图晚回调专项](scenery-lifecycle-m52-four-completions/result.json)0错误：scene3→0、四成功回调均发生、ready结束、fieldAvailable仍0。该专项走Vite源且无renderer，不当生产或GPU证据；初工具等待load与主动拦图相互等待的超时已记录。
+- [12最终桌面/手机机位](evidence-coastal-field-final.json)已逐图看、0错误，覆盖正常道路、草侧、原野、内陆、小镇和洞口。[原有八机位提交计数](landcover-m52-count-comparison.json)与M49完全相同；本轮12图峰桌面150calls/853236tri/201geo/57tex、手机116/381989/199/53，已有超预算保留。手机RGBA含mip存储估算少4MiB，桌面同1k相近。
+- [实际多点触控](offroad-m52-field-phone/android-touch.json)/[视频](offroad-m52-field-phone/android-touch.webm)：离路64.62m并返回，最后行驶采样21.274秒、完整视频26.36秒、0错误。[6秒](offroad-m52-field-phone/motion-1.png)/[14秒](offroad-m52-field-phone/motion-2.png)/[24.5秒](offroad-m52-field-phone/motion-3.png)已看，[时间清单](offroad-m52-field-phone/sampled-frames.json)为间隔取样；65秒恢复继续沿用M41，不声称本轮重测。
+- 同轮RTX4050、Android844×390低档，各90有效GPU样本、无disjoint，[M49](ground-gpu-m52-m49-control/result.json)→[M52](ground-gpu-m52-field-candidate/result.json)：路草/内陆P50=1.956/3.128→2.034/3.455ms，P95=3.140/4.243→3.504/5.893ms。计时上升保留，不称提速或真实手机FPS；单轮无法隔离时钟/缓存波动。
+- [5190普通入口](fineleaf-m52-coastal-field-release/result.json)同Dj-QjOG3、前进8.45m；新512图一次请求，实际GL sampler/镜像寻址/10级mip FBO完整、8表面槽，原草/压力/岩石/棕榈与115投影一次缓存正常，测试全局关闭、0错误；[普通画面](fineleaf-m52-coastal-field-release/normal.png)已看。[实际HTTP核对](landcover-m52-http-release.json)与候选同SHA a23ed90051a9388547378595d17a4287ccdde5ddefd9d6d66d085da156d6302a。
+
+近处宏颜色仍偏平贴，远坡和实际植物形体未完成。World1.5、Lighting2.25保持，其余八类未重评、无新均分，**Goal active**；用户新增的视角/物理及动态世界仍按[文档11](../docs/11-后续驾驶与动态世界计划.md)后续实施。
+
 # M49 · 完整羽状棕榈叶面
 
 2026-10-26，**index-C9JfYe3-.js**，877.04kB/gzip252.23，已更新[5190试玩](http://192.168.3.10:5190/)（同一Wi-Fi，接口已复核）。树冠由完整透明叶图、弯曲主叶轴与中央折脊组成；原树干、位置、数量及叶轴随机形体保持。近/远面数手机1185/401→625/345、桌面2673/729→801/441。

@@ -73,10 +73,11 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   let disposed = false;
   let vergeSurface:ReturnType<typeof scanSurface>|undefined;
   const textureLoader = new THREE.TextureLoader(loadingManager);
-  function surfaceTexture(file: string, color = false,onLoad?:()=>void,onError?:()=>void): THREE.Texture {
+  function surfaceTexture(file: string, color = false,onLoad?:(texture:THREE.Texture)=>void,onError?:()=>void): THREE.Texture {
     const texture = textureLoader.load(`${import.meta.env.BASE_URL}assets/environment/${file}`, loaded => {
       if (disposed) loaded.dispose();
-      onLoad?.();
+      // Completion callbacks also settle pending readiness promises after disposal.
+      onLoad?.(loaded);
     },undefined,()=>onError?.());
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
@@ -90,7 +91,24 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const sandMaps = {
     color: surfaceTexture('sand-color.jpg', true), surface: surfaceTexture('sand-surface.webp'),
   };
-  const fieldMaps={color:surfaceTexture('meadow-color.webp',true),surface:surfaceTexture('meadow-surface.webp')};
+  const fieldSize=mobile?512:1024,fieldAvailable={value:0};
+  let fieldColorReady=false,fieldSurfaceReady=false;
+  const fieldMaps={
+    color:surfaceTexture(`coastal-field-v1-${fieldSize}.webp`,true,loaded=>{
+      if(disposed)return;
+      const image=loaded.image as HTMLImageElement;
+      fieldColorReady=image.width===fieldSize&&image.height===fieldSize;
+      fieldAvailable.value=Number(fieldColorReady&&fieldSurfaceReady);
+    }),
+    surface:surfaceTexture('meadow-surface.webp',false,loaded=>{
+      if(disposed)return;
+      const image=loaded.image as HTMLImageElement;
+      fieldSurfaceReady=image.width===1024&&image.height===1024;
+      fieldAvailable.value=Number(fieldColorReady&&fieldSurfaceReady);
+    }),
+    available:fieldAvailable,
+  };
+  fieldMaps.color.wrapS=fieldMaps.color.wrapT=THREE.MirroredRepeatWrapping;
   const rockMaps = {
     color: surfaceTexture('rock-color.jpg', true), surface: surfaceTexture('rock-surface.png'),
   };

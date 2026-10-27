@@ -1,3 +1,9 @@
+# M60 · 驾驶CPU基线，试玩保留M59
+
+- [18场景测量](driving-m60-baseline/summary.json)直接调用M59源码的Driving.update，两遍各8640步完整raw哈希相同；[脚本](../scripts/measure-driving-baseline.mjs)、[源码与数据SHA清单](driving-m60-baseline/manifest.json)、[报告](driving-m60-baseline/report.md)可核对。初速12m/s是受控设置，非玩家加速；道路和离路摩擦分开，不把后续倒车轨迹当刹停距离。
+- 转向1秒偏航77.75°、峰侧向加速度16.77m/s²，位移侧向速度约8e-12m/s。连续小起伏轮底几何绝对误差P95 9.82cm、最大14.06cm，属于CPU估计，非悬挂录像。三车本次零油门工况相同，未测试加速和极速。
+- 本步骤没有渲染、真机性能或发布验证，不修改5190的M59版本；F02/F03进入质量/轮胎/弹簧工作方案验证，目标未完成。
+
 # M59 · 自由环绕与连续结构避障
 
 - 已更新[试玩](http://192.168.3.10:5190/)；[生产/候选HTTP](camera-m59-http-release.json)均DMDpn9Js、912485B、SHA cbab2fe8…，相对M57 raw+6113B。没有新图片、可见几何或投影烘焙。

@@ -1,3 +1,8 @@
+# M58 · 灌丛重排未采用，生产保持M57
+
+- [独立工作对照](chaparral-m58-first/result.json)包含桌面/手机各4实际机位、2工作观察机位的前后24图；[手机](chaparral-m58-first/mobile-contact.png)/[桌面](chaparral-m58-first/desktop-contact.png)均已看，0错误。扩大压低的46条凹地灌丛带在驾驶机位收益很小，工作远观出现贴地绿条，未采用；无本轮运动/真机性能/发布声明。
+- Scenery已恢复M57；下面的Dg2生产证据仍为当前发布依据。5190服务已重新启动：[同一Wi-Fi试玩](http://192.168.3.10:5190/)。风景仍未完成；接下来进入已登记F01镜头避障/拖动问题。
+
 # M57 · 内陆脊谷与最终格网约束
 
 - 最终Dg2Kz38n已更新[试玩地址](http://192.168.3.10:5190/)，[HTTP双构建核对](inland-relief-m57-http-release.json)同SHA b9444069…；906372B，较M52 raw+28833B，同Node默认gzip估计+11753B。

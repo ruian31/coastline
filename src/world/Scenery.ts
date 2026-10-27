@@ -15,6 +15,7 @@ import offshoreHeightsText from './offshore-heights.json?raw';
 import boulderShapeText from './boulder-shape.json?raw';
 import inlandReliefText from './inland-relief.json?raw';
 import type {CameraSurfaceSource} from '../systems/CameraCollision';
+import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
 
 // Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
 // Background, water and fixed shadows use this same world direction.
@@ -53,6 +54,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   terrainHeight: (x:number,z:number) => number;
   terrainMaterial: THREE.Material;
   cameraSurfaces: CameraSurfaceSource[];
+  vehicleSurfaces:VehicleSurface[];
+  vehiclePrimitives:VehiclePrimitive[];
   rockMaterial: THREE.MeshStandardMaterial;
   blocksCar: (x:number,z:number) => boolean;
   cullForCamera:(camera:THREE.Camera)=>void;
@@ -1035,6 +1038,8 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     terrainHeight:groundHeight,
     terrainMaterial:groundMaterial,
     cameraSurfaces:[{geometry:terrain},{geometry:headland.geometry},...rocks.map(transform=>({geometry:rockShape,transform}))],
+    vehicleSurfaces:[{geometry:terrain},{geometry:headland.geometry},...rocks.map(transform=>({geometry:rockShape,transform,convex:true}))],
+    get vehiclePrimitives(){return[...palms.map(m=>({position:new THREE.Vector3(m.elements[12],m.elements[13]+2,m.elements[14]),radius:.25*Math.hypot(m.elements[0],m.elements[2]),height:4})),...pineObstacles.map(o=>({position:new THREE.Vector3(o.x,groundHeight(o.x,o.z)+2,o.z),radius:o.radius-.78,height:4}))];},
     rockMaterial,
     blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
     registerInstances,

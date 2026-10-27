@@ -13,11 +13,13 @@
     "verify:visual": "playwright test tests/visual.spec.ts",
     "inspect:canvas": "node scripts/inspect-threejs-canvas.mjs",
     "test:driving": "node scripts/test-driving.mjs",
+    "test:vehicle": "node scripts/test-vehicle-dynamics.mjs",
     "test:camera": "node scripts/test-camera-surfaces.mjs",
     "test:rocks": "node scripts/validate-coastal-assets.mjs && node scripts/test-rock-surfaces.mjs",
     "test:shore": "node scripts/test-shore-field.mjs"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
     "lil-gui": "^0.21.0",
     "three": "^0.184.0"
   },

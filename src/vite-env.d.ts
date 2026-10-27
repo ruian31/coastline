@@ -10,6 +10,7 @@ interface ThreeGameDiagnostics {
     position: { x: number; y: number; z: number };
     speed: number;
   };
+  vehicle?: {engine:string;mass:number;steps:number;colliders:number;fixedTriangles:number;velocity:number[];lateralSpeed:number;steeringAngle:number;wheels:{length:number;force:number;contact:boolean;y:number}[]};
   cameraRig?: {cockpitEyeError:number|null;orbitYaw:number;orbitPitch:number;boomDistance:number|null;availableDistance:number|null};
   lighting?: {ready:boolean;mode:string;bakes:number;bakeDraws:number;localPasses:number;localDraws:number;localTriangles:number;mapSize:number;projectedWidth:number;projectedHeight:number;casters:number};
   renderer: {
@@ -40,6 +41,7 @@ interface ThreeGameTestHooks {
   /** Stabilize ambient/idle visuals without requiring an unpaused simulation tick. */
   setReducedMotion(enabled: boolean): void | Promise<void>;
   /** Freeze simulation at an explicit ambient time for animated-surface verification. */
+  stepDriving?(seconds:number,intent?:{throttle:number;brake:number;steer:number;handbrake:boolean}):void;
   setSceneTime?(seconds: number): void | Promise<void>;
   /** Hide debug UI (lil-gui) before capturing. */
   hideDebugUi?(hidden: boolean): void | Promise<void>;

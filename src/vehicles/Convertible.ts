@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createDriver } from './Driver';
+import type {VehicleWheel} from '../systems/VehicleDynamics';
 
 /** Coordinates are metres, +Z forward, +Y up. Current cabins use right-hand drive. */
 export const CAR_DEFINITIONS = [
@@ -14,7 +15,7 @@ export interface Convertible {
   cockpitEye: THREE.Vector3;
   cockpitLook: THREE.Vector3;
   wheelContacts:readonly THREE.Vector3[];
-  update: (speed: number, steer: number, dt: number) => void;
+  update: (speed: number, steer: number, dt: number, wheels?:readonly VehicleWheel[]) => void;
   setContactShadow:(visible:boolean)=>void;
   dispose: () => void;
 }
@@ -519,7 +520,7 @@ export function createConvertible(index = 0): Convertible {
   const { materials, textures: surfaceTextures } = materialKit(index);
   // Double-sided authored body skins remain visible from both the road and the open cockpit.
   materials.paint.side = THREE.DoubleSide;
-  const root = new THREE.Group(); root.name = `convertible-${index}`;
+  const root = new THREE.Group(); root.name = `convertible-${index}`;root.rotation.order='YXZ';
   const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;
   const shadowContext=shadowCanvas.getContext('2d')!,gradient=shadowContext.createRadialGradient(64,64,20,64,64,64);
   gradient.addColorStop(0,'rgba(0,0,0,.72)');gradient.addColorStop(.6,'rgba(0,0,0,.45)');gradient.addColorStop(1,'rgba(0,0,0,0)');
@@ -530,11 +531,12 @@ export function createConvertible(index = 0): Convertible {
   const batch = new GeometryBatch(materials);
   buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
 
-  const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [],wheelContacts:THREE.Vector3[]=[];
+  const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [],suspensions:THREE.Group[]=[],wheelContacts:THREE.Vector3[]=[];
   for (const z of [-1.28, 1.28]) for (const x of [-.845, .845]) {
     const steering = new THREE.Group(); steering.position.set(x, .338, z);
     wheelContacts.push(V(x,steering.position.y-.338,z));
     const roll = wheelTemplate.clone(true); steering.add(roll); root.add(steering); rolls.push(roll);
+    suspensions.push(steering);
     if (z > 0) steers.push(steering);
   }
 
@@ -588,18 +590,26 @@ export function createConvertible(index = 0): Convertible {
   const driver = createDriver(index);
   root.add(driver.root);
 
-  let wheelRotation = 0;
+  let wheelRotation = 0,contactShadowEnabled=false;
+  const shadowNormal=new THREE.Vector3(),shadowLocalNormal=new THREE.Vector3(0,0,1);
   const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
-    root, cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadow.visible=visible;},
-    update(speed, steer, dt) {
+    root, cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
+    update(speed, steer, dt, wheels) {
       driver.update(steer, dt);
-      contactShadow.rotation.set(-Math.PI/2,0,-root.rotation.z,'ZXY');
+      if(wheels?.length===4){
+        const heights=wheels.map(w=>w.position.y-.338),slopeX=(heights[1]+heights[3]-heights[0]-heights[2])/2/1.69,slopeZ=(heights[2]+heights[3]-heights[0]-heights[1])/2/2.56;
+        contactShadow.position.y=heights.reduce((sum,y)=>sum+y,0)/4+.008;
+        shadowNormal.set(-slopeX,1,-slopeZ).normalize();contactShadow.quaternion.setFromUnitVectors(shadowLocalNormal,shadowNormal);
+        const contacts=wheels.filter(w=>w.contact).length;contactShadow.visible=contactShadowEnabled&&contacts>=2;
+        (contactShadow.material as THREE.MeshBasicMaterial).opacity=.46*Math.min(1,contacts/3);
+      }else contactShadow.rotation.set(-Math.PI/2,0,-root.rotation.z,'ZXY');
       // Speed is metres/second and steer is normalized [-1,1].
       wheelRotation = (wheelRotation + speed * Math.min(dt, .1) / .338) % (Math.PI * 2);
-      rolls.forEach(roll => { roll.rotation.x = wheelRotation; });
-      steers.forEach(front => { front.rotation.y = steer * .47; });
+      rolls.forEach((roll,i) => { roll.rotation.x = wheels?.[i]?.rotation??wheelRotation; });
+      if(wheels)for(let i=0;i<wheels.length;i++){suspensions[i].position.copy(wheels[i].position);suspensions[i].rotation.y=wheels[i].steering;wheelContacts[i].copy(wheels[i].position);wheelContacts[i].y-=.338;}
+      else steers.forEach(front => { front.rotation.y = steer * .47; });
       steering.rotation.z = steer * -2.2;
       const kmh = Math.min(Math.abs(speed) * 3.6, 180);
       needles[0].rotation.z = -Math.PI * .25 + kmh / 180 * Math.PI * 1.5;

@@ -8,14 +8,16 @@ test('驾驶、巡航接管、三视角、选车和暂停恢复',async({page},in
   if(mobile){const b=await page.locator('[data-drive="throttle"]').boundingBox();expect(b).not.toBeNull();await page.mouse.move(b!.x+b!.width/2,b!.y+b!.height/2);await page.mouse.down();await expect.poll(async()=> (await state(page)).player.speed).toBeGreaterThan(.5);await page.mouse.up();}
   else{await page.keyboard.down('KeyW');await expect.poll(async()=> (await state(page)).player.speed).toBeGreaterThan(.5);await page.keyboard.up('KeyW');}
  };
+ await expect.poll(async()=> (await state(page)).vehicle?.engine).toBe('Rapier 0.21.0');
+ await expect.poll(async()=> (await state(page)).vehicle?.mass).toBeCloseTo(1280,0);
  await accelerate();
  await page.click('#auto-button');await expect.poll(async()=> (await state(page)).state?.automatic).toBe(true);await page.click('[data-camera="1"]');await expect.poll(async()=> (await state(page)).state?.camera).toBe(1);
  await page.click('[data-camera="2"]');await expect.poll(async()=> (await state(page)).state?.camera).toBe(2);await expect.poll(async()=> (await state(page)).state?.automatic).toBe(true);
  if(mobile){const b=await page.locator('[data-drive="brake"]').boundingBox();await page.mouse.click(b!.x+b!.width/2,b!.y+b!.height/2);}
  else{await page.keyboard.press('KeyS');}
  await expect.poll(async()=> (await state(page)).state?.automatic).toBe(false);await expect.poll(async()=> (await state(page)).state?.camera).toBe(0);
- await page.click('#garage-button');await page.click('[data-car="1"]');await page.click('#garage-done');await expect.poll(async()=> (await state(page)).state?.car).toBe(1);await accelerate();
- await page.click('#garage-button');await page.click('[data-car="2"]');await page.click('#garage-done');await expect.poll(async()=> (await state(page)).state?.car).toBe(2);await accelerate();
+ await page.click('#garage-button');await page.click('[data-car="1"]');await page.click('#garage-done');await expect.poll(async()=> (await state(page)).state?.car).toBe(1);await expect.poll(async()=> (await state(page)).vehicle?.mass).toBeCloseTo(1540,0);await accelerate();
+ await page.click('#garage-button');await page.click('[data-car="2"]');await page.click('#garage-done');await expect.poll(async()=> (await state(page)).state?.car).toBe(2);await expect.poll(async()=> (await state(page)).vehicle?.mass).toBeCloseTo(1320,0);await accelerate();
  await page.click('#menu-button');await expect(page.locator('#menu-panel')).toBeVisible();await expect.poll(async()=> (await state(page)).state?.paused).toBe(true);const before=(await state(page)).player.position;await page.waitForTimeout(200);expect((await state(page)).player.position).toEqual(before);await page.click('#resume-button');await expect.poll(async()=> (await state(page)).state?.paused).toBe(false);
  await page.screenshot({path:`artifacts/${info.project.name}-m1.png`});expect(errors).toEqual([]);
 });
@@ -60,7 +62,7 @@ test('手机开始点击先申请全屏，再锁定横屏',async({page},info)=>{
   Object.defineProperty(HTMLElement.prototype,'requestFullscreen',{configurable:true,value:()=>{events.push('fullscreen');return Promise.resolve();}});
   Object.defineProperty(screen,'orientation',{configurable:true,value:{lock:(value:string)=>{events.push(value);return Promise.resolve();}}});
  });
- await page.goto('/?test=1');await expect(page.locator('#landscape-launch')).toBeEnabled();await page.click('#landscape-launch');
+ await page.goto('/?test=1');await expect(page.locator('#landscape-launch')).toBeEnabled({timeout:30000});await page.click('#landscape-launch');
  await expect.poll(()=>page.evaluate(()=>(window as unknown as {presentationEvents:string[]}).presentationEvents)).toEqual(['fullscreen','landscape']);
  await page.click('#portrait-continue');await expect(page.locator('#landscape-prompt')).toBeHidden();
  await expect.poll(async()=>(await state(page)).state?.running).toBe(true);

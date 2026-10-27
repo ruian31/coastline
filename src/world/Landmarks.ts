@@ -3,6 +3,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { coast, heightAt } from './roads';
 import { createSeededRandom } from '../utils/random';
 import type {CameraCollider} from '../systems/CameraCollision';
+import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
+import {scanSurface} from './SurfaceHeight';
 
 type Collider = { x: number; z: number; halfX: number; halfZ: number };
 export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight:(x:number,z:number)=>number=heightAt): {
@@ -11,9 +13,13 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   colliders: Collider[];
   cameraColliders: CameraCollider[];
   cameraMeshes: THREE.Mesh[];
+  vehicleSurfaces:VehicleSurface[];
+  vehiclePrimitives:VehiclePrimitive[];
+  pavingHeight:(x:number,z:number)=>number|undefined;
 } {
   const root = new THREE.Group();root.name='Coastal destinations';scene.add(root);
   const random=createSeededRandom(99184),colliders:Collider[]=[],cameraColliders:CameraCollider[]=[];
+  const vehicleSurfaces:VehicleSurface[]=[],vehiclePrimitives:VehiclePrimitive[]=[],physicsGeometries:THREE.BufferGeometry[]=[];
   const materials:THREE.MeshStandardMaterial[]=[];
   const batches=new Map<THREE.Material,THREE.BufferGeometry[]>();
   const mat=(name:string,color:number,roughness=.85,metalness=0)=>{
@@ -79,10 +85,11 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
     const direction=s.tangent.clone();direction.y=0;direction.normalize();
     return new THREE.Matrix4().makeBasis(direction,new THREE.Vector3(0,1,0),s.right).setPosition(p);
   }
-  function collider(frame:THREE.Matrix4,w:number,d:number) {
+  function collider(frame:THREE.Matrix4,w:number,d:number,height=12) {
     const p=new THREE.Vector3().setFromMatrixPosition(frame),e=frame.elements;
     colliders.push({x:p.x,z:p.z,halfX:Math.abs(e[0])*w/2+Math.abs(e[8])*d/2,halfZ:Math.abs(e[2])*w/2+Math.abs(e[10])*d/2});
     cameraColliders.push({x:p.x,z:p.z,halfX:w/2,halfZ:d/2,yaw:Math.atan2(-e[2],e[0])});
+    vehiclePrimitives.push({position:p.clone().add(new THREE.Vector3(0,height/2,0)),halfSize:new THREE.Vector3(w/2,height/2,d/2),yaw:Math.atan2(-e[2],e[0])});
   }
   function planter(frame:THREE.Matrix4,x:number,y:number,z:number,size=.65) {
     cylinder(frame,pots,x,y+size*.4,z,size*.43,size*.29,size*.8,8);
@@ -124,7 +131,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
       }
       if(i<segments){const k=i*2;indices.push(k,k+2,k+1,k+1,k+2,k+3);}
     }
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();add(g,material);
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();vehicleSurfaces.push({geometry:g});add(g,material);
   }
   function roofTiles(frame:THREE.Matrix4,w:number,d:number,roofY:number,h:number) {
     const count=Math.ceil(w/.49),r=.047;
@@ -156,6 +163,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
       const t=.328+(.423-.328)*(i+.5)/n,s=coast.sample(t),frame=routeFrame(t,side,5.08);
       const p=new THREE.Vector3().setFromMatrixPosition(frame);frame.elements[13]=Math.max(s.position.y,heightAt(p.x,p.z))+.055;
       box(frame,stone,0,0,0,step-.035,.23,.25);
+      vehiclePrimitives.push({position:new THREE.Vector3().setFromMatrixPosition(frame),halfSize:new THREE.Vector3((step-.035)/2,.115,.125),yaw:Math.atan2(-frame.elements[2],frame.elements[0])});
       if(i%7===0)box(frame,iron,0,.13,side*.12,.58,.018,.33);
     }
   }
@@ -227,7 +235,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
       box(frame,stone,wallSide*(width/2+.15),floorY-.92,0,.4,.13,1.7);
     }
     box(frame,stone,-width*.25,.12,front+facade*.47,1.9,.24,.9);
-    collider(frame,width,depth);
+    collider(frame,width,depth,height+1.7);
     const street=routeFrame(t,side,7.8);lamp(street,0,0);
     if(i%4===1)bench(street,0,0,side*.8);
     if(i%4===0){const terrace=routeFrame(t,side,10.4);cylinder(terrace,stone,2.4,.74,0,.57,.57,.09,12);cylinder(terrace,iron,2.4,.38,0,.045,.08,.72,7);for(const dir of [-1,1]){box(terrace,wood,2.4+dir*.8,.43,0,.5,.08,.5);box(terrace,wood,2.4+dir*.99,.75,0,.08,.65,.5);for(const dz of [-.2,.2])box(terrace,iron,2.4+dir*.8,.2,dz,.06,.4,.06);}}
@@ -238,17 +246,18 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   function tunnelPoint(t:number,theta:number,radius:number,height:number):THREE.Vector3 {
     const s=coast.sample(t);return s.position.clone().addScaledVector(s.right,Math.cos(theta)*radius).add(new THREE.Vector3(0,Math.sin(theta)*height-.08,0));
   }
-  function tunnelSurface(inner:boolean):THREE.BufferGeometry {
+  function tunnelSurface(inner:boolean,along=segments,around=arcSteps):THREE.BufferGeometry {
     const vertices:number[]=[],uv:number[]=[],indices:number[]=[],radius=inner?6.4:7.2,height=inner?6.6:7.45;
-    for(let segment=0;segment<=segments;segment++)for(let arc=0;arc<=arcSteps;arc++) {
-      const t=tunnelStart+(tunnelEnd-tunnelStart)*segment/segments,a=arc/arcSteps*Math.PI;
-      const p=tunnelPoint(t,a,radius,height);vertices.push(p.x,p.y,p.z);uv.push(segment/segments*(tunnelEnd-tunnelStart)*coast.length/5,arc/arcSteps*4);
-      if(segment<segments&&arc<arcSteps){const k=segment*(arcSteps+1)+arc,n=k+arcSteps+1;indices.push(...(inner?[k,k+1,n,n,k+1,n+1]:[k,n,k+1,n,n+1,k+1]));}
+    for(let segment=0;segment<=along;segment++)for(let arc=0;arc<=around;arc++) {
+      const t=tunnelStart+(tunnelEnd-tunnelStart)*segment/along,a=arc/around*Math.PI;
+      const p=tunnelPoint(t,a,radius,height);vertices.push(p.x,p.y,p.z);uv.push(segment/along*(tunnelEnd-tunnelStart)*coast.length/5,arc/around*4);
+      if(segment<along&&arc<around){const k=segment*(around+1)+arc,n=k+around+1;indices.push(...(inner?[k,k+1,n,n,k+1,n+1]:[k,n,k+1,n,n+1,k+1]));}
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;
   }
   tunnelMaterial.side=THREE.DoubleSide;rock.side=THREE.DoubleSide;
   add(tunnelSurface(true),tunnelMaterial);add(tunnelSurface(false),rock);
+  const physicsTunnel=tunnelSurface(true,28,12);physicsGeometries.push(physicsTunnel);vehicleSurfaces.push({geometry:physicsTunnel});
   for(const side of [-1,1]) {
     const range=[side*4.66,side*6.54].sort((a,b)=>a-b);
     pavedBand(tunnelStart,tunnelEnd,range[0],range[1],tunnelShoulder,true,.065,58);
@@ -382,16 +391,19 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   root.updateMatrixWorld(true);
   const cameraMaterials=new Set<THREE.Material>([...walls,terracotta,roofEdges,stone,wood,glass,cream,red,white,tunnelMaterial,rock]);
   const cameraMeshes=meshes.filter(mesh=>!Array.isArray(mesh.material)&&cameraMaterials.has(mesh.material));
+  const pavingSurface=scanSurface(vehicleSurfaces.filter(source=>source.geometry!==physicsTunnel).map(source=>source.geometry));
   for(const mesh of cameraMeshes)mesh.geometry.computeBoundingBox();
   root.userData.diagnostics={draws:meshes.length,spatialCellSize:cellSize,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?mesh.geometry.index.count:mesh.geometry.getAttribute('position').count)/3,0)};
   return {
     update(_elapsed,_carPosition) {},
     dispose() {
       root.removeFromParent();root.traverse(object=>{if(object instanceof THREE.Mesh)object.geometry.dispose();});
+      physicsGeometries.forEach(geometry=>geometry.dispose());
       for(const material of materials)material.dispose();for(const texture of [...signs,...surfaceTextures])texture.dispose();
     },
     colliders,
     cameraColliders,
     cameraMeshes,
+    vehicleSurfaces,vehiclePrimitives,pavingHeight:(x,z)=>pavingSurface.height(x,z),
   };
 }

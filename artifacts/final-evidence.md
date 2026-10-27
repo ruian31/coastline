@@ -1,3 +1,16 @@
+# M61 · 真实惯性、轮胎抓地和四轮悬挂
+
+- 已更新[本地试玩](http://192.168.3.10:5190/)；[三地址HTTP核对](vehicle-m61-http-release.json)主JS Beu2WSct/920493B/SHA f4cc3a03…，物理Dey3i3yR/4338860B/SHA d321fafb…相同，许可证200。精确复制已验证候选后原子替换HTML，保留旧哈希资产。主包比M59 raw+8008B，另增物理兼容包，构建gzip估计268.45/1671.75kB；无新图或可见物理网格，未push。
+- 一个有质量/惯量、CCD的底盘与四个弹簧阻尼射线轮；三车不同质量、动力/悬挂。速度方向不再随车头硬转，有限轮胎抓地、后轮手刹和制动冲量；渲染读取物理四元数与各轮状态，非输入驱动的假侧倾。场景用简化代理，非完整轮胎/变速箱或每个装饰物的汽车工程仿真。
+- [28组最终CPU](vehicle-m61-cpu/result.json)：三车九工况加Driving抬高地面放车。平地12m/s两秒松油门约11.67m/s，制动≤.2m/s约1.78s/10.73m，转向侧速约.66m/s；三车实际油门加速分别约6.78/7.94/9.41m/s@2s。高速短波起伏仍有离地和3.3–3.4cm接地样本轮底P95误差，慢速/单轮起伏另列。与M60工况/航向/offroad不完全相同，不计算严格提升百分比。放车检查以实际姿态漂移判稳，不要求求解器阶段速度恰为零。
+- 首版内部地面边骤停、hill出口顶护栏、第二版反向切弯和旧贴墙起点低于铺装弹起均有工作记录，未采用失败版本。现地面法线邻接修正，铺装实际三角高度参与放车支撑，路口25m减速/6m换目标。[最终双端八条路线](vehicle-m61-routes-corner/result.json)各24000步、共192000步，含三车正向及经典反向；每.5秒观察均无停驶、路距峰2.85m、中段山路后回到主路。属于CPU轨迹核对，不是实时运动或手机性能。
+- [最终三浏览器](vehicle-m61-browser-final.json)17通过/4设备条件跳过，0失败/重试；包含真实油门/滑行/制动、切车质量、暂停/恢复、驾驶位、环绕、多指和横屏。首轮[6失败原记录](vehicle-m61-browser-first.json)保留；贴墙三项由铺装起点修正、制动两项由50ms级采样避免漏过停车/倒车窗口、WebKit一项延长加载等待后通过。[铺装专项三浏览器](vehicle-m61-camera-placement.json)保持原镜头断言。WebKit为宿主模拟，非真实iPhone触控/流畅度验收。
+- [键盘](offroad-vehicle-m61-final/desktop-keyboard.json)/[Android原生触控](offroad-vehicle-m61-final/android-touch.json)实际离路62.26/62.71m并返回，0错误，同Beu2/Dey3 SHA。视频28.52/32.36秒，[六个编码时间样本](offroad-vehicle-m61-final/sampled-frames.json)、[桌面filmstrip](offroad-vehicle-m61-final/desktop-keyboard-filmstrip.png)/[手机filmstrip](offroad-vehicle-m61-final/android-touch-filmstrip.png)均已看，稀疏抽帧不称逐帧看完整录像；原压草仍跟随轮点，65秒恢复沿用M41。
+- [12正式机位](evidence-vehicle-final.json)及[桌面](vehicle-m61-formal-desktop.png)/[手机](vehicle-m61-formal-mobile.png)联图全部已看，0错误；静态冻结机位不作为悬挂运动证明。[计数](vehicle-m61-render-counts.json)峰桌面148calls/819812tri/201geo/56tex、手机117/369009/199/53，已有预算问题保留。World1.5、Lighting2.25沿用，其余八项未重评，无新的综合视觉分数。
+- [同主机最终开销](vehicle-m61-mainthread-final/result.json)：同最终主包，Android低档4倍CPU/单次8秒，贴墙Task4033→4590ms、隧道4073→4701ms；Task/帧8.32→9.46、8.48→9.69ms。缓冲存储约43.3→49.1MB，不能全部归为物理独占。贴墙新车仅移4mm、提交相同；隧道末帧107/106calls，实际行驶100.07/98.51m，非严格同视野。首份贴墙车弹起的[无效停车对照](vehicle-m61-mainthread/result.json)不作该结论依据；不称提速或真实手机FPS。
+- [普通5190入口](fineleaf-m61-vehicle-release/result.json)新物理包一次加载、前进5.75m、测试全局关闭，原八表面/压力/岩石/棕榈绑定与115物体一次缓存正常，0错误；[普通画面](fineleaf-m61-vehicle-release/normal.png)已看。[一次只读审查附加CPU探针](vehicle-m61-review/result.json)单列其旧源SHA与范围，不当最终全量批准。
+- 一加12新手感/流畅度问题已异步发出，真实iPhone仍待设备复核。Goal未完成，工具仍usageLimited；自然风景、F04/F05灯镜、F06–F08四季昼夜天气继续推进。M57一次未复现黑角观察仍保留，不能据本轮无异常声称已查明根因。
+
 # M60 · 驾驶CPU基线，试玩保留M59
 
 - [18场景测量](driving-m60-baseline/summary.json)直接调用M59源码的Driving.update，两遍各8640步完整raw哈希相同；[脚本](../scripts/measure-driving-baseline.mjs)、[源码与数据SHA清单](driving-m60-baseline/manifest.json)、[报告](driving-m60-baseline/report.md)可核对。初速12m/s是受控设置，非玩家加速；道路和离路摩擦分开，不把后续倒车轨迹当刹停距离。

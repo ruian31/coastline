@@ -1,3 +1,15 @@
+# M59 · 自由环绕与连续结构避障
+
+- 已更新[试玩](http://192.168.3.10:5190/)；[生产/候选HTTP](camera-m59-http-release.json)均DMDpn9Js、912485B、SHA cbab2fe8…，相对M57 raw+6113B。没有新图片、可见几何或投影烘焙。
+- [旧版实际拖动](camera-m59-before/summary-corrected.json)隧道两端maxTravel=0，已解除固定角度覆盖；保留输入方向，只阻尼恢复距离。旧原始日志切状态时有少数player诊断滞后，已独立列出排除帧，未删除原记录。
+- 静态结构按实际世界三角面建立16m CPU索引，覆盖地形/岬角、实体岩石完整原始矩阵、扫描岸面与建筑雨棚/阳台；五条射线查询附近分区，生产不再用高度步进。一次聚焦审查的雨棚和窄脊漏检均处理；[雨棚源几何反例](camera-surface-regression.json)两端4.625m命中处旧boom7.935m、新3.906m，独立结果射线无阻；21组CPU含2mm薄脊/负格缝通过。
+- [三浏览器最终](camera-m59-browser-final.json)：12通过/3设备条件跳过，0失败/重试；覆盖旋转恢复、Android原生多指/油门释放、巡航接管/三视角/三车、驾驶位及横屏。早期错误CDP抬指和等待上限失败记录保留，修复专项脚本和等待设置后通过；WebKit环绕使用可信鼠标，非真实iPhone触控证据。
+- [完整输入记录](camera-m59-final/result.json)电脑/Android各五个静止实际机位三次拖动，随后18秒行驶三次环顾，位移218.30/217.16m、0错误。[桌面](camera-m59-final/desktop-mouse-contact.png)/[手机](camera-m59-final/android-touch-contact.png)46张已看。视频45.72/43.28秒，[实际尾部时间样本](camera-m59-final/sampled-frames.json)及两组filmstrip六帧已看；没有把静态截图当运动证明。
+- [8正式机位](evidence-camera-final.json)与[联图](camera-m59-formal-contact.png)均已看，0错误；[计数](camera-m59-render-counts.json)峰桌面149/818478/201/56、手机116/357477/199/53，原有面数/手机纹理超预算保留。画面仍有草形、裸坡、车辆地面接触问题，World1.5、Lighting2.25沿用，其余八项未重评，无新总分。
+- [4倍CPU同主机对照](camera-m59-mainthread/result.json)：小镇/隧道8秒Task3532/3362→4271/3721ms；500us采样updateCamera含后代/帧0.090/0.552→1.452/0.875ms。新增检测有CPU成本，小镇提交相同，隧道新角度多见部分结构，不称提速或真实手机FPS。
+- [普通入口](fineleaf-m59-camera-release/result.json)行驶8.45m、测试全局关闭、八表面/压草/岩石/棕榈绑定与115物体一次缓存正常；普通截图已看。[普通两端CPU索引](camera-m59-normal-index.json)单独记录，不当新增渲染面数。真实一加12反馈待回；M57一次未复现黑角观察仍保留，未据镜头修复宣称已查明。
+- [后续文档11](../docs/11-后续驾驶与动态世界计划.md)标记F01实现/待真机，进入F02/F03惯性与悬挂。Goal未完成，目标工具仍usageLimited，本轮按用户授权继续工作。
+
 # M58 · 灌丛重排未采用，生产保持M57
 
 - [独立工作对照](chaparral-m58-first/result.json)包含桌面/手机各4实际机位、2工作观察机位的前后24图；[手机](chaparral-m58-first/mobile-contact.png)/[桌面](chaparral-m58-first/desktop-contact.png)均已看，0错误。扩大压低的46条凹地灌丛带在驾驶机位收益很小，工作远观出现贴地绿条，未采用；无本轮运动/真机性能/发布声明。

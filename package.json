@@ -13,6 +13,7 @@
     "verify:visual": "playwright test tests/visual.spec.ts",
     "inspect:canvas": "node scripts/inspect-threejs-canvas.mjs",
     "test:driving": "node scripts/test-driving.mjs",
+    "test:camera": "node scripts/test-camera-surfaces.mjs",
     "test:rocks": "node scripts/validate-coastal-assets.mjs && node scripts/test-rock-surfaces.mjs",
     "test:shore": "node scripts/test-shore-field.mjs"
   },

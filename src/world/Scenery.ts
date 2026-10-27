@@ -14,6 +14,7 @@ import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMip
 import offshoreHeightsText from './offshore-heights.json?raw';
 import boulderShapeText from './boulder-shape.json?raw';
 import inlandReliefText from './inland-relief.json?raw';
+import type {CameraSurfaceSource} from '../systems/CameraCollision';
 
 // Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
 // Background, water and fixed shadows use this same world direction.
@@ -51,6 +52,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   groundHeight: (x:number,z:number) => number;
   terrainHeight: (x:number,z:number) => number;
   terrainMaterial: THREE.Material;
+  cameraSurfaces: CameraSurfaceSource[];
   rockMaterial: THREE.MeshStandardMaterial;
   blocksCar: (x:number,z:number) => boolean;
   cullForCamera:(camera:THREE.Camera)=>void;
@@ -1032,6 +1034,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     groundHeight:cameraGroundHeight,
     terrainHeight:groundHeight,
     terrainMaterial:groundMaterial,
+    cameraSurfaces:[{geometry:terrain},{geometry:headland.geometry},...rocks.map(transform=>({geometry:rockShape,transform}))],
     rockMaterial,
     blocksCar:(x,z)=>obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<o.radius**2),
     registerInstances,

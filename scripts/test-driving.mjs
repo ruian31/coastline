@@ -3,7 +3,7 @@ import {createServer} from 'vite';
 const server=await createServer({server:{middlewareMode:true},appType:'custom'});
 try {
  const {Driving,ROAD_POSITION_CLEARANCE}=await server.ssrLoadModule('/src/systems/Driving.ts');
- const {avoidCameraCollision}=await server.ssrLoadModule('/src/systems/CameraCollision.ts');
+ const {avoidCameraCollision,createCameraSurface}=await server.ssrLoadModule('/src/systems/CameraCollision.ts');
  const THREE=await server.ssrLoadModule('three');
  const {createDriver}=await server.ssrLoadModule('/src/vehicles/Driver.ts');
  for(const variant of[0,1,2]){
@@ -18,8 +18,22 @@ try {
   driver.dispose();
  }
  const origin=new THREE.Vector3(0,2,0),camera=new THREE.Vector3(10,4,0);
- assert.ok(avoidCameraCollision(camera,origin,[{x:8,z:0,halfX:1,halfZ:2}],()=>0));assert.ok(camera.x<6.35,'camera boom stays in front of expanded wall');
+ assert.ok(avoidCameraCollision(camera,origin,[{x:8,z:0,halfX:1,halfZ:2}],()=>0));assert.ok(camera.x<6.7,'camera boom retains 30cm clearance before the actual wall');
  const slopeCamera=new THREE.Vector3(10,3,0);assert.ok(avoidCameraCollision(slopeCamera,origin,[],x=>x>5?5:0));assert.ok(slopeCamera.x<=5,'camera cannot look through rising hillside');
+ const narrowCamera=new THREE.Vector3(10,3,0);assert.ok(avoidCameraCollision(narrowCamera,origin,[],x=>x>4.01&&x<4.2?5:0));assert.ok(narrowCamera.x<4.01,'a short raised bank cannot fall between coarse boom samples');
+ const rotatedWall={x:6,z:6,halfX:5,halfZ:1,yaw:Math.PI/4},clearCamera=new THREE.Vector3(2.5,3,2),clearTarget=clearCamera.clone();
+ assert.equal(avoidCameraCollision(clearCamera,new THREE.Vector3(0,2,2),[rotatedWall],()=>0),false);assert.ok(clearCamera.distanceTo(clearTarget)<1e-6,'empty corners of rotated building bounds must remain usable');
+ const crossing=new THREE.Vector3(10,3,6);assert.ok(avoidCameraCollision(crossing,new THREE.Vector3(0,2,6),[rotatedWall],()=>0));assert.ok(crossing.x<4.2,'a diagonal facade still shortens the camera boom');
+ const blockerMaterial=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),wallMesh=new THREE.Mesh(new THREE.BoxGeometry(.2,6,6),blockerMaterial);wallMesh.position.set(4,3,0);wallMesh.updateMatrixWorld(true);
+ const meshCamera=new THREE.Vector3(10,3,0),direction=meshCamera.clone().sub(origin).normalize();assert.ok(avoidCameraCollision(meshCamera,origin,[],()=>0,[wallMesh]));assert.ok(meshCamera.x<3.9);assert.ok(meshCamera.clone().sub(origin).normalize().dot(direction)>1-1e-10,'collision must preserve requested orbit direction');
+ const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(20,20),blockerMaterial);ceiling.rotation.x=Math.PI/2;ceiling.position.y=4;ceiling.updateMatrixWorld(true);const highCamera=new THREE.Vector3(5,8,0);assert.ok(avoidCameraCollision(highCamera,origin,[],()=>0,[ceiling]));assert.ok(highCamera.y<3.9,'actual ceiling geometry limits upward orbit');
+ wallMesh.geometry.dispose();ceiling.geometry.dispose();blockerMaterial.dispose();
+ // Exact production-surface sweeps must also find features narrower than any
+ // fixed height sample spacing, including negative-coordinate cell seams.
+ for(const x of[4.267,-16.003]){
+  const ridge=new THREE.BoxGeometry(.002,6,6),transform=new THREE.Matrix4().makeTranslation(x,3,0),surface=createCameraSurface([{geometry:ridge,transform}]),start=new THREE.Vector3(x-4,2,0),end=new THREE.Vector3(x+6,3,0);
+  assert.ok(avoidCameraCollision(end,start,[],()=>0,surface));assert.ok(end.x<x-.1,'continuous triangle sweep catches a 2mm ridge at any sample phase');assert.ok(surface.cells>0);surface.dispose();ridge.dispose();
+ }
  const {CoastAudio}=await server.ssrLoadModule('/src/systems/CoastAudio.ts');
  const audio=new CoastAudio();audio.context={currentTime:.2,resume:async()=>{}};audio.noteTime=1.6;await audio.resume();assert.ok(audio.noteTime>=1.6,'resume preserves already scheduled music horizon');
  const {coast,hill}=await server.ssrLoadModule('/src/world/roads.ts');
@@ -54,5 +68,5 @@ try {
   for(let i=0;i<60*6;i++)rail.update(1/60,{...empty,throttle:1});
   assert.ok(open?rail.road.offset>25:rail.road.offset<4.5,'physical guardrail spans stop the car; real gaps allow exploration');
  }
- console.log(JSON.stringify({passed:14,offroadDistance:Number(free.road.distance.toFixed(1)),coastalDistance:Math.round(loop.distance),coastalLength:Math.round(coast.length),maxOffset:Number(maxOffset.toFixed(3)),branchEntered:entered,branchReturned:returned,reverseBranch:reverseEntry&&reverseReturn},null,2));
+ console.log(JSON.stringify({passed:21,offroadDistance:Number(free.road.distance.toFixed(1)),coastalDistance:Math.round(loop.distance),coastalLength:Math.round(coast.length),maxOffset:Number(maxOffset.toFixed(3)),branchEntered:entered,branchReturned:returned,reverseBranch:reverseEntry&&reverseReturn},null,2));
 }finally{await server.close();}

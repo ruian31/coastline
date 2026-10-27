@@ -10,7 +10,7 @@ interface ThreeGameDiagnostics {
     position: { x: number; y: number; z: number };
     speed: number;
   };
-  cameraRig?: {cockpitEyeError:number|null};
+  cameraRig?: {cockpitEyeError:number|null;orbitYaw:number;orbitPitch:number;boomDistance:number|null;availableDistance:number|null};
   lighting?: {ready:boolean;mode:string;bakes:number;bakeDraws:number;localPasses:number;localDraws:number;localTriangles:number;mapSize:number;projectedWidth:number;projectedHeight:number;casters:number};
   renderer: {
     calls: number;

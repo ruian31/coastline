@@ -2,15 +2,18 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { coast, heightAt } from './roads';
 import { createSeededRandom } from '../utils/random';
+import type {CameraCollider} from '../systems/CameraCollision';
 
 type Collider = { x: number; z: number; halfX: number; halfZ: number };
 export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight:(x:number,z:number)=>number=heightAt): {
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   colliders: Collider[];
+  cameraColliders: CameraCollider[];
+  cameraMeshes: THREE.Mesh[];
 } {
   const root = new THREE.Group();root.name='Coastal destinations';scene.add(root);
-  const random=createSeededRandom(99184),colliders:Collider[]=[];
+  const random=createSeededRandom(99184),colliders:Collider[]=[],cameraColliders:CameraCollider[]=[];
   const materials:THREE.MeshStandardMaterial[]=[];
   const batches=new Map<THREE.Material,THREE.BufferGeometry[]>();
   const mat=(name:string,color:number,roughness=.85,metalness=0)=>{
@@ -79,6 +82,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   function collider(frame:THREE.Matrix4,w:number,d:number) {
     const p=new THREE.Vector3().setFromMatrixPosition(frame),e=frame.elements;
     colliders.push({x:p.x,z:p.z,halfX:Math.abs(e[0])*w/2+Math.abs(e[8])*d/2,halfZ:Math.abs(e[2])*w/2+Math.abs(e[10])*d/2});
+    cameraColliders.push({x:p.x,z:p.z,halfX:w/2,halfZ:d/2,yaw:Math.atan2(-e[2],e[0])});
   }
   function planter(frame:THREE.Matrix4,x:number,y:number,z:number,size=.65) {
     cylinder(frame,pots,x,y+size*.4,z,size*.43,size*.29,size*.8,8);
@@ -375,6 +379,10 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   }
   root.userData.tunnel={start:tunnelStart,end:tunnelEnd,interiorHalfWidth:6.4,interiorHeight:6.6};
   const meshes:THREE.Mesh[]=[];root.traverse(obj=>{if(obj instanceof THREE.Mesh)meshes.push(obj);});
+  root.updateMatrixWorld(true);
+  const cameraMaterials=new Set<THREE.Material>([...walls,terracotta,roofEdges,stone,wood,glass,cream,red,white,tunnelMaterial,rock]);
+  const cameraMeshes=meshes.filter(mesh=>!Array.isArray(mesh.material)&&cameraMaterials.has(mesh.material));
+  for(const mesh of cameraMeshes)mesh.geometry.computeBoundingBox();
   root.userData.diagnostics={draws:meshes.length,spatialCellSize:cellSize,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?mesh.geometry.index.count:mesh.geometry.getAttribute('position').count)/3,0)};
   return {
     update(_elapsed,_carPosition) {},
@@ -383,5 +391,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
       for(const material of materials)material.dispose();for(const texture of [...signs,...surfaceTextures])texture.dispose();
     },
     colliders,
+    cameraColliders,
+    cameraMeshes,
   };
 }

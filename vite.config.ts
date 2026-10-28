@@ -16,5 +16,13 @@ export default defineConfig({
   build: {
     sourcemap: true,
     chunkSizeWarningLimit: 900,
+    rolldownOptions: {
+      output: {
+        // Keep the large WASM wrapper cached when only game code changes.
+        codeSplitting: {
+          groups: [{ name: 'rapier', test: /node_modules[\\/]@dimforge[\\/]rapier3d-compat[\\/]/ }],
+        },
+      },
+    },
   },
 });

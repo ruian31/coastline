@@ -1,3 +1,11 @@
+# M62 · 物理库缓存，驾驶与画面保持M61
+
+- [本地试玩](http://192.168.3.10:5190/)已恢复并更新。[三地址HTTP](physics-cache-m62/http-release.json)主B-FYNEws/920656B、车辆Cg_oRHpL/6066B、库BR_-CEU_/4332859B，候选/稳定/LAN全部逐字一致；未push。总raw比M61多228B，不是首次加载减重。
+- [工作构建图](physics-cache-m62/build-graph.json)只改应用质量参数，应用两块文件名变化，独立Rapier SHA bf574388…保持，库无指向应用的静态import。1281kg探针只在work，已清理候选额外文件，最终三车参数保持M61。
+- [Chrome/WebKit同源记录](physics-cache-m62/browser.json)：首次物理正文约1.64MB gzip，应用变更后Chrome ResourceTiming仅300B、WebKit0B且新应用初始化成功；不把WebKit缓存项bodySize0解释为空库。physics=0控制均无物理请求，0错误。[Chrome启动图](physics-cache-m62/chrome-active.png)、[WebKit图](physics-cache-m62/webkit-active.png)已看，不是新的画质评分。
+- [三浏览器真实驾驶专项](physics-cache-m62-driving.json)3通过、0失败/跳过/重试，79.5秒；[普通入口](fineleaf-m62-physics-cache-release/result.json)行驶5.74m、测试全局关闭、原资源绑定/压草和115物体一次缓存正常，0错误，[普通图](fineleaf-m62-physics-cache-release/normal.png)已看。首次工作复制目录与残余探针选择失败的日志保留，清理重建后才做最终浏览器及发布。
+- 仅构建配置改变，无新纹理、可见面数、物理参数或运行时帧率优化。M61的CPU/路线/运动证据见下；本轮未重评分。真实手机新引擎反馈仍待回复，整体需求未完成，继续F04灯光及后续镜面/动态世界。
+
 # M61 · 真实惯性、轮胎抓地和四轮悬挂
 
 - 已更新[本地试玩](http://192.168.3.10:5190/)；[三地址HTTP核对](vehicle-m61-http-release.json)主JS Beu2WSct/920493B/SHA f4cc3a03…，物理Dey3i3yR/4338860B/SHA d321fafb…相同，许可证200。精确复制已验证候选后原子替换HTML，保留旧哈希资产。主包比M59 raw+8008B，另增物理兼容包，构建gzip估计268.45/1671.75kB；无新图或可见物理网格，未push。

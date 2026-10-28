@@ -43,6 +43,9 @@ try {
  const branch=new Driving();branch.teleport(.282);branch.preferHill=true;branch.setAutomatic(true);let entered=false,returned=false;for(let i=0;i<60*150;i++){branch.update(1/60,empty);if(branch.route===hill)entered=true;else if(entered)returned=true;assert.equal(branch.hit,false,'branch autopilot touched boundary');}assert.ok(entered&&returned,'inland branch rejoins coastal loop');
  const reverse=new Driving();reverse.teleport(.668);reverse.yaw+=Math.PI;reverse.preferHill=true;reverse.setAutomatic(true);let reverseEntry=false,reverseReturn=false;for(let i=0;i<60*140;i++){reverse.update(1/60,empty);if(reverse.route===hill)reverseEntry=true;else if(reverseEntry)reverseReturn=true;}assert.ok(reverseEntry&&reverseReturn,'reverse route also traverses branch');
  const manual=new Driving();for(let i=0;i<60*4;i++)manual.update(1/60,{...empty,throttle:1});assert.ok(manual.speed>5,'throttle accelerates');const speed=manual.speed;for(let i=0;i<60;i++)manual.update(1/60,{...empty,handbrake:true});assert.ok(Math.abs(manual.speed)<speed,'handbrake reduces speed');manual.recover();assert.equal(manual.speed,0);assert.ok(Math.abs(manual.position.y-manual.road.sample.position.y-ROAD_POSITION_CLEARANCE)<1e-6,'recovery preserves road clearance');assert.ok(manual.road.distance<6,'recover on road');for(let i=0;i<60;i++)manual.update(1/60,{...empty,brake:1});assert.ok(manual.speed<-.5,'holding brake from rest engages low speed reverse');
+ // Recovering/changing a fallback car must clear a previous service brake signal
+ // even while the garage is paused and no further driving update can run.
+ const signals=new Driving();signals.speed=6;signals.update(1/60,{...empty,brake:1});assert.equal(signals.braking,true);signals.recover();assert.equal(signals.braking,false,'recovered fallback car releases brake lamps');signals.speed=6;signals.update(1/60,{...empty,brake:1});signals.modelIndex=1;signals.resetDynamics();assert.equal(signals.braking,false,'paused garage reset releases fallback brake lamps');
  // Leave the real road onto a flat test field; distance must never clamp position.
  const free=new Driving();free.teleport(.12);const start=coast.sample(.12),level=start.position.y-.4;
  free.setTerrain(()=>level);free.yaw=Math.atan2(-start.right.x,-start.right.z);
@@ -68,5 +71,5 @@ try {
   for(let i=0;i<60*6;i++)rail.update(1/60,{...empty,throttle:1});
   assert.ok(open?rail.road.offset>25:rail.road.offset<4.5,'physical guardrail spans stop the car; real gaps allow exploration');
  }
- console.log(JSON.stringify({passed:21,offroadDistance:Number(free.road.distance.toFixed(1)),coastalDistance:Math.round(loop.distance),coastalLength:Math.round(coast.length),maxOffset:Number(maxOffset.toFixed(3)),branchEntered:entered,branchReturned:returned,reverseBranch:reverseEntry&&reverseReturn},null,2));
+ console.log(JSON.stringify({passed:22,offroadDistance:Number(free.road.distance.toFixed(1)),coastalDistance:Math.round(loop.distance),coastalLength:Math.round(coast.length),maxOffset:Number(maxOffset.toFixed(3)),branchEntered:entered,branchReturned:returned,reverseBranch:reverseEntry&&reverseReturn},null,2));
 }finally{await server.close();}

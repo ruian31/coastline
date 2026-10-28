@@ -6,7 +6,7 @@ export class DriveInput {
  window.addEventListener('keydown',e=>{if((e.target instanceof HTMLInputElement)||(e.target instanceof HTMLSelectElement))return;
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();this.keys.add(e.code);
  if(['KeyW','KeyS','KeyA','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))this.onManual();
- if(!e.repeat){const map:Record<string,string>={KeyC:'camera',KeyP:'auto',KeyV:'garage',KeyR:'recover',Escape:'pause',KeyM:'mute'};if(map[e.code])this.onAction(map[e.code]);}},{signal});
+ if(!e.repeat){const map:Record<string,string>={KeyC:'camera',KeyP:'auto',KeyV:'garage',KeyR:'recover',KeyH:'lights',Escape:'pause',KeyM:'mute'};if(map[e.code])this.onAction(map[e.code]);}},{signal});
  window.addEventListener('keyup',e=>this.keys.delete(e.code),{signal});window.addEventListener('blur',()=>this.clear(),{signal});document.addEventListener('visibilitychange',()=>this.clear(),{signal});
  document.querySelectorAll<HTMLElement>('[data-drive]').forEach(el=>{el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);this.held.set(e.pointerId,el.dataset.drive!);el.classList.add('held');this.onManual();},{signal});
  for(const event of['pointerup','pointercancel','lostpointercapture'])el.addEventListener(event,e=>{this.held.delete((e as PointerEvent).pointerId);el.classList.remove('held');},{signal});});

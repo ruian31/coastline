@@ -8,11 +8,13 @@ export class Driving {
  position=new THREE.Vector3();yaw=0;pitch=0;roll=0;speed=0;steer=0;automatic=false;route:RoadRoute=coast;progress=.84;direction=1;preferHill=false;distance=0;hit=false;offroad=false;
  road:RoadLocation;modelIndex=0;
  dynamics:VehicleDynamics|undefined;
+ private legacyBraking=false;
+ get braking(){return this.dynamics?.braking??this.legacyBraking;}
  private physicsPose=new THREE.Vector3(Infinity,Infinity,Infinity);private physicsYaw=Infinity;private physicsSpeed=Infinity;
  private physicsRotation=new THREE.Quaternion();private physicsEuler=new THREE.Euler(0,0,0,'YXZ');
  private junctionTime=0;
  setDynamics(dynamics:VehicleDynamics){this.dynamics?.dispose();this.dynamics=dynamics;this.resetDynamics();}
- resetDynamics(){if(!this.dynamics)return;
+ resetDynamics(){this.legacyBraking=false;if(!this.dynamics)return;
   const support=this.support(this.position.x,this.position.z,this.yaw);
   // Teleports and old observation fixtures may start below town paving. Lift
   // to its actual support plane before the solver sees an overlapping chassis.
@@ -66,10 +68,11 @@ export class Driving {
   }
   this.road=nearestRoad(this.position.x,this.position.z);this.offroad=this.road.distance>this.road.route.width/2+.2;this.rememberPhysicsPose();
  }
- update(dt:number,input:DriveIntent){if(this.dynamics){this.updateDynamics(dt,input);return;}this.hit=false;const previousSpeed=this.speed,oldX=this.position.x,oldZ=this.position.z,oldYaw=this.yaw;
+ update(dt:number,input:DriveIntent){if(this.dynamics){this.updateDynamics(dt,input);return;}this.hit=false;const previousSpeed=this.speed,oldX=this.position.x,oldZ=this.position.z,oldYaw=this.yaw;this.legacyBraking=false;
  if(this.automatic){
  const s=this.route.sample(this.progress),look=this.route.sample(this.progress+this.direction*18/this.route.length),bend=Math.abs(wrap(Math.atan2(look.tangent.x,look.tangent.z)-Math.atan2(s.tangent.x,s.tangent.z))),target=(this.route===hill?10.5:14)/(1+bend*2.8);
  this.speed=THREE.MathUtils.damp(this.speed,target,1.5,dt);this.progress+=this.direction*this.speed*dt/this.route.length;
+ this.legacyBraking=previousSpeed>target+.2;
  if(this.route===coast){this.progress=(this.progress+1)%1;const junction=this.direction>0?.29:.66;if(this.preferHill&&Math.abs(this.progress-junction)<.0018){this.route=hill;this.progress=this.direction>0?0:1;}}
  else if(this.progress>=1||this.progress<=0){this.progress=this.direction>0?.66:.29;this.route=coast;this.preferHill=false;}
  const next=this.route.sample(this.progress),targetPosition=next.position.clone().addScaledVector(next.right,1.6*this.direction),desiredYaw=Math.atan2(next.tangent.x,next.tangent.z)+(this.direction<0?Math.PI:0);
@@ -77,6 +80,7 @@ export class Driving {
  }else{
  const maxSpeed=([29,32,36][this.modelIndex]??29)*(this.offroad?.6:1),throttle=input.throttle,brake=input.brake;
  let acceleration=throttle*(this.speed<0?9:5.8)*(1-Math.max(0,this.speed)/maxSpeed);
+ this.legacyBraking=brake>0&&this.speed>.3||throttle>0&&this.speed<-.3;
  if(brake>0)acceleration+=this.speed>.3?-brake*11:-brake*3.4;
  if(!throttle&&!brake)acceleration-=Math.sign(this.speed)*(.28+this.speed*this.speed*.0035);
  if(this.offroad)acceleration-=Math.sign(this.speed)*(.65+this.speed*this.speed*.006);

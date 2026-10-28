@@ -21,7 +21,7 @@ export class VehicleDynamics {
  }
  readonly position=new THREE.Vector3();readonly rotation=new THREE.Quaternion();readonly velocity=new THREE.Vector3();
  readonly wheels:VehicleWheel[]=Array.from({length:4},()=>({position:new THREE.Vector3(),rotation:0,steering:0,contact:false,length:REST_LENGTH,force:0}));
- speed=0;lateralSpeed=0;steer=0;steeringAngle=0;hit=false;modelIndex:number;
+ speed=0;lateralSpeed=0;steer=0;steeringAngle=0;hit=false;braking=false;modelIndex:number;
  private readonly world=new RAPIER.World({x:0,y:-9.81,z:0});
  private readonly body:RAPIER.RigidBody;private controller:RAPIER.DynamicRayCastVehicleController;
  private reverseDelay=0;private hardpointY=0;private disposed=false;private triangles=0;private steps=0;private contactsReady=false;
@@ -71,7 +71,7 @@ export class VehicleDynamics {
   if(model!==this.modelIndex)this.configure(model);
   this.body.setTranslation(position,true);this.body.setRotation(rotation,true);this.forward.set(0,0,1).applyQuaternion(rotation);
   this.body.setLinvel(this.forward.multiplyScalar(speed),true);this.body.setAngvel({x:0,y:0,z:0},true);this.body.resetForces(true);this.body.resetTorques(true);
-  this.reverseDelay=0;this.steer=0;this.steeringAngle=0;this.contactsReady=false;this.world.propagateModifiedBodyPositionsToColliders();this.readState();
+  this.reverseDelay=0;this.steer=0;this.steeringAngle=0;this.braking=false;this.contactsReady=false;this.world.propagateModifiedBodyPositionsToColliders();this.readState();
  }
  update(dt:number,input:DriveIntent,offroad=false,automatic=false){
   const p=VEHICLE_PROFILES[this.modelIndex]??VEHICLE_PROFILES[0],mass=p.mass,vehicle=this.controller;
@@ -85,6 +85,9 @@ export class VehicleDynamics {
    if(beforeSpeed>.3||automatic){this.reverseDelay=0;brake=input.brake*6.5;}
    else{this.reverseDelay+=dt;if(this.reverseDelay<.4)brake=input.brake*6.5;else engine=-input.brake*mass*2.5*Math.max(0,1-Math.abs(Math.min(0,beforeSpeed))/5);}
   }else{this.reverseDelay=0;if(absSpeed<.15&&Math.abs(this.lateralSpeed)<.12)brake=2;}
+  // Show commanded service braking, including cruise and braking out of reverse.
+  // Automatic low-speed hold and a parking handbrake do not light the pedal lamps.
+  this.braking=brake>.05&&(input.brake>0||input.throttle>0);
   this.body.resetForces(false);this.body.resetTorques(false);
   const drag=Math.sign(beforeSpeed)*(mass*(offroad?.5:.12)+.4*beforeSpeed*beforeSpeed);
   this.body.addForce({x:-this.forward.x*drag,y:0,z:-this.forward.z*drag},Boolean(engine||brake||input.steer));

@@ -17,10 +17,11 @@ export interface Convertible {
   wheelContacts:readonly THREE.Vector3[];
   update: (speed: number, steer: number, dt: number, wheels?:readonly VehicleWheel[]) => void;
   setContactShadow:(visible:boolean)=>void;
+  setLights:(headlights:boolean,braking:boolean,reversing:boolean)=>void;
   dispose: () => void;
 }
 
-type MaterialKey = 'paint' | 'leather' | 'seam' | 'dark' | 'chrome' | 'wood' | 'glass' | 'lens' | 'mirror' | 'headlight' | 'tail' | 'amber';
+type MaterialKey = 'paint' | 'leather' | 'seam' | 'dark' | 'chrome' | 'wood' | 'glass' | 'lens' | 'mirror' | 'headlight' | 'tail' | 'brakeLamp' | 'reverseLamp' | 'amber';
 type MaterialKit = Record<MaterialKey, THREE.MeshStandardMaterial>;
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -148,6 +149,10 @@ function materialKit(index: number): { materials: MaterialKit; textures: THREE.T
     mirror: mat('#a0bbc1', .13, .95),
     headlight: new THREE.MeshStandardMaterial({ color: '#fff1c9', emissive: '#ffd396', emissiveIntensity: .55, roughness: .24 }),
     tail: new THREE.MeshPhysicalMaterial({ color: '#861d20', emissive: '#c12f23', emissiveIntensity: .28, roughness: .19,clearcoat:.8,clearcoatRoughness:.12 }),
+    // Keep the red signal saturated when bright; the scene's filmic shoulder
+    // otherwise shifts this small emissive surface toward pale orange.
+    brakeLamp: new THREE.MeshPhysicalMaterial({color:'#701113',emissive:'#ff1008',emissiveIntensity:.35,toneMapped:false,roughness:.2,clearcoat:.8,clearcoatRoughness:.12}),
+    reverseLamp: new THREE.MeshStandardMaterial({color:'#c9d4ce',emissive:'#fff4de',emissiveIntensity:0,roughness:.23}),
     amber: new THREE.MeshStandardMaterial({ color: '#e99f32', emissive: '#a0570c', emissiveIntensity: .25, roughness: .3 }),
   };
   const leather = upholsteryTexture('leather'), wood = upholsteryTexture('wood'), paint = upholsteryTexture('paint');
@@ -279,11 +284,12 @@ function buildBody(batch: GeometryBatch, variant: number) {
     }
     batch.box('amber', [.12, .022, .025], V(side * .61, .6, 2.18), .006);
     batch.box(variant === 0 ? 'chrome' : 'dark', [.31, variant === 0 ? .12 : .065, .035], V(side * .57, .75, -2.172), .018);
-    batch.box('tail', [.27, variant === 0 ? .083 : .027, .035], V(side * .57, .75, -2.194), .012);
+    batch.box('brakeLamp', [.27, variant === 0 ? .083 : .027, .035], V(side * .57, .75, -2.194), .012);
+    batch.box('reverseLamp',[.10,.025,.025],V(side*.57,.69,-2.205),.006);
     batch.add('chrome', new THREE.CylinderGeometry(.04, .04, .22, 12, 1, true), V(side * .6, .32, -2.13), new THREE.Euler(Math.PI / 2, 0, 0));
   }
   if (variant === 2) {
-    batch.box('tail', [.83, .012, .024], V(0, .75, -2.195));
+    batch.box('brakeLamp', [.83, .012, .024], V(0, .75, -2.195));
     batch.tube('paint', [V(-.77, .99, -1.96), V(0, 1.015, -2.015), V(.77, .99, -1.96)], .025, 26);
     for (const side of [-1, 1]) batch.tube('chrome', [V(side * .42, 1.05, -.87), V(side * .42, 1.35, -.9), V(side * .63, 1.35, -.9), V(side * .63, 1.05, -.87)], .024, 14);
   }
@@ -531,6 +537,24 @@ export function createConvertible(index = 0): Convertible {
   const batch = new GeometryBatch(materials);
   buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
 
+  // A shared optical mask spreads the low beam across the road and softens
+  // its upper cut-off, rather than making two round torch spots near the bumper.
+  const beamPixels=new Uint8Array(64*64*4);
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++){
+    const u=(x+.5)/64,v=(y+.5)/64,falloff=Math.exp(-(((u-.5)/.4)**4)-((v-.46)/.08)**2)*(1-THREE.MathUtils.smoothstep(v,.51,.55)),i=(y*64+x)*4;
+    beamPixels[i]=beamPixels[i+1]=beamPixels[i+2]=Math.round(falloff*255);beamPixels[i+3]=255;
+  }
+  const beamMap=new THREE.DataTexture(beamPixels,64,64);beamMap.name='shared-low-beam-optics';beamMap.minFilter=beamMap.magFilter=THREE.LinearFilter;beamMap.needsUpdate=true;surfaceTextures.push(beamMap);
+  // Two actual road lights follow chassis pitch/roll. No extra shadow render
+  // passes or fog cones: the existing PBR road and scenery receive the light.
+  const headlamps=[-1,1].map(side=>{
+    const light=new THREE.SpotLight(index===0?'#ffe0ae':'#fff1d8',1800,38,.36,.5,2);light.map=beamMap;
+    light.name=side<0?'left-low-beam':'right-low-beam';light.position.set(side*(index===0?.61:.585),.82,2.24);
+    light.target.position.set(side*.8,.12,20);light.castShadow=false;
+    root.add(light,light.target);return light;
+  });
+  const lampState={headlights:true,braking:false,reversing:false};root.userData.lights=lampState;
+
   const wheelTemplate = createWheel(materials, index), rolls: THREE.Group[] = [], steers: THREE.Group[] = [],suspensions:THREE.Group[]=[],wheelContacts:THREE.Vector3[]=[];
   for (const z of [-1.28, 1.28]) for (const x of [-.845, .845]) {
     const steering = new THREE.Group(); steering.position.set(x, .338, z);
@@ -596,6 +620,14 @@ export function createConvertible(index = 0): Convertible {
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
     root, cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
+    setLights(headlights,braking,reversing){
+      Object.assign(lampState,{headlights,braking,reversing});
+      // Keep light count stable on toggles, avoiding full-scene shader rebuilds.
+      for(const light of headlamps)light.intensity=headlights?1800:0;
+      materials.headlight.emissiveIntensity=headlights?2.2:0;
+      materials.brakeLamp.emissiveIntensity=braking?3.2:headlights?.4:0;
+      materials.reverseLamp.emissiveIntensity=reversing?2.4:0;
+    },
     update(speed, steer, dt, wheels) {
       driver.update(steer, dt);
       if(wheels?.length===4){
@@ -617,6 +649,7 @@ export function createConvertible(index = 0): Convertible {
     },
     dispose() {
       driver.dispose();
+      headlamps.forEach(light=>light.dispose());
       const geometries = new Set<THREE.BufferGeometry>();
       const mats = new Set<THREE.Material>();
       root.traverse(object => {

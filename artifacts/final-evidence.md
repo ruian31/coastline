@@ -1,3 +1,14 @@
+# M63 · 实际照路的前灯与制动/倒车灯
+
+- 已更新[本地试玩](http://192.168.3.10:5190/)。[三地址HTTP](lights-m63-http-release.json)主Cn1uuQIv/922647B/SHA2de9ee42…、车辆9n1oNJvB/6139B、Rapier BR_-CEU_/4332859B逐字相同；[源码/构建SHA](lights-m63-build-source.json)保留，库哈希与M62一致。先复制已验证资产再原子替换HTML，保留旧哈希文件，未push。
+- 前灯两个真实PBR聚光灯，共享64²光学遮罩、随底盘姿态照路；经典偏暖，另外两车偏中性。H与暂停菜单开关并记忆，换车保留。独立红灯读取实际服务制动，白灯跟随倒车，座椅扣件/卡钳不再被一同点亮；驻车与手刹不冒充踩刹车。红灯绕开电影高亮去饱和，修正首轮偏橙表现。
+- [最终三浏览器](lights-m63-browser-final.json)3项通过、0失败/跳过/重试，242.8s，每项依次实输入驾驶三款车并测开关/记忆。[18输入图](lights-m63-input-contact.png)已看。前两轮各3项通过，保留首轮244.5s与改色前219.9s报告，不算9个独立用例。WebKit为宿主模拟，Android另有原生触控录像；不当实际iPhone或手机性能通过。
+- [28物理CPU](lights-m63-cpu-final/result.json)、[22旧驾驶检查](lights-m63-legacy.log)通过，动力/碰撞参数保持。[一次只读审查](lights-m63-review.json)发现回退模式恢复/暂停换车会保留旧制动信号，已在提前返回前清理并加回归；审查SHA早于该修复，非最终全量批准。
+- [键盘/原生触控记录](lights-m63-motion/result.json)先真实加速、制动、倒车、再前进，随后声明隧道起点并正常巡航100.00/100.20m；0错误。视频[17.36s](lights-m63-motion/desktop-keyboard.webm)/[18.08s](lights-m63-motion/android-touch.webm)，[六个实际时间样本](lights-m63-motion/sampled-frames.json)与[联图](lights-m63-motion/filmstrip.png)已看，含红灯/白灯及洞内照路；未称逐帧看完整视频。横屏[手机菜单](lights-m63-motion/android-touch-menu.png)可滚动、无横向溢出。
+- [6正式机位](evidence-lights-final.json)、[正式联图](lights-m63-formal-contact.png)、[12开关对照](lights-m63-final/result.json)及[对照联图](lights-m63-optics-contact.png)均已看，0运行错误。前两次采集分别误缺test参数、误传不存在的seed接口，失败日志/报告保留；最终按原六机位和现有接口重拍，不修改游戏接口迎合采集。[路面像素观察](lights-m63-optics-pixels.json)固定区域sRGB亮度差约19.1/12.9，非光度学标定。六图峰桌面152/774386/198/55、手机110/296741/199/52；子集不代表全世界预算通过，旧bank等超标仍保留。World1.5、Lighting2.25沿用，无新总分。
+- [同机M62](ground-gpu-m63-m62-control/result.json)→[M63](ground-gpu-m63-lights-final/result.json)，手机低档固定海岸/隧道各90有效GPU样本、无disjoint；P50为2.806/3.552→2.786/3.658ms，P95为4.071/5.089→3.705/4.404ms。各加2calls/568面/2geo/1tex，单轮波动不能当提速或真机FPS。光学纹理约16KiB，未新增前灯阴影pass；中间遮挡漏光和真实夜间验收留到F07。
+- [普通5190入口](fineleaf-m63-lights-release/result.json)前进5.75m、测试全局关闭、原八表面/压草/岩石/棕榈绑定与115物体一次缓存正常，0错误，[普通画面](fineleaf-m63-lights-release/normal.png)已看。真实一加12新物理反馈仍待回复；自然风景、镜面、四季昼夜天气未完成，下一轮先处理道路/岸台过平和地表与植物缺少共同空间组织的问题。
+
 # M62 · 物理库缓存，驾驶与画面保持M61
 
 - [本地试玩](http://192.168.3.10:5190/)已恢复并更新。[三地址HTTP](physics-cache-m62/http-release.json)主B-FYNEws/920656B、车辆Cg_oRHpL/6066B、库BR_-CEU_/4332859B，候选/稳定/LAN全部逐字一致；未push。总raw比M61多228B，不是首次加载减重。

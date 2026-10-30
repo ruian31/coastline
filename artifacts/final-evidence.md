@@ -1,3 +1,9 @@
+# M66 · 原生植物形体筛选，未采用
+
+- 官方[Poly Haven模型](https://polyhaven.com/models/nature/plants)与[CC0许可](https://polyhaven.com/license)确认后，四种素材只下载到work；官方字节/MD5及本地SHA保存在work/low-cover-m66-source/downloaded-source.json。RGB与独立alpha无损合并，几何、UV、法线、原1k PBR完整，统一一米足迹并记录原尺寸/缩放。
+- [前两种28幅](lowcover-m66-source-shapes-fixed/result.json)、[Leipoldtia7幅](lowcover-m66-leipoldtia-source/result.json)、[Burchellii7幅](lowcover-m66-burchellii-source/result.json)均0页面错误；联图与前两种顶部原图已看。这是独立平地、近似夕阳的素材检查，非游戏/LOD/压力/运动/真机成本验收。首次favicon404和Burchellii几何60秒下载超时日志保留，修正后才完成，不将失败计为通过。
+- [Leipoldtia联图](lowcover-m66-leipoldtia-source/all-contact.png)的低宽形体仍稀疏；[Burchellii联图](lowcover-m66-burchellii-source/all-contact.png)的宽冠仍裸枝。其最小完整株分别53920/44516面，未简化或接入；旧M43成熟Lucida原图和d/e过重结论复核后不重做。四种均暂不采用，无public新资源、无性能/美术达标声明。稳定5190与运行源码仍M64；下一步F05，风景、草坡停驶和F06–F08继续保留。
+
 # M64 · 连贯的灯塔岬角坡面
 
 - 已更新[试玩](http://192.168.3.10:5190/)。[三地址HTTP](cape-grade-m64-http-release.json)均BwUp8_dq/923444B/SHA c49def7d…、车辆DU7I1iqD/6139B、Rapier BR_-CEU_/4332859B；库与M63同SHA。[源码/构建记录](cape-grade-m64-build-source.json)和[原子本地更新](cape-grade-m64-local-release.json)保留，无push。普通入口前进、测试全局关闭及原资源绑定通过，见下。

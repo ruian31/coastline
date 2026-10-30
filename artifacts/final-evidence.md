@@ -1,4 +1,12 @@
-# M68 · 镜面清楚了，真机性能仍需修正
+# M69 · 镜面工作量下降，真机仍卡顿
+
+- [试玩](http://192.168.3.10:5190/)已更新CxFJuKZJ/930187B、车辆BwwWFpGI/6139B，Rapier库SHA保持；[源码/构建](mirror-perf-m69-build-source.json)、[原子更新/三地址核对](mirror-perf-m69-local-release.json)保留，14旧JS保留、无push。**一加12复测仍“还是明显卡顿”**，不称真机性能通过；下一步需要区分主场景和镜面单次开销。
+- 实际玻璃顶点裁剪修正右镜屏外−2.43px仍刷新的问题。手机中央8Hz/侧4Hz/16槽，桌面12Hz/36槽；手机取消镜内MSAA，保留大玻璃、目标尺寸及三线mip。三方案四手机机位[12幅对照](mirror-perf-m69/compare/result.json)、[联图](mirror-perf-m69/compare/contact.png)已看，选择filtered源码方案。
+- [三浏览器专项](mirror-perf-m69-browser.json)一次3通过/0失败、跳过或重试（162.65秒），[读回记录](mirror-perf-m69-browser-records.json)含屏外镜零初始化、真实1500ms内刷新数量上限、反射左右/三车返车/资源不增长/冻结与外部停更。[CPU36射线](mirror-perf-m69-cpu-rays.json)通过。[实际键盘/Android触控](mirror-perf-m69-motion-approved/result.json)78.58/78.50m、倒车−3.34/−3.36m/s，可信拖动后原不可见侧镜确实更新、0错误。视频[20.28秒](mirror-perf-m69-motion-approved/desktop-keyboard.webm)/[18.72秒](mirror-perf-m69-motion-approved/android-touch.webm)的[6个稀疏编码帧](mirror-perf-m69-motion-approved/sampled-frames.json)、[联图](mirror-perf-m69-motion-approved/filmstrip.png)及侧看原PNG已看，不称完整逐帧或真机FPS。
+- [8最终机位](evidence-mirror-perf-m69.json)与[联图](pass-m69-mirror-perf/contact.png)全部查看、0错误。[冻结峰](mirror-perf-m69-render-counts.json)桌面143/769323/210/57、手机105/288602/208/55，不当活跃镜面成本。[控制](mirrors-m67-profile-m69-m68-control/result.json)→[候选](mirrors-m67-profile-m69-filtered-final/result.json)顺序各90整帧GPU样本/状态、无disjoint；[汇总](mirror-perf-m69-cost-summary.json)8秒镜面pass160/161→90/91、任务−8.0/−13.4%、脚本−8.7/−13.8%。树旁/镇旁GPU P50 4.606/4.095→3.917/5.159、P95 7.823/6.432→9.729/7.345ms，未一致改善；活跃峰154calls/423500tri、54–56纹理，超额保持。
+- [普通入口](fineleaf-m69-mirror-perf-release/result.json)前进5.12m、116投影一次缓存、原资源/压草绑定/测试全局关闭、0错误，[普通图](fineleaf-m69-mirror-perf-release/normal.png)已看。用户仍卡顿，M69只是已验证的工作量减少，没有完成手机修正。World1.5/Lighting2.25保持，草坡/自然风景/四季昼夜天气仍未完成，Goal active。
+
+## M68 · 镜面清楚了，真机性能仍需修正
 
 - [当前试玩](http://192.168.3.10:5190/)已更新Dwj5HiKP/929908B，三入口全部模块SHA相同，[原子更新记录](mirror-clarity-m68-local-release.json)保留12个旧JS，无push。[源码/构建SHA](mirror-clarity-m68-build-source.json)、[构建日志](mirror-clarity-m68-source-build.log)保留。**一加12 Chrome复核“清楚了，但画面更卡”**：清晰度改善成立，真机性能不通过；下一步M69先减镜面开销。
 - 中央玻璃/框体及侧镜扩大，低档手机中央66.6×19.1→97.4×31.3 CSS像素，桌面190.2×61.0；主画布DPR1保持。中央384×128/侧192×128，MSAA与三线mip过滤。[16幅工作对照](mirror-clarity-m68/compare/result.json)和[手机联图](mirror-clarity-m68/compare/mobile-contact.png)已看，目标颜色含mip1048560B，另有多采样颜色/深度与驱动开销。

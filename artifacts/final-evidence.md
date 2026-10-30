@@ -1,4 +1,10 @@
-# M69 · 镜面工作量下降，真机仍卡顿
+# M70 · 真机对照检测已准备，等待硬件数据
+
+- 真实用户M69仍明显卡顿，现提供[手机检测](http://192.168.3.10:5191/?test=1)。独立work构建只给整个镜面update加总开关，5190/正式dist/游戏源码保持；[转换配方与SHA](phone-probe-m70/recipe.json)和[构建日志](phone-probe-m70-build-final.log)保留。可用`npm run diagnose:phone`重建并启动；已存在5191时先退出，不覆盖活跃检测。
+- 同路段低档、静止车内，两轮ON/OFF，每段1秒暖机+4秒真实RAF；原始间隔、FPS/P50/P95/慢帧、视口/DPR/GPU和前后诊断自动回传项目目录。[主机端到端](phone-probe-m70/host-verification.json)确认四段顺序、实际低档、ON45/45pass与OFF0/0、0错误；[完成页](phone-probe-m70/host-complete.png)已看。四段主机约60FPS只是采集验证，**不是一加12报告**。Node语法及[重复服务保护](phone-probe-m70/duplicate-server-guard.json)通过，拒绝前后HTML SHA相同。
+- 用户已收到约25秒的一键检测请求，真实硬件报告尚未到达。需要据此区分主场景瓶颈和镜面额外负担，当前不继续凭桌面数据猜测调参；未声称修好卡顿、未提高评分或完成Goal。此前已验证的镜面清晰度及全部失败记录保留。
+
+## M69 · 镜面工作量下降，真机仍卡顿
 
 - [试玩](http://192.168.3.10:5190/)已更新CxFJuKZJ/930187B、车辆BwwWFpGI/6139B，Rapier库SHA保持；[源码/构建](mirror-perf-m69-build-source.json)、[原子更新/三地址核对](mirror-perf-m69-local-release.json)保留，14旧JS保留、无push。**一加12复测仍“还是明显卡顿”**，不称真机性能通过；下一步需要区分主场景和镜面单次开销。
 - 实际玻璃顶点裁剪修正右镜屏外−2.43px仍刷新的问题。手机中央8Hz/侧4Hz/16槽，桌面12Hz/36槽；手机取消镜内MSAA，保留大玻璃、目标尺寸及三线mip。三方案四手机机位[12幅对照](mirror-perf-m69/compare/result.json)、[联图](mirror-perf-m69/compare/contact.png)已看，选择filtered源码方案。

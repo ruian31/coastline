@@ -5,6 +5,9 @@
 ## M70 · 继续定位真实手机卡顿
 
 - M69用户一加12Chrome复测仍“还是明显卡顿”。主机工作量下降不代表手机流畅；先准备同机同场景镜面开/关的受控诊断，避免继续仅调刷新率。稳定5190已M69，先保留清晰镜体。
+- M69已提交45d41cd，立即读取HEAD核验UTF8、临时消息删除，无push。M70诊断仅work/phone-probe-m70-dist，Vite单处转换给整个mirror update加总开关，正常5190与源码保持；检测server5191会把POST保存artifacts/phone-probe-m70/reports。当前活跃服务为work/serve-phone-probe-m70.mjs/session13589，不要在用户检测时重建或重启。
+- 受控流程为tree-shadow低档、静止车内，ON/OFF/ON/OFF各1秒暖机+4秒RAF，含实际frameTimes/FPS/P50/P95/慢帧、画布与GPU及前后诊断，OFF连次级剔除一并停用。主机Android视口端到端0错误、ON45/45pass、OFF0/0、4段约60FPS；完成原图已看。主机收据2026-10-30T07-05-38-389Z-d4351ebb-877c-4162-a7d0-4ed0993234b9.json不能当真实OnePlus数据。
+- 已向用户发送http://192.168.3.10:5191/?test=1和一次异步检测问题，等待真实手机数据；不要重复追问或把等待当许可。可独立检查材料/剔除成本，但不在数据到来前再凭主机FPS改正式运行。正式工具已整理为scripts/start-phone-mirror-probe.mjs和phone-mirror-probe-client.js（npm run diagnose:phone）；与已验工作版同一客户端，新增启动前端口保护已验EADDRINUSE不改活跃HTML、Node语法通过。
 
 ## M69 · 工作量下降但真机仍卡顿
 

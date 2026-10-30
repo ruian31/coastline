@@ -15,6 +15,7 @@
     "test:driving": "node scripts/test-driving.mjs",
     "test:vehicle": "node scripts/test-vehicle-dynamics.mjs",
     "test:camera": "node scripts/test-camera-surfaces.mjs",
+    "diagnose:phone": "node scripts/start-phone-mirror-probe.mjs",
     "test:rocks": "node scripts/validate-coastal-assets.mjs && node scripts/test-rock-surfaces.mjs",
     "test:shore": "node scripts/test-shore-field.mjs"
   },

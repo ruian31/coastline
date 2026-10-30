@@ -19,6 +19,6 @@ test('真实油门后保留滑行，制动后可恢复到道路',async({page},in
  const travelled=Math.hypot(braked.player.position.x-start.player.position.x,braked.player.position.z-start.player.position.z);expect(travelled).toBeGreaterThan(10);
  await page.keyboard.press('KeyR');await expect.poll(async()=>Math.abs((await read()).player.speed)).toBeLessThan(.1);await expect.poll(async()=>(await read()).state!.roadDistance).toBeLessThan(3);
  const recovered=await read();expect(recovered.vehicle!.wheels).toHaveLength(4);expect(recovered.vehicle!.wheels.every(w=>Number.isFinite(w.length)&&Number.isFinite(w.force))).toBe(true);expect(errors).toEqual([]);
- await page.screenshot({path:`artifacts/vehicle-m61-${info.project.name}.png`});
+ await page.screenshot({path:`artifacts/vehicle-${process.env.VEHICLE_SCREENSHOT_LABEL??'m61'}-${info.project.name}.png`});
  await test.info().attach('actual-input-state',{body:JSON.stringify({method:'Trusted keyboard or browser pointer pedal inputs and live RAF physics; no assigned velocity or stepped test clock. Mobile pointer checks are browser emulation, not physical-device performance.',start,released,coasted,braked,recovered,travelled,errors},null,2),contentType:'application/json'});
 });

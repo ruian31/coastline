@@ -4,7 +4,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const label=process.env.VEHICLE_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);
 const out='artifacts/vehicle-'+label,base=process.env.TEST_BASE_URL??'http://127.0.0.1:4191';await mkdir(out,{recursive:true});
-const hash=bytes=>createHash('sha256').update(bytes).digest('hex'),files=['src/systems/VehicleDynamics.ts','src/systems/Driving.ts','src/game/OceanDrive.ts','src/world/Scenery.ts','src/world/Landmarks.ts','src/world/RoadMesh.ts','src/vehicles/Convertible.ts'];
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex'),files=['src/systems/VehicleDynamics.ts','src/systems/Driving.ts','src/game/OceanDrive.ts','src/world/roads.ts','src/world/Scenery.ts','src/world/ScannedCoast.ts','src/world/inland-relief-v2.json','src/world/Landmarks.ts','src/world/RoadMesh.ts','src/vehicles/Convertible.ts'];
 const sources=await Promise.all(files.map(async file=>({file,sha256:hash(await readFile(file))})));
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),reports=[];
 try{

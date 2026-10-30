@@ -2,6 +2,8 @@ import {test,expect} from '@playwright/test';
 import * as THREE from 'three';
 import {readFile} from 'node:fs/promises';
 import {PNG} from 'pngjs';
+import {createHash} from 'node:crypto';
+import {coast} from '../src/world/roads';
 
 test('近景草毯随驾驶更新窗口，切档复用地形纹理与固定实例缓冲',async({page},info)=>{
  test.setTimeout(90000);await page.setViewportSize({width:844,height:390});
@@ -288,7 +290,9 @@ test('卷曲蕨叶共用原摄影贴图，近远互斥并保留低档摆放前�
 });
 
 test('原实拍蕨叶按视锥逐株剔除，切档保留全部原始摆放',async({page},info)=>{
- const fixture=JSON.parse(await readFile(new URL('./fixtures/imported-fern-placements.json',import.meta.url),'utf8')).platforms[info.project.name.includes('mobile')?'mobile':'desktop'];
+ const original=await readFile(new URL('./fixtures/imported-fern-placements.json',import.meta.url),'utf8'),reference=JSON.parse(await readFile(new URL('./fixtures/coast-route-m63.json',import.meta.url),'utf8'));
+ expect(createHash('sha256').update(original).digest('hex')).toBe(reference.placementsSha256);
+ const fixture=JSON.parse(original).platforms[info.project.name.includes('mobile')?'mobile':'desktop'],oldCurve=new THREE.CatmullRomCurve3().fromJSON(reference.curve);
  await page.setViewportSize({width:844,height:390});await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as unknown as {fernObjects:unknown[];__THREE_DEVTOOLS__:EventTarget};w.fernObjects=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',e=>w.fernObjects.push((e as CustomEvent).detail));});
  await page.goto('/?test=1');await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setState('fern-verge'));
  const inspect=()=>page.evaluate(()=>{
@@ -296,7 +300,21 @@ test('原实拍蕨叶按视锥逐株剔除，切档保留全部原始摆放',asy
   return root.children.map(o=>{const m=o as THREE.InstancedMesh,authored=m.userData.authoredInstances as THREE.Matrix4[],key=(v:THREE.Matrix4)=>Array.from(new Float32Array(v.elements),n=>n.toFixed(3)).join(','),lookup=new Map(authored.map((v,i)=>[key(v),i])),indices:(number|undefined)[]=[];for(let i=0;i<m.count;i++){const v=m.matrix.clone();m.getMatrixAt(i,v);indices.push(lookup.get(key(v)));}return{name:m.name,frustumCulled:m.frustumCulled,matrices:authored.map(v=>v.toArray()),indices,limit:low?Math.floor(authored.length*.5):authored.length};});
  });
  const before=await inspect();expect(before.some(m=>m.indices.length<m.limit)).toBe(true);
- for(const expected of fixture.batches){const actual=before.find(m=>m.name===expected.name)!;expect(actual.matrices.length).toBe(expected.matrices.length);for(let i=0;i<expected.matrices.length;i++)for(let j=0;j<16;j++)expect(actual.matrices[i][j],expected.name+' original transform').toBeCloseTo(expected.matrices[i][j],4);}
+ // Keep the frozen M22 rotation/scale and road-local spacing. M64 changes the
+ // 3D curve length, so the same authored progress now has a new world position.
+ const ground=await page.evaluate(()=>{const scene=(window as unknown as {fernObjects:THREE.Scene[]}).fernObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape'))!,g=(scene.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh).geometry,p=g.getAttribute('position');return{positions:Array.from({length:p.count},(_,i)=>[p.getX(i),p.getY(i),p.getZ(i)]).flat(),indices:Array.from(g.index!.array)};});
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(ground.positions,3));geometry.setIndex(ground.indices);const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),terrain=new THREE.Mesh(geometry,material),ray=new THREE.Raycaster();terrain.updateMatrixWorld(true);
+ try{for(const [variant,expected]of fixture.batches.entries()){
+  const actual=before.find(m=>m.name===expected.name)!;expect(actual.matrices.length).toBe(expected.matrices.length);
+  for(let i=0;i<expected.matrices.length;i++){
+   const frozen=expected.matrices[i],matrix=actual.matrices[i],t=reference.beats[i]+(variant-1.5)*.0015,old=oldCurve.getPointAt(t),tangent=oldCurve.getTangentAt(t);tangent.y=0;tangent.normalize();
+   const right=new THREE.Vector3(tangent.z,0,-tangent.x),offset=new THREE.Vector3(frozen[12]-old.x,0,frozen[14]-old.z),next=coast.sample(t),forward=next.tangent.clone();forward.y=0;forward.normalize();
+   const anchor=next.position.clone().addScaledVector(next.right,offset.dot(right)).addScaledVector(forward,offset.dot(tangent));
+   expect(matrix[12],expected.name+' original road-local x').toBeCloseTo(anchor.x,4);expect(matrix[14],expected.name+' original road-local z').toBeCloseTo(anchor.z,4);
+   for(let j=0;j<16;j++)if(j<12||j>14)expect(matrix[j],expected.name+' original rotation and scale').toBeCloseTo(frozen[j],4);
+   ray.set(new THREE.Vector3(matrix[12],200,matrix[14]),new THREE.Vector3(0,-1,0));const hit=ray.intersectObject(terrain)[0];expect(hit,'fern has actual supporting terrain').toBeDefined();expect(matrix[13],'fern root follows the actual final terrain with original2.5cm burial').toBeCloseTo(hit.point.y-.025,4);
+  }
+ }}finally{geometry.dispose();material.dispose();}
  for(const quality of ['high','low','high','low']){
   await page.click('#menu-button');await page.selectOption('#quality-select',quality);await page.click('#resume-button');await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
   for(const m of await inspect()){expect(m.frustumCulled).toBe(false);expect(m.indices.length).toBeLessThanOrEqual(m.limit);expect(m.indices.every(i=>i!==undefined&&i<m.limit)).toBe(true);expect(new Set(m.indices).size).toBe(m.indices.length);expect(m.matrices).toEqual(before.find(v=>v.name===m.name)!.matrices);}
@@ -349,15 +367,15 @@ test('实体岩岸背部埋入实际地形，礁石基座深入海面',async({pa
   const meshData=(mesh:THREE.Mesh)=>{const p=mesh.geometry.getAttribute('position');return{positions:Array.from({length:p.count},(_,i)=>[p.getX(i),p.getY(i),p.getZ(i)]).flat(),indices:Array.from(mesh.geometry.index!.array)};};
   const terrain=scene.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh,root=scene.getObjectByName('Eroded sandstone headland')!;
   const cliffs=root.children.filter(group=>group.name.startsWith('sandstone-cut-'));
-  return{terrain:meshData(terrain),parts:cliffs[0].children.map(mesh=>meshData(mesh as THREE.Mesh)),matrices:cliffs.map(group=>group.matrixWorld.toArray()),reefs:root.children.filter(group=>group.name.startsWith('Intertidal rock shelf')).map(group=>{
+  return{terrain:meshData(terrain),cliffs:cliffs.map(group=>({matrix:group.matrixWorld.toArray(),parts:group.children.map(mesh=>meshData(mesh as THREE.Mesh))})),reefs:root.children.filter(group=>group.name.startsWith('Intertidal rock shelf')).map(group=>{
    let min=Infinity;group.traverse(o=>{const mesh=o as THREE.Mesh;if(!mesh.isMesh)return;const p=mesh.geometry.getAttribute('position');for(let i=0;i<p.count;i++)min=Math.min(min,p.getY(i)*group.scale.y+group.position.y);});return min;
   })};
  });
- expect(snapshot.matrices).toHaveLength(4);expect(snapshot.parts).toHaveLength(2);expect(snapshot.reefs).toHaveLength(2);for(const bottom of snapshot.reefs)expect(bottom).toBeLessThan(-5);
+ expect(snapshot.cliffs).toHaveLength(4);for(const cliff of snapshot.cliffs)expect(cliff.parts).toHaveLength(2);expect(snapshot.reefs).toHaveLength(2);for(const bottom of snapshot.reefs)expect(bottom).toBeLessThan(-5);
  const resources:THREE.BufferGeometry[]=[],material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
  const geometry=(data:typeof snapshot.terrain)=>{expect(data.positions.length%3).toBe(0);expect(data.positions.every(Number.isFinite)).toBe(true);expect(data.indices.every(index=>index>=0&&index<data.positions.length/3)).toBe(true);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));g.setIndex(data.indices);resources.push(g);return g;};
- const terrain=new THREE.Mesh(geometry(snapshot.terrain),material),parts=snapshot.parts.map(geometry),ray=new THREE.Raycaster();terrain.updateMatrixWorld(true);
- for(const matrix of snapshot.matrices){const group=new THREE.Group();for(const part of parts)group.add(new THREE.Mesh(part,material));group.matrixAutoUpdate=false;group.matrix.fromArray(matrix);group.updateMatrixWorld(true);let contacts=0;
+ const terrain=new THREE.Mesh(geometry(snapshot.terrain),material),ray=new THREE.Raycaster();terrain.updateMatrixWorld(true);
+ for(const cliff of snapshot.cliffs){const group=new THREE.Group();for(const part of cliff.parts)group.add(new THREE.Mesh(geometry(part),material));group.matrixAutoUpdate=false;group.matrix.fromArray(cliff.matrix);group.updateMatrixWorld(true);let contacts=0;
   for(const x of[-35,-20,0,20,35])for(const z of[-13,-17]){
    const p=new THREE.Vector3(x,0,z).applyMatrix4(group.matrixWorld);ray.set(new THREE.Vector3(p.x,120,p.z),new THREE.Vector3(0,-1,0));const rock=ray.intersectObject(group),land=ray.intersectObject(terrain)[0];if(rock.length<2)continue;
    expect(land).toBeDefined();const bottom=Math.min(...rock.map(hit=>hit.point.y));expect(bottom,'rock backing intersects solid land instead of hovering above it').toBeLessThan(land.point.y-.2);contacts++;

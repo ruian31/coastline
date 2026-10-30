@@ -6,6 +6,7 @@ import path from 'node:path';
 import {chromium,webkit,devices} from 'playwright';
 
 const label=process.env.CANOPY_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);
+const states=(process.env.CANOPY_STATES??'bank-inland,grass-verge,town').split(',');assert.ok(states.length>0&&states.every(state=>/^[a-z0-9-]+$/.test(state)));
 const kind=process.env.CANOPY_BROWSER??'chrome',mobile=process.env.CANOPY_DEVICE!=='desktop',out=`artifacts/grass-canopy-${label}`;
 assert.ok(['chrome','webkit'].includes(kind));await mkdir(out);
 const browser=kind==='webkit'?await webkit.launch({executablePath:path.resolve('work/webkit-runtime/launch-webkit.sh')}):await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
@@ -16,7 +17,7 @@ await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringi
 try{
  await page.goto((process.env.TEST_BASE_URL??'http://127.0.0.1:4191')+'/?test=1');
  const samples=[];
- for(const state of ['bank-inland','grass-verge','town']){
+ for(const state of states){
   await page.evaluate(async state=>{const h=window.__THREE_GAME_TEST_HOOKS__;await h.setState(state);h.setPausedForScreenshot(true);h.setReducedMotion(true);},state);
   const report=await page.evaluate(async()=>{
    const T=await import('/__qa/three.module.js'),scene=canopyObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')),renderer=canopyObjects.find(o=>o.isWebGLRenderer),mesh=scene.getObjectByName('World anchored dry grass canopy'),terrain=scene.getObjectByName('Limestone headland and grassy interior'),gl=renderer.getContext();

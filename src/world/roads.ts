@@ -1,9 +1,16 @@
 import * as THREE from 'three';
 export type RoadSample = { position: THREE.Vector3; tangent: THREE.Vector3; right: THREE.Vector3 };
 export type RoadRoute = { id: string; name: string; curve: THREE.CatmullRomCurve3; length: number; width: number; closed: boolean; sample: (t:number)=>RoadSample };
+/** One continuous cape profile for the road, land and adjoining rock faces.
+ * Fade out inland and beyond the outer coast, leaving the deeper seabed unchanged. */
+export function capeGrade(x:number,z:number):number {
+ const r=Math.hypot(x/355,z/292),phase=THREE.MathUtils.euclideanModulo(Math.atan2(z/254,x/320)/(Math.PI*2),1);
+ const rise=THREE.MathUtils.smoothstep(phase,.755,.875)*(1-THREE.MathUtils.smoothstep(phase,.875,.995));
+ return 8*rise*THREE.MathUtils.smoothstep(r,.5,.84)*(1-THREE.MathUtils.smoothstep(r,1.02,1.12));
+}
 export function heightAt(x:number,z:number):number {
  const r=Math.sqrt((x/355)**2+(z/292)**2), inland=Math.max(0,1-r);
- return -1.6+Math.min(9,Math.max(0,(1.12-r)*53))+inland*14+Math.sin(x*.018)*Math.cos(z*.016)*inland*7;
+ return -1.6+Math.min(9,Math.max(0,(1.12-r)*53))+inland*14+Math.sin(x*.018)*Math.cos(z*.016)*inland*7+capeGrade(x,z);
 }
 function makeRoute(id:string,name:string,points:THREE.Vector3[],closed:boolean,width:number):RoadRoute {
  const curve=new THREE.CatmullRomCurve3(points,closed,'catmullrom',.45),length=curve.getLength();

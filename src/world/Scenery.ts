@@ -13,7 +13,7 @@ import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
 import offshoreHeightsText from './offshore-heights.json?raw';
 import boulderShapeText from './boulder-shape.json?raw';
-import inlandReliefText from './inland-relief.json?raw';
+import inlandReliefText from './inland-relief-v2.json?raw';
 import type {CameraSurfaceSource} from '../systems/CameraCollision';
 import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
 

@@ -6,7 +6,7 @@ import{createHash}from'node:crypto';
 const rocky=process.env.OFFROAD_ROUTE==='rocks',label=process.env.OFFROAD_LABEL??`${rocky?'rocks':'drive'}-${Date.now()}`;
 if(!/^[a-z0-9-]+$/.test(label))throw Error('OFFROAD_LABEL must contain lowercase letters, digits and hyphens');
 const dir=`artifacts/offroad-${label}`;await mkdir(dir);
-const server=await createServer({server:{middlewareMode:true,watch:null},appType:'custom'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts');
+const server=await createServer({configFile:false,server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'error'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts');
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:process.env.OFFROAD_DEVICE==='desktop'?[false]:[false,true])){
@@ -42,6 +42,6 @@ try{for(const mobile of(process.env.OFFROAD_DEVICE==='mobile'?[true]:process.env
   await page.waitForTimeout(90);
  }
  await setInput([]);await page.screenshot({path:`${dir}/${name}-last.png`});const video=page.video();await context.close();await video.saveAs(`${dir}/${name}.webm`);
- await writeFile(`${dir}/${name}.json`,JSON.stringify({method:'Live RAF driving from actual keyboard or Android CDP multi-touch inputs, guided to world waypoints. No assigned position, speed or stepped clock after the declared initial test fixture. Host GPU emulates browser input/viewport; no physical-phone FPS claim.',modules,finished,maxDistance,errors,samples},null,2));
+ await writeFile(`${dir}/${name}.json`,JSON.stringify({method:'Live RAF driving from actual keyboard or Android CDP multi-touch inputs, guided to world waypoints. No assigned position, speed or stepped clock after the declared initial test fixture. Host GPU emulates browser input/viewport; no physical-phone FPS claim.',route:rocky?'direct cape traverse':'bay out and back',waypoints,modules,finished,maxDistance,errors,samples},null,2));
  if(!finished||maxDistance<30||errors.length)throw Error(`${name}: off-road drive incomplete; see evidence`);
 }}finally{await browser.close();await server.close();}

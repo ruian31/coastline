@@ -6,7 +6,7 @@ import {chromium,devices} from 'playwright';
 import {createServer} from 'vite';
 import * as THREE from 'three';
 const label=process.env.BANK_LABEL;assert.match(label??'',/^[a-z0-9-]+$/);const out=`artifacts/roadbanks-${label}`;await mkdir(out);
-const server=await createServer({server:{middlewareMode:true},appType:'custom'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts'),{scanSurface}=await server.ssrLoadModule('/src/world/SurfaceHeight.ts');
+const server=await createServer({configFile:false,server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'error'}),{coast}=await server.ssrLoadModule('/src/world/roads.ts'),{scanSurface}=await server.ssrLoadModule('/src/world/SurfaceHeight.ts');
 const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']});
 try{for(const mobile of [false,true]){
  const page=await browser.newPage({...mobile?devices['Pixel 7']:{},viewport:mobile?{width:844,height:390}:{width:1280,height:720}}),errors=[];

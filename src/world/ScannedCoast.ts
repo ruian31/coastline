@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {coast} from './roads';
+import {coast,capeGrade} from './roads';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createSeededRandom} from '../utils/random';
 
@@ -28,11 +28,23 @@ export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
    material.roughness=.94;material.normalScale.set(.75,.75);material.aoMapIntensity=.8;material.side=THREE.FrontSide;addWetness(material);
   }
   if(!disposed){const surface=scanSurface(sources.map(source=>source.geometry));
+   const bounds=new THREE.Box3();for(const source of sources){source.geometry.computeBoundingBox();bounds.union(source.geometry.boundingBox!);}
    for(const [i,placement]of[{t:.827,shore:false},{t:.875,shore:false},{t:.829,shore:true},{t:.927,shore:true}].entries()){
     const sample=coast.sample(placement.t),offset=placement.shore?17.5:-21,x=sample.position.x+sample.right.x*offset,z=sample.position.z+sample.right.z*offset;
     const group=new THREE.Group();group.name=`sandstone-cut-${i}`;group.position.set(x,sample.position.y-(placement.shore?10.2:2.4),z);group.rotation.y=Math.atan2(sample.right.x,sample.right.z);group.scale.set(1.06,placement.shore?1:.83+(i%2)*.10,1.15);
-    for(const source of sources){const mesh=new THREE.Mesh(source.geometry,source.material);mesh.name=source.material===bodyMaterial?'Closed sandstone side and back':'Photographed sandstone face';mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
-    root.add(group);group.updateMatrixWorld(true);sections.push({group,inverse:group.matrixWorld.clone().invert(),surface});
+    // Keep the original submerged foot. Apply the same continuous deformation
+    // to the photographed face and its closed body, increasingly toward the top.
+    if(placement.shore)group.position.y-=capeGrade(sample.position.x,sample.position.z);
+    group.updateMatrixWorld(true);
+    for(const source of sources){let geometry=source.geometry;
+     if(placement.shore){geometry=source.geometry.clone();geometries.add(geometry);const p=geometry.getAttribute('position'),world=new THREE.Vector3();
+      for(let j=0;j<p.count;j++){world.fromBufferAttribute(p,j).applyMatrix4(group.matrixWorld);p.setY(j,p.getY(j)+capeGrade(world.x,world.z)*THREE.MathUtils.smoothstep(p.getY(j),bounds.min.y,bounds.max.y-2));}
+      geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+     }
+     const mesh=new THREE.Mesh(geometry,source.material);mesh.name=source.material===bodyMaterial?'Closed sandstone side and back':'Photographed sandstone face';mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
+    }
+    root.add(group);group.updateMatrixWorld(true);const sectionSurface=placement.shore?scanSurface(group.children.filter((o):o is THREE.Mesh=>o instanceof THREE.Mesh).map(m=>m.geometry)):surface;
+    sections.push({group,inverse:group.matrixWorld.clone().invert(),surface:sectionSurface});
    }
   }
   if(disposed){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}

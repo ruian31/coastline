@@ -1,0 +1,55 @@
+{
+  "method": "Project the existing M57 DEM deltas against the new authored cape base on each exact final grid, preserving newly recomputed protected vertices. Only edge-limit corrections are made; no additional DEM noise or grid resampling.",
+  "input": "source-assets/cape-grade-base-inputs.json",
+  "inputSha256": "f0ecd557c34006be7e92a70c7db81b7b97eebabe9bcdd83820f66bad00fa0a6e",
+  "parent": "src/world/inland-relief.json",
+  "parentSha256": "ce2a1a99719edb859505a0747ca343994161f5b472b6e0c2aa7936d2149198a6",
+  "parentSource": "source-assets/inland-relief-v1.source.json",
+  "observedBaseBundle": "/assets/index-By9wZGJF.js",
+  "observedBaseBundleSha256": "5ed62354767231cf0a1b5ed5e3abd4a9b1396eb006f6b5865ff6f630f358426c",
+  "capeProfile": {
+    "metres": 8,
+    "phase": [
+      0.755,
+      0.875,
+      0.995
+    ],
+    "radial": [
+      0.5,
+      0.84,
+      1.02,
+      1.12
+    ]
+  },
+  "output": "src/world/inland-relief-v2.json",
+  "outputBytes": 28468,
+  "outputSha256": "f5851887d8ccc357999c4f8e306c3e99a965f08f108556122e39855883b83065",
+  "tiers": {
+    "mobile": {
+      "vertices": 14641,
+      "protectedVertices": 12736,
+      "protectedDelta": 0,
+      "originalViolations": 29,
+      "projectionIterations": 35,
+      "residual": 1.8051665016116658e-05,
+      "maxQuantizedEdgeExcess": 0.0019514236450195455,
+      "changedFromM57": 62,
+      "maxCorrectionMetres": 0.146,
+      "storedSamples": 3819,
+      "decodedSha256": "7ecaa1e7bc2a456fa161d291963934d640e91fd568171516f93a29790f9dded1"
+    },
+    "desktop": {
+      "vertices": 25921,
+      "protectedVertices": 22521,
+      "protectedDelta": 0,
+      "originalViolations": 63,
+      "projectionIterations": 53,
+      "residual": 1.961985993403914e-05,
+      "maxQuantizedEdgeExcess": 0.0019466415070734655,
+      "changedFromM57": 116,
+      "maxCorrectionMetres": 0.154,
+      "storedSamples": 6764,
+      "decodedSha256": "fb3ee415c1018fea2ab3106f949e3eab47d70cd12373e808c9a8d46f62254c82"
+    }
+  }
+}

@@ -1,4 +1,13 @@
-# M67 · 三车后视镜已更新试玩
+# M68 · 镜面清楚了，真机性能仍需修正
+
+- [当前试玩](http://192.168.3.10:5190/)已更新Dwj5HiKP/929908B，三入口全部模块SHA相同，[原子更新记录](mirror-clarity-m68-local-release.json)保留12个旧JS，无push。[源码/构建SHA](mirror-clarity-m68-build-source.json)、[构建日志](mirror-clarity-m68-source-build.log)保留。**一加12 Chrome复核“清楚了，但画面更卡”**：清晰度改善成立，真机性能不通过；下一步M69先减镜面开销。
+- 中央玻璃/框体及侧镜扩大，低档手机中央66.6×19.1→97.4×31.3 CSS像素，桌面190.2×61.0；主画布DPR1保持。中央384×128/侧192×128，MSAA与三线mip过滤。[16幅工作对照](mirror-clarity-m68/compare/result.json)和[手机联图](mirror-clarity-m68/compare/mobile-contact.png)已看，目标颜色含mip1048560B，另有多采样颜色/深度与驱动开销。
+- [专项去重结果](mirror-clarity-m68-browser-approved.json)含同一冻结运行构建的WebKit和最终桌面/Android Chrome各1项通过；并非一次三项全过。实际高度、采样、GL错误、物理左右反射读回、三车切换/返回资源不增长、暂停/外部停更均检查；Chrome手机实际2采样/桌面4，WebKit将请求2取成4。[首轮](mirror-clarity-m68-browser.json)WebKit350ms等待不够；[按帧版](mirror-clarity-m68-browser-final.json)WebKit/桌面通过，Chrome快帧仍不足冷却时长；[最终Chrome](mirror-clarity-m68-browser-chrome.json)加入墙钟等待后2项通过。运行冻结逻辑未改，[独立暂停观察](mirror-clarity-m68/pause-debug.json)记录两镜按当前姿态各补拍后停止；[CPU36射线](mirror-clarity-m68-cpu.json)误差约1.2e-12。
+- [实际键盘/Android原生触控](mirror-clarity-m68-motion-approved/result.json)行驶77.76/76.68m，倒车至−3.34/−3.28m/s，再前进转弯、拖动、暂停恢复和回追随，0错误。视频[18.48秒](mirror-clarity-m68-motion-approved/desktop-keyboard.webm)/[18.28秒](mirror-clarity-m68-motion-approved/android-touch.webm)的[6个稀疏编码时间帧](mirror-clarity-m68-motion-approved/sampled-frames.json)及[联图](mirror-clarity-m68-motion-approved/filmstrip.png)已看；另看代表原PNG，不称完整逐帧或真机FPS。
+- [8正式视图](evidence-mirror-clarity-m68.json)覆盖两端三车与隧道，[全部联图](pass-m68-mirror-clarity/contact.png)已看、0错误。[冻结计数](mirror-clarity-m68-render-counts.json)峰桌面143/769323/210/57、手机105/288602/208/56，不用于代替活跃成本。[M67控制](mirrors-m67-profile-m68-clarity-control/result.json)→[M68](mirrors-m67-profile-m68-clarity-final/result.json)各90整帧样本/状态、无disjoint，[成本汇总](mirror-clarity-m68-cost-summary.json)保留全部样本。树旁/镇旁P50 5.079/4.538→4.667/4.403，P95 11.749/7.577→12.947/11.030ms；任务+4.0/+1.8%、脚本+4.2/+2.0%，慢帧增加，不称提速。尺寸改变可见范围，8秒镜面pass120→160；活跃峰154calls/423500tri，原预算问题保留。
+- [普通入口](fineleaf-m68-mirror-clarity-release/result.json)前进4.94m、116投影物一次烘焙，原资源/压草绑定正常、测试全局关闭、0错误，[普通图](fineleaf-m68-mirror-clarity-release/normal.png)已看。World1.5/Lighting2.25保持，无新整体评分；草坡停驶和自然风景仍未完成，四季昼夜天气保存在文档11。Goal active，未创建重复目标。
+
+## M67 · 三车后视镜历史记录
 
 - [试玩](http://192.168.3.10:5190/)刷新后选择车内。[本地原子更新/三地址HTTP](mirrors-m67-local-release.json)核对主WbwKHcRk/929840B/SHA b911de3f…、车辆C22FCqfk/6139B，Rapier BR_-CEU_仍同M64哈希；先复制资产再换HTML，保留10个旧JS，无push。[源码/构建SHA](mirrors-m67-build-source.json)、[构建日志](mirrors-m67-build-approved.log)保留。
 - 三车中央/侧镜由实际驾驶位反射眼点和镜面边界取景，默认−.02方向兼顾后方护栏、海面和路面。三块线性半浮点目标共360448B颜色缓冲，另有深度/驱动开销；手机8/电脑12次每秒上限、单槽分时，暂停保留画面、首次/新姿态补一次，外部视角停更。[唯一独立审查](mirrors-m67-review.json)发现的暂停重复更新已修；不把审查当最终全量背书。

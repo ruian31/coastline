@@ -5,7 +5,7 @@ test('三车镜面保留实际后方、左右反射与资源生命周期',async(
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.addInitScript(()=>{
   localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as any;w.mirrorObjects=[];w.mirrorTargets={};w.__THREE_DEVTOOLS__=new EventTarget();
-  w.__THREE_DEVTOOLS__.addEventListener('observe',(event:any)=>{const object=event.detail;w.mirrorObjects.push(object);if(object.isWebGLRenderer){const original=object.setRenderTarget;object.setRenderTarget=function(target:any,...args:any[]){if(target?.texture.name.startsWith('rearview-'))w.mirrorTargets[target.texture.name]=target;return original.call(this,target,...args);};}});
+  w.__THREE_DEVTOOLS__.addEventListener('observe',(event:any)=>{const object=event.detail;w.mirrorObjects.push(object);if(object.isWebGLRenderer){const original=object.setRenderTarget,render=object.render;object.setRenderTarget=function(target:any,...args:any[]){if(target?.texture.name.startsWith('rearview-'))w.mirrorTargets[target.texture.name]=target;return original.call(this,target,...args);};object.render=function(scene:any,camera:any){if(object.getRenderTarget()===null)w.mirrorMainCamera=camera;return render.call(this,scene,camera);};}});
  });
  await page.goto('/?test=1');await page.waitForFunction(()=>Boolean(window.__THREE_GAME_TEST_HOOKS__));
  const read=()=>page.evaluate(()=>structuredClone(window.__THREE_GAME_DIAGNOSTICS__!));
@@ -15,7 +15,15 @@ test('三车镜面保留实际后方、左右反射与资源生命周期',async(
   await page.locator('[data-camera="1"]').click();
   await expect.poll(async()=>{const d=await read();return d.vehicleMirrors!.views.find(v=>v.name==='rearview-center')!.updates;},{timeout:20000}).toBeGreaterThan(0);
   const forward=await read();expect(forward.state!.car).toBe(car===3?0:car);expect(forward.vehicleMirrors!.active).toBe(true);expect(forward.cameraRig!.cockpitEyeError).toBeLessThan(.00001);
-  const image=`artifacts/mirrors-m67-${info.project.name}-${car}-forward.png`;await page.screenshot({path:image});
+  const clarity=await page.evaluate(()=>{
+   const w=window as any,scene=w.mirrorObjects.find((o:any)=>o.isScene&&o.getObjectByName('Coastal landscape')),renderer=w.mirrorObjects.find((o:any)=>o.isWebGLRenderer),mirror=scene.getObjectByName('rearview-center'),positions=mirror.geometry.attributes.position,target=w.mirrorTargets['rearview-center-linear-view'],camera=w.mirrorMainCamera,ys=[];
+   for(let i=0;i<positions.count;i++)ys.push(mirror.position.clone().fromBufferAttribute(positions,i).applyMatrix4(mirror.matrixWorld).project(camera).y);
+   const gl=renderer.getContext(),properties=renderer.properties.get(target),binding=gl.getParameter(gl.RENDERBUFFER_BINDING),buffer=properties.__webglColorRenderbuffer?.[0];let actualSamples=null;
+   if(buffer){gl.bindRenderbuffer(gl.RENDERBUFFER,buffer);actualSamples=gl.getRenderbufferParameter(gl.RENDERBUFFER,gl.RENDERBUFFER_SAMPLES);gl.bindRenderbuffer(gl.RENDERBUFFER,binding);}
+   return{heightCss:(Math.max(...ys)-Math.min(...ys))*.5*innerHeight,width:target.width,height:target.height,samples:target.samples,actualSamples,directMultisample:Boolean(properties.__useRenderToTexture),mips:target.texture.generateMipmaps,minFilter:target.texture.minFilter,rendererDpr:renderer.getPixelRatio(),glError:gl.getError()};
+  });
+  expect(clarity.heightCss).toBeGreaterThan(info.project.name.includes('mobile')?28:55);expect(clarity.width).toBe(384);expect(clarity.height).toBe(128);expect(clarity.samples).toBe(info.project.name.includes('mobile')?2:4);if(clarity.actualSamples!==null)expect(clarity.actualSamples).toBeGreaterThanOrEqual(clarity.samples);else expect(clarity.directMultisample).toBe(true);expect(clarity.mips).toBe(true);expect(clarity.minFilter).toBe(1008);expect(clarity.rendererDpr).toBe(1);expect(clarity.glError).toBe(0);
+  const image=`artifacts/mirror-clarity-m68-${info.project.name}-${car}-forward.png`;await page.screenshot({path:image});
   if(car===0){
    await page.evaluate(()=>{window.__THREE_GAME_TEST_HOOKS__!.stepDriving!(3,{throttle:0,brake:0,steer:0,handbrake:true});window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(false);});
    await expect.poll(async()=>Math.abs((await read()).player.speed)).toBeLessThan(.15);
@@ -36,13 +44,23 @@ test('三车镜面保留实际后方、左右反射与资源生命周期',async(
     return{width:target.width,height:target.height,red,blue,redX:redX/red,blueX:blueX/blue};
    });
    expect(pixels.red).toBeGreaterThan(40);expect(pixels.blue).toBeGreaterThan(40);expect(pixels.redX).toBeGreaterThan(pixels.width*.6);expect(pixels.blueX).toBeLessThan(pixels.width*.4);
-   await page.screenshot({path:`artifacts/mirrors-m67-${info.project.name}-colored-rays.png`});
+   await page.screenshot({path:`artifacts/mirror-clarity-m68-${info.project.name}-colored-rays.png`});
    await page.evaluate(names=>{const scene=(window as any).mirrorObjects.find((o:any)=>o.isScene&&o.getObjectByName('Coastal landscape'));for(const name of names){const board=scene.getObjectByName(name);board.removeFromParent();board.geometry.dispose();board.material.dispose();}},names);
    records.push({pixels});
   }
-  await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true));await page.waitForTimeout(350);const frozen=await read();await page.waitForTimeout(300);expect((await read()).vehicleMirrors!.passes).toBe(frozen.vehicleMirrors!.passes);
+  await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true));
+  // A slow WebKit frame can exceed the old 350ms wait. Each visible dirty
+  // mirror gets one staggered capture; then observe six actual frozen frames.
+  const pausedFrame=(await read()).frame;
+  await expect.poll(async()=>(await read()).frame,{timeout:20000}).toBeGreaterThanOrEqual(pausedFrame+5);
+  // Fast frames still need the per-view cooldown plus staggered slots.
+  await page.waitForTimeout(350);
+  const frozen=await read();
+  await expect.poll(async()=>(await read()).frame,{timeout:20000}).toBeGreaterThanOrEqual(frozen.frame+6);
+  await page.waitForTimeout(300);
+  expect((await read()).vehicleMirrors!.passes).toBe(frozen.vehicleMirrors!.passes);
   await page.locator('[data-camera="0"]').click();await expect.poll(async()=>(await read()).vehicleMirrors!.active).toBe(false);const outside=await read();await page.waitForTimeout(250);expect((await read()).vehicleMirrors!.passes).toBe(outside.vehicleMirrors!.passes);
-  records.push({car:forward.state!.car,forward,outside,image});
+  records.push({car:forward.state!.car,forward,outside,image,clarity});
  }
  const first=records.find((r:any)=>r.car===0) as any,last=records[records.length-1] as any;expect(last.forward.renderer.textures).toBeLessThanOrEqual(first.forward.renderer.textures);expect(last.forward.renderer.geometries).toBeLessThanOrEqual(first.forward.renderer.geometries);expect(errors).toEqual([]);
  await info.attach('mirror-records',{body:JSON.stringify({method:'Actual production three-car views and switch lifecycle. QA-only red/blue boards on independently reflected rays verify physical target left/right via Three half-float readback; they are removed and never shipped. Trusted camera UI, frozen driving fixtures; no live driving or physical phone FPS claim.',records,errors},null,2),contentType:'application/json'});

@@ -438,13 +438,13 @@ function buildWindshield(batch: GeometryBatch, variant: number, root:THREE.Group
   for (const side of [-1, 1]) {
     batch.tube('dark', [V(side * .45, 1.105, .705), V(side * .39, 1.12, .67), V(side * .27, 1.12, .67)], .006, 3);
     batch.tube('chrome', [V(side * .78, .99, .43), V(side * .94, 1.08, .43)], .014, 3);
-    const surface=mirror(side<0?'left':'right',new THREE.CircleGeometry(.055,22).scale(1.45,.85,1),V(side*.97,1.095,.372),V(side*.12,-.02,-1));
+    const surface=mirror(side<0?'left':'right',new THREE.CircleGeometry(.055,22).scale(1.65,1.05,1),V(side*.97,1.095,.372),V(side*.12,-.02,-1));
     const rotation=new THREE.Euler().setFromQuaternion(surface.quaternion),normal=V(0,0,1).applyQuaternion(surface.quaternion);
-    batch.add('paint', new THREE.SphereGeometry(1, 18, 12), surface.position.clone().addScaledVector(normal,-.08), rotation, V(.1, .061, .075));
+    batch.add('paint', new THREE.SphereGeometry(1, 18, 12), surface.position.clone().addScaledVector(normal,-.085), rotation, V(.113, .074, .08));
   }
   batch.tube('chrome', [V(0, topY - .01, topZ), V(0, topY - .14, topZ - .06)], .007, 1);
-  const center=mirror('center',new THREE.ShapeGeometry(roundedShape(.168,.047,.008),8),V(0,topY-.15,topZ-.09),V(0,-.02,-1));
-  const frame=new THREE.ExtrudeGeometry(roundedShape(.19,.065,.01),{depth:.024,bevelEnabled:false,curveSegments:6});frame.translate(0,0,-.027);
+  const center=mirror('center',new THREE.ShapeGeometry(roundedShape(.245,.078,.011),8),V(0,topY-.15,topZ-.09),V(0,-.02,-1));
+  const frame=new THREE.ExtrudeGeometry(roundedShape(.27,.099,.013),{depth:.024,bevelEnabled:false,curveSegments:6});frame.translate(0,0,-.027);
   batch.add('dark',frame,center.position,new THREE.Euler().setFromQuaternion(center.quaternion));
   return mirrors;
 }

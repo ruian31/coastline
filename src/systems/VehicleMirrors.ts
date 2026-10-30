@@ -21,8 +21,8 @@ export function mirrorCamera(surface:THREE.Mesh,eye:THREE.Vector3,camera:THREE.P
 export function createVehicleMirrors(renderer:THREE.WebGLRenderer,scene:THREE.Scene,car:Convertible,mobile:boolean,cull:(camera:THREE.Camera,secondary?:boolean)=>void){
   const bias=new THREE.Matrix4().set(.5,0,0,.5,0,.5,0,.5,0,0,.5,.5,0,0,0,1),eye=new THREE.Vector3(),frustum=new THREE.Frustum(),view=new THREE.Matrix4();
   const entries=car.mirrors.map(surface=>{
-    const center=surface.name.endsWith('center'),target=new THREE.WebGLRenderTarget(center?256:128,center?96:80,{type:THREE.HalfFloatType,depthBuffer:true});
-    target.texture.name=surface.name+'-linear-view';target.texture.generateMipmaps=false;
+    const center=surface.name.endsWith('center'),target=new THREE.WebGLRenderTarget(center?384:192,128,{type:THREE.HalfFloatType,depthBuffer:true,samples:Math.min(mobile?2:4,renderer.capabilities.maxSamples)});
+    target.texture.name=surface.name+'-linear-view';target.texture.generateMipmaps=true;target.texture.minFilter=THREE.LinearMipmapLinearFilter;
     const matrix=new THREE.Matrix4(),original=surface.material,material=new THREE.ShaderMaterial({name:surface.name+'-reflection',uniforms:{image:{value:target.texture},project:{value:matrix}},
       vertexShader:'uniform mat4 project;varying vec4 reflectedUv;void main(){reflectedUv=project*vec4(position,1.0);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader:'uniform sampler2D image;varying vec4 reflectedUv;void main(){gl_FragColor=texture2DProj(image,reflectedUv);gl_FragColor.rgb*=vec3(.94,.975,.98);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',toneMapped:true});

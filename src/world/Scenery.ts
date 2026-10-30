@@ -58,7 +58,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   vehiclePrimitives:VehiclePrimitive[];
   rockMaterial: THREE.MeshStandardMaterial;
   blocksCar: (x:number,z:number) => boolean;
-  cullForCamera:(camera:THREE.Camera)=>void;
+  cullForCamera:(camera:THREE.Camera,secondary?:boolean)=>void;
   registerInstances:(mesh:THREE.InstancedMesh,matrices:THREE.Matrix4[])=>void;
   prepareShore:(sample:(x:number,z:number)=>number)=>void;
   addShoreWetness:(material:THREE.MeshStandardMaterial)=>void;
@@ -1063,10 +1063,10 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       }
       return group;
     },
-    cullForCamera(camera){
+    cullForCamera(camera,secondary=false){
       camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
       const detailBudgets=new Map<string,{cap:number;candidates:{detail:FoliageDetail;index:number;distance:number}[]}>();
-      for(const detail of foliageDetails){
+      for(const detail of secondary?[]:foliageDetails){
         const key=detail.budget??detail.key,budget=detailBudgets.get(key)??{cap:detail.cap,candidates:[]};detailBudgets.set(key,budget);budget.cap=Math.min(budget.cap,detail.cap);
         const enter=detail.enter,exit=detail.exit;detail.visible=0;
         const sourceCandidates=fieldCandidates(detail.source,exit);
@@ -1092,23 +1092,28 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         for(let i=0;i<Math.min(budget.cap,budget.candidates.length);i++){const candidate=budget.candidates[i];candidate.detail.near[candidate.index]=1;root.userData[candidate.detail.key].selected++;}
       }
       for(const record of visibleBatches){const{mesh,matrices,colors,bounds,slots,limit,lod,groundSlopes}=record;let count=0,changed=false;
+        const secondaryRange=secondary?(lod?.impostorRange??foliageDetails.find(detail=>detail.near===lod?.near)?.impostorRange):undefined;
         const candidates=fieldCandidates(record,lod?.range);
         for(let slot=0;slot<(candidates?.length??limit);slot++){
           const i=candidates?.[slot]??slot;
           if(lod?.range&&((matrices[i].elements[12]-viewPosition.x)**2+(matrices[i].elements[14]-viewPosition.z)**2)>lod.range**2)continue;
-          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=lod.nearRange??(mobile?130:200),band=lod.nearRange?range*.2:12;if(distance<(range-band)**2)lod.near[index]=1;else if(distance>(range+band)**2)lod.near[index]=0;}
+          if(lod){const index=lod.indices?.[i]??i;if(lod.source&&index>=lod.source.limit)continue;if(!secondary&&lod.anchors&&lod.detail==='near'){const distance=lod.anchors[i].distanceToSquared(viewPosition),range=lod.nearRange??(mobile?130:200),band=lod.nearRange?range*.2:12;if(distance<(range-band)**2)lod.near[index]=1;else if(distance>(range+band)**2)lod.near[index]=0;}
             // Spatial colonies update their far/proxy state only among actual
             // draw candidates; selecting a near bush need not scan the horizon.
-            if(lod.impostorRange&&lod.distant){const e=matrices[i].elements,distance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2,range=lod.impostorRange;if(distance>(range+6)**2)lod.distant[index]=1;else if(distance<(range-6)**2)lod.distant[index]=0;}
-            const near=Boolean(lod.near[index]),wrongDetail=lod.detail==='near'?!near:near&&!lod.keepBody;
-            const wrongDistance=lod.detail!=='near'&&Boolean(lod.distant?.[index])!==(lod.detail==='impostor');
+            if(!secondary&&lod.impostorRange&&lod.distant){const e=matrices[i].elements,distance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2,range=lod.impostorRange;if(distance>(range+6)**2)lod.distant[index]=1;else if(distance<(range-6)**2)lod.distant[index]=0;}
+            // Mirrors use the existing far body/proxy, without borrowing the
+            // main view's near-detail slots or changing its LOD hysteresis.
+            const near=!secondary&&Boolean(lod.near[index]),wrongDetail=lod.detail==='near'?!near:near&&!lod.keepBody;
+            const e=matrices[i].elements,secondaryDistance=(e[12]-viewPosition.x)**2+(e[13]-viewPosition.y)**2+(e[14]-viewPosition.z)**2;
+            const distant=secondary?Boolean(secondaryRange&&secondaryDistance>secondaryRange**2):Boolean(lod.distant?.[index]);
+            const wrongDistance=lod.detail!=='near'&&distant!==(lod.detail==='impostor');
             if(wrongDetail||wrongDistance)continue;}
           // Retain off-screen casters if a later lighting pass enables their shadows.
           if(!mesh.castShadow&&!viewFrustum.intersectsSphere(bounds[i]))continue;
           if(slots[count]!==i){mesh.setMatrixAt(count,matrices[i]);if(colors)mesh.setColorAt(count,colors[i]);if(groundSlopes)groundSlopes.attribute.setXYZ(count,groundSlopes.source[i*3],groundSlopes.source[i*3+1],groundSlopes.source[i*3+2]);slots[count]=i;changed=true;}count++;
         }
         mesh.count=count;if(changed){uploadVisiblePrefix(mesh.instanceMatrix,count);if(mesh.instanceColor)uploadVisiblePrefix(mesh.instanceColor,count);if(groundSlopes)uploadVisiblePrefix(groundSlopes.attribute,count);}
-        if(lod?.indices&&lod.detail==='near'){const detail=foliageDetails.find(detail=>detail.near===lod.near);if(detail)detail.visible+=count;}
+        if(!secondary&&lod?.indices&&lod.detail==='near'){const detail=foliageDetails.find(detail=>detail.near===lod.near);if(detail)detail.visible+=count;}
       }
       if(fieldBladeBody){
         const {mesh,sources}=fieldBladeBody,slopes=mesh.geometry.getAttribute('instanceGroundSlope') as THREE.InstancedBufferAttribute;let count=0;
@@ -1118,7 +1123,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         }}
         mesh.count=count;if(count){uploadVisiblePrefix(mesh.instanceMatrix,count);uploadVisiblePrefix(mesh.instanceColor!,count);uploadVisiblePrefix(slopes,count);}
       }
-      for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
+      if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setSkyReflection:texture=>water.setSkyReflection(texture),
     updateVehicle:vegetationInteraction.update,

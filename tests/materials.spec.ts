@@ -32,7 +32,9 @@ test('近远草保留完整mip与干草颜色，实际GPU程序包含风动和�
    return{shared:map===(root.getObjectByName(road) as typeof mesh).material.map,canvas:map.image instanceof HTMLCanvasElement,allCanvas:(map.mipmaps as HTMLCanvasElement[]).every(m=>m instanceof HTMLCanvasElement),mips:(map.mipmaps as HTMLCanvasElement[]).map(m=>[m.width,m.height]),generateMipmaps:map.generateMipmaps,flipY:map.flipY,coverage:map.userData.alphaCoverage,linked:p?gl.getProgramParameter(p.program,gl.LINK_STATUS) as boolean:false,wind:vertex.includes('uSceneryTime'),ground:vertex.includes('instanceGroundSlope'),centered:fragment.includes('alphaTest - fwidth( diffuseColor.a ) * .5'),dry:fragment.includes('float dryGrassValue'),fade:fragment.includes('float fieldCoverage'),alphaMultiplication:fragment.includes('diffuseColor.a*=1.0-smoothstep(')};
   });
  });
- for(const [i,r]of report.entries()){const size=i===0?1024:256;expect(r.shared&&r.canvas&&r.allCanvas&&r.linked&&r.wind&&r.ground&&r.centered&&r.dry).toBe(true);expect(r.generateMipmaps).toBe(false);expect(r.mips).toEqual(Array.from({length:i===0?11:9},(_,i)=>[size/2**i,size/2**i]));expect(r.coverage.regions).toEqual([[0,0,size,size]]);expect(r.coverage.threshold).toBe(i===0?.43:.46);expect(r.coverage.averaging).toBe('linear-light alpha-weighted sRGB');expect(r.fade).toBe(i===1);expect(r.alphaMultiplication).toBe(false);}
+ // Fine grass has separate photographed stems and lower clump charts since
+ // M41. Preserve both authored domains rather than the obsolete whole atlas.
+ for(const [i,r]of report.entries()){const size=i===0?1024:256;expect(r.shared&&r.canvas&&r.allCanvas&&r.linked&&r.wind&&r.ground&&r.centered&&r.dry).toBe(true);expect(r.generateMipmaps).toBe(false);expect(r.mips).toEqual(Array.from({length:i===0?11:9},(_,i)=>[size/2**i,size/2**i]));expect(r.coverage.regions).toEqual(i===0?[[0,0,1024,768],[0,768,1024,256]]:[[0,0,256,256]]);expect(r.coverage.threshold).toBe(i===0?.43:.46);expect(r.coverage.averaging).toBe('linear-light alpha-weighted sRGB');expect(r.fade).toBe(i===1);expect(r.alphaMultiplication).toBe(false);}
  expect(report.map(r=>r.flipY)).toEqual([false,true]);expect(errors).toEqual([]);
 });
 

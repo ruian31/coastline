@@ -12,6 +12,7 @@ export const CAR_DEFINITIONS = [
 
 export interface Convertible {
   root: THREE.Group;
+  mirrors: readonly THREE.Mesh[];
   cockpitEye: THREE.Vector3;
   cockpitLook: THREE.Vector3;
   wheelContacts:readonly THREE.Vector3[];
@@ -422,7 +423,14 @@ function buildCabin(batch: GeometryBatch, variant: number) {
   for (let i = 0; i < 4; i++) batch.tube('wood', [V(-.6, 1.045, -.875 - i * .035), V(0, 1.06, -.875 - i * .035), V(.6, 1.045, -.875 - i * .035)], .004, 18);
 }
 
-function buildWindshield(batch: GeometryBatch, variant: number) {
+function buildWindshield(batch: GeometryBatch, variant: number, root:THREE.Group, eye:THREE.Vector3) {
+  const mirrors:THREE.Mesh[]=[];
+  function mirror(name:string,geometry:THREE.BufferGeometry,position:THREE.Vector3,rear:THREE.Vector3){
+    const normal=eye.clone().sub(position).normalize().add(rear.normalize()).normalize();
+    const surface=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:'#a0bbc1',roughness:.13,metalness:.95}));
+    surface.name='rearview-'+name;surface.position.copy(position);surface.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(position.clone().add(normal),position,V(0,1,0)));root.add(surface);mirrors.push(surface);
+    return surface;
+  }
   const bottomY = 1.085, topY = variant === 2 ? 1.47 : 1.56, bottomZ = .72, topZ = variant === 0 ? .43 : variant === 1 ? .28 : .21;
   const corners = [V(-.73, bottomY, bottomZ), V(-.65, topY, topZ), V(.65, topY, topZ), V(.73, bottomY, bottomZ)];
   batch.add('glass', surface((u, v) => V(THREE.MathUtils.lerp(-.73 + .08 * v, .73 - .08 * v, u), THREE.MathUtils.lerp(bottomY, topY, v), THREE.MathUtils.lerp(bottomZ, topZ, v)), 12, 3));
@@ -430,12 +438,15 @@ function buildWindshield(batch: GeometryBatch, variant: number) {
   for (const side of [-1, 1]) {
     batch.tube('dark', [V(side * .45, 1.105, .705), V(side * .39, 1.12, .67), V(side * .27, 1.12, .67)], .006, 3);
     batch.tube('chrome', [V(side * .78, .99, .43), V(side * .94, 1.08, .43)], .014, 3);
-    batch.add('paint', new THREE.SphereGeometry(1, 18, 12), V(side * .97, 1.095, .43), new THREE.Euler(), V(.1, .061, .075));
-    batch.add('mirror', new THREE.CircleGeometry(.055, 22), V(side * .97, 1.095, .372), new THREE.Euler(0, Math.PI, 0), V(1.45, .85, 1));
+    const surface=mirror(side<0?'left':'right',new THREE.CircleGeometry(.055,22).scale(1.45,.85,1),V(side*.97,1.095,.372),V(side*.12,-.02,-1));
+    const rotation=new THREE.Euler().setFromQuaternion(surface.quaternion),normal=V(0,0,1).applyQuaternion(surface.quaternion);
+    batch.add('paint', new THREE.SphereGeometry(1, 18, 12), surface.position.clone().addScaledVector(normal,-.08), rotation, V(.1, .061, .075));
   }
   batch.tube('chrome', [V(0, topY - .01, topZ), V(0, topY - .14, topZ - .06)], .007, 1);
-  batch.box('dark', [.19, .065, .03], V(0, topY - .15, topZ - .07), .01);
-  batch.box('mirror', [.16, .047, .006], V(0, topY - .15, topZ - .09), .007);
+  const center=mirror('center',new THREE.ShapeGeometry(roundedShape(.168,.047,.008),8),V(0,topY-.15,topZ-.09),V(0,-.02,-1));
+  const frame=new THREE.ExtrudeGeometry(roundedShape(.19,.065,.01),{depth:.024,bevelEnabled:false,curveSegments:6});frame.translate(0,0,-.027);
+  batch.add('dark',frame,center.position,new THREE.Euler().setFromQuaternion(center.quaternion));
+  return mirrors;
 }
 
 function createWheel(materials: MaterialKit, variant: number) {
@@ -527,6 +538,7 @@ export function createConvertible(index = 0): Convertible {
   // Double-sided authored body skins remain visible from both the road and the open cockpit.
   materials.paint.side = THREE.DoubleSide;
   const root = new THREE.Group(); root.name = `convertible-${index}`;root.rotation.order='YXZ';
+  const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;
   const shadowContext=shadowCanvas.getContext('2d')!,gradient=shadowContext.createRadialGradient(64,64,20,64,64,64);
   gradient.addColorStop(0,'rgba(0,0,0,.72)');gradient.addColorStop(.6,'rgba(0,0,0,.45)');gradient.addColorStop(1,'rgba(0,0,0,0)');
@@ -535,7 +547,7 @@ export function createConvertible(index = 0): Convertible {
   const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(2.5,4.9),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.46,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
   contactShadow.name='vehicle-contact-shadow';contactShadow.rotation.x=-Math.PI/2;contactShadow.position.y=.008;contactShadow.visible=false;root.add(contactShadow);
   const batch = new GeometryBatch(materials);
-  buildBody(batch, index); buildCabin(batch, index); buildWindshield(batch, index); batch.finish(root);
+  buildBody(batch, index); buildCabin(batch, index); const mirrors=buildWindshield(batch,index,root,cockpitEye); batch.finish(root);
 
   // A shared optical mask spreads the low beam across the road and softens
   // its upper cut-off, rather than making two round torch spots near the bumper.
@@ -616,10 +628,9 @@ export function createConvertible(index = 0): Convertible {
 
   let wheelRotation = 0,contactShadowEnabled=false;
   const shadowNormal=new THREE.Vector3(),shadowLocalNormal=new THREE.Vector3(0,0,1);
-  const cockpitEye = V(-.425, index === 2 ? 1.25 : 1.29, -.43), cockpitLook = V(-.425, index === 2 ? 1.2 : 1.23, 12);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
-    root, cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
+    root, mirrors,cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
     setLights(headlights,braking,reversing){
       Object.assign(lampState,{headlights,braking,reversing});
       // Keep light count stable on toggles, avoiding full-scene shader rebuilds.

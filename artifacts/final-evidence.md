@@ -1,3 +1,13 @@
+# M67 · 三车后视镜已更新试玩
+
+- [试玩](http://192.168.3.10:5190/)刷新后选择车内。[本地原子更新/三地址HTTP](mirrors-m67-local-release.json)核对主WbwKHcRk/929840B/SHA b911de3f…、车辆C22FCqfk/6139B，Rapier BR_-CEU_仍同M64哈希；先复制资产再换HTML，保留10个旧JS，无push。[源码/构建SHA](mirrors-m67-build-source.json)、[构建日志](mirrors-m67-build-approved.log)保留。
+- 三车中央/侧镜由实际驾驶位反射眼点和镜面边界取景，默认−.02方向兼顾后方护栏、海面和路面。三块线性半浮点目标共360448B颜色缓冲，另有深度/驱动开销；手机8/电脑12次每秒上限、单槽分时，暂停保留画面、首次/新姿态补一次，外部视角停更。[唯一独立审查](mirrors-m67-review.json)发现的暂停重复更新已修；不把审查当最终全量背书。
+- [最终三浏览器镜面](mirrors-m67-browser-approved.json)3通过/0失败、跳过或重试，117.96秒；[实际读回记录](mirrors-m67-browser-approved-records.json)包含三车切换/回车、资源不累积和停更，QA红/蓝独立反射射线板在256宽真实目标中约2775/2639像素、中心186.6/68.8，左右正确，QA板未进产品。[CPU36射线](mirrors-m67-cpu-final.json)误差约1.2e-12。[首版](mirrors-m67-browser-first.json)资源相等断言过严的失败、[暂停修正版](mirrors-m67-browser-pause.json)、[旧下调角度/草图6项](mirrors-m67-browser-aim-final.json)保留，不重复计作独立最终用例。
+- [植被首轮](mirrors-m67-culling-browser.json)12项8通过/4失败；[M64同样复现](mirrors-m67-m64-fixture-control.json)旧整图域与bank停驶。仅将断言对齐源码已有两域，三浏览器修正专项通过，未改资源。电脑bank20秒仅3.3806m、控制3.3818m，仍失败；没有改阈值、挪起点或称全通过。后续需分离牵引/坡面问题。
+- [实际键盘/Android触控](mirrors-m67-motion-approved/result.json)行驶78.76/77.53m，制动倒车至−3.48/−3.39m/s，再前进转弯、拖动、暂停恢复和回追随，0错误。视频[20.20s](mirrors-m67-motion-approved/desktop-keyboard.webm)/[18.56s](mirrors-m67-motion-approved/android-touch.webm)，[六个实际编码时间帧](mirrors-m67-motion-approved/sampled-frames.json)及[联图](mirrors-m67-motion-approved/filmstrip.png)已看，另看代表原PNG；不是完整逐帧或真机性能证据。旧强下调角度的路面过满未采用，[四角度内容对照](mirrors-m67-aim-content/contact.png)选择较轻下调。
+- [八正式视图](evidence-mirrors-approved.json)覆盖两端三车和隧道，[全部联图](pass-m67-mirrors-approved/contact.png)已看，0错误。[冻结计数](mirrors-m67-render-counts.json)峰桌面143/769323/210/57、手机104/288580/208/55；暂停无镜面更新，不作活跃镜面预算。[M64控制](mirrors-m67-profile-m64-control/result.json)与[最终M67](mirrors-m67-profile-approved/result.json)各状态90整帧GPU样本/无disjoint，[成本汇总](mirrors-m67-cost-summary.json)保留全部镜面/非镜面帧。树旁/镇旁P50 2.839/4.049→2.462/2.386、P95 4.666/5.236→4.594/11.913ms，频率/尾部波动明显；CPU任务+21.5/+28.3%、脚本+23.9/+30.0%，不称提速或手机FPS。完整活跃帧峰151calls/421482tri，已有及新增超预算均保留。
+- [普通无query5190](fineleaf-m67-mirrors-release/result.json)实际开始/前进5.03m，原纹理/压草/岩石/棕榈绑定与115物体一次缓存正常、测试全局关闭、0错误，[普通图](fineleaf-m67-mirrors-release/normal.png)已看。真实一加12镜面清晰度/流畅度问题已发，等待不阻塞下一阶段；自然风景未达标、World1.5和Lighting2.25沿用，无新整体评分。四季/昼夜/天气继续文档11，下一步先定位已复现草坡停驶，Goal active。
+
 # M66 · 原生植物形体筛选，未采用
 
 - 官方[Poly Haven模型](https://polyhaven.com/models/nature/plants)与[CC0许可](https://polyhaven.com/license)确认后，四种素材只下载到work；官方字节/MD5及本地SHA保存在work/low-cover-m66-source/downloaded-source.json。RGB与独立alpha无损合并，几何、UV、法线、原1k PBR完整，统一一米足迹并记录原尺寸/缩放。

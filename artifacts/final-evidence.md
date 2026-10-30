@@ -1,4 +1,10 @@
-# M70 · 真机对照检测已准备，等待硬件数据
+# M71 · 真机主画面约60FPS，卡顿明确在镜内
+
+- 独立检测新增`drive=1`四段真实巡航+10秒手动，记录每15帧状态和可信输入；[配方/SHA](phone-probe-m70/recipe-drive-manual.json)、[主机原生触控端到端](phone-probe-m70/host-drive-manual-final-verification.json)、[完成图](phone-probe-m70/host-drive-manual-final-complete.png)与[操作中图](phone-probe-m70/host-manual-final-active.png)保留，图已查看，0错误。首轮过早读取诊断的失败记录保留，修正为等候实际手动状态发布，未改游戏物理或弱化断言。
+- [一加12真实行驶报告](phone-probe-m70/reports/2026-10-30T07-54-53-607Z-a6dc5bf9-7b0a-4c75-bf1c-e7e0c8ab5967.json)：Chrome156/Adreno750、905×411/画布DPR1/低档，巡航ON60.38/OFF60.37/ON59.87/OFF60.37FPS，P95均16.6ms；手动601帧/60.07FPS/P95 16.7ms/max33.2ms、15次可信输入、约125m、无后台切换。ON45/46pass每4秒、OFF0，手动129pass每10秒。用户确认普通画质“自动”，并明确“只有后视镜卡顿，手动自动都卡”。
+- 结论修正：主画面流畅，当前中央8Hz/侧镜4Hz导致镜中景物跳动；此前降低刷新率的方向不能解决这个体验问题。下一步提高可见镜面至约30Hz/块，每主帧最多一个额外render并减少无效车身绘制；尚未发布修复、不提高评分或完成Goal。静止真实报告、先前主机性能与失败记录保留，iPhone及热稳定性仍未验证。
+
+## M70 · 历史：真机对照检测准备
 
 - 真实用户M69仍明显卡顿，现提供[手机检测](http://192.168.3.10:5191/?test=1)。独立work构建只给整个镜面update加总开关，5190/正式dist/游戏源码保持；[转换配方与SHA](phone-probe-m70/recipe.json)和[构建日志](phone-probe-m70-build-final.log)保留。可用`npm run diagnose:phone`重建并启动；已存在5191时先退出，不覆盖活跃检测。
 - 同路段低档、静止车内，两轮ON/OFF，每段1秒暖机+4秒真实RAF；原始间隔、FPS/P50/P95/慢帧、视口/DPR/GPU和前后诊断自动回传项目目录。[主机端到端](phone-probe-m70/host-verification.json)确认四段顺序、实际低档、ON45/45pass与OFF0/0、0错误；[完成页](phone-probe-m70/host-complete.png)已看。四段主机约60FPS只是采集验证，**不是一加12报告**。Node语法及[重复服务保护](phone-probe-m70/duplicate-server-guard.json)通过，拒绝前后HTML SHA相同。

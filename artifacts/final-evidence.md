@@ -1,4 +1,4 @@
-# M72 · 可见镜面连续刷新，等待真实手机复核
+# M72 · 一加12确认镜面顺滑与主画面流畅
 
 - [本地试玩](http://10.158.204.114:5190/)已更新BnTV9v9-/932039B，车辆Bqhv8m_-/6139B、Rapier库SHA不变；[源码/构建SHA](mirror-smooth-m72-build-source.json)、[构建日志](mirror-smooth-m72-build.log)、[原子更新/3地址全部模块](mirror-smooth-m72-local-release.json)保留，16旧JS不删除，无push。当前网络地址从192.168.3.10变为10.158.204.114，需手机与主机网络可互通。
 - 两可见镜通常交替各30Hz，总槽60Hz、每主帧最多一次额外render；三可见镜共用预算。deadline跳过错过的槽，避免16.6ms别名降频，不循环补帧。保留大玻璃/目标/mip和手机0/桌面4采样，原冻结/屏外停更保持。固定车身精确保守裁剪，动态车轮/手臂/方向盘不裁剪；紧凑属性独立拥有、原排序包围球和主画面车身在finally恢复。
@@ -7,7 +7,7 @@
 - [键盘/原生Android触控实际驾驶](mirror-smooth-m72-motion-approved/result.json)78.97/78.67m、倒车最低−3.46m/s，转弯/可信拖动让新侧镜更新，暂停恢复/外部停更与0错误；[19.96秒桌面](mirror-smooth-m72-motion-approved/desktop-keyboard.webm)、[18.88秒触控](mirror-smooth-m72-motion-approved/android-touch.webm)的[6个稀疏编码帧](mirror-smooth-m72-motion-approved/sampled-frames.json)、[联图](mirror-smooth-m72-motion-approved/filmstrip.png)、侧看与外部车身原PNG已看，不称完整逐帧或手机性能。
 - [8正式机位](evidence-mirror-smooth-m72.json)及[全部联图](pass-m72-mirror-smooth/contact.png)已看、0错误；[冻结计数](mirror-smooth-m72-render-counts.json)峰桌面143/769323/211/57、手机105/288602/209/55，不替代活跃镜面。顺序[控制](mirrors-m67-profile-m72-m69-control/result.json)→[隔离候选](mirrors-m67-profile-m72-smooth-isolated/result.json)各90完整GPU帧/状态、无disjoint，另8s4xCPU都480帧；[汇总](mirror-smooth-m72-cost-summary.json)镜面pass90→480，任务5099/4867→7751/7798ms，GPU P50 2.811/3.428→3.354/4.135，P95 6.214/9.388→5.613/12.774ms。提高连续性增加工作量，未声称整体提速。首候选有源码搜索干扰的[原记录](mirrors-m67-profile-m72-smooth-final/result.json)保留，已隔离重测。活跃峰149calls/372235tri、209几何/56纹理，旧预算超额继续记录。
 - [普通入口](fineleaf-m72-mirror-smooth-release/result.json)前进5.03m、116投影物一次缓存、原纹理/压草/岩石/棕榈绑定正常，测试全局关闭、0错误，[普通图](fineleaf-m72-mirror-smooth-release/normal.png)已看。[证据检查](mirror-smooth-m72-evidence-check.log)8正式+24辅助共32引用通过，不是32个独立测试。
-- M71旧低频版真实一加12约60FPS不能作为新版性能证明；新版镜内顺滑与主画面流畅度待一次普通手机复核，iPhone/长时间发热仍未实测。自然风景、草坡停驶与四季昼夜天气仍未完成，World1.5/Lighting2.25保持，Goal active。
+- M72代码已提交`6ecaa6c`，立即检查HEAD中文UTF8正常、临时消息删除，无push。用户随后在一加12Chrome普通入口复核明确“镜面更顺滑，主画面流畅”，该设备本次镜面体验通过。没有额外采集新版FPS，M71旧低频版约60FPS不移作M72数值；iPhone/长时间发热未实测。自然风景、草坡停驶与四季昼夜天气仍未完成，World1.5/Lighting2.25保持，Goal active。
 
 ## M71 · 真机主画面约60FPS，卡顿明确在镜内
 

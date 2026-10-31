@@ -1,4 +1,11 @@
-# M72 · 一加12确认镜面顺滑与主画面流畅
+# M73 · 草坡牵引原因已分离，继续自然风景
+
+- [受控36工况](vehicle-slopes-m73-verified/result.json)由`scripts/measure-vehicle-slopes.mjs`直接调用当前VehicleDynamics：三车型、道路/离路、六个坡度，1/60固定步长，3秒服务制动稳定/零速重置后12秒全油门，之后无赋值移动。2000米平面、边界/有限状态断言；[初版400米平面](vehicle-slopes-m73/first-short-plane.json)最快平地车驶出边缘，已排除并以更大平面重测。经典离路15/20/25度前进38.20/8.15/0.28m，GT25度5.74m，Sport25/30度37.70/11.95m，全部最终四轮接地。
+- [当前世界观察配方](slope-m73-source/recipe.json)、[现场汇总](vehicle-slopes-m73/live-summary.json)与[桌面原始](slope-m73-source/desktop-observed.json)/[手机几何原始](slope-m73-source/mobile-observed.json)保留。工作4199构建仅暴露原私有物理及几何供观察，不能发布。真实键盘W8.5秒/S3.5秒，两档最后2秒四轮接地、底盘解算接触0，末坡度27.44/28.60度，随后倒车−6.14/−6.23m/s、0错误；手机几何档仍是键盘测试，不冒充原生触控或物理手机。[四图联图](slope-m73-source/contact.png)已看。
+- [实际世界三车型CPU重放](vehicle-slopes-m73/bank-replay.json)保留原始面/碰撞体/初始位姿及世界SHA，12秒全油门、始终offroad=true，不运行Driving路线/海水边界规则。经典车3.22/5.91m、GT6.93/11.49m、Sport33.88/35.42m并跨坡，末速6.28/5.70m/s。共同支持这段停驶源于当前车型的爬坡力上限；不能据此把旧M64/M67失败路线改作通过，或保证所有离路路线。
+- M72一加12镜面“更顺滑，主画面流畅”的确认已提交`c396acf`，UTF8核验/临时消息清理完成，无push。当前稳定5190仍为已接受的M72版本。自然风景层次、陡坡探索路线的可读性、四季昼夜天气与既有预算继续推进；Goal active。
+
+## M72 · 一加12确认镜面顺滑与主画面流畅
 
 - [本地试玩](http://10.158.204.114:5190/)已更新BnTV9v9-/932039B，车辆Bqhv8m_-/6139B、Rapier库SHA不变；[源码/构建SHA](mirror-smooth-m72-build-source.json)、[构建日志](mirror-smooth-m72-build.log)、[原子更新/3地址全部模块](mirror-smooth-m72-local-release.json)保留，16旧JS不删除，无push。当前网络地址从192.168.3.10变为10.158.204.114，需手机与主机网络可互通。
 - 两可见镜通常交替各30Hz，总槽60Hz、每主帧最多一次额外render；三可见镜共用预算。deadline跳过错过的槽，避免16.6ms别名降频，不循环补帧。保留大玻璃/目标/mip和手机0/桌面4采样，原冻结/屏外停更保持。固定车身精确保守裁剪，动态车轮/手臂/方向盘不裁剪；紧凑属性独立拥有、原排序包围球和主画面车身在finally恢复。

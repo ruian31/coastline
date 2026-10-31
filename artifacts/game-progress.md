@@ -2,6 +2,13 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
+## M73 · 草坡爬坡力上限已分离
+
+- 手机镜面确认已提交c396acf，UTF8核验/临时消息清理完成，无push；一加12新版镜面更顺滑/主画面流畅成立，无新FPS数值。Goal active。
+- 新增scripts/measure-vehicle-slopes.mjs直接测当前VehicleDynamics，3车型×2地表×6坡度=36工况，2000m平面/finite与边界断言。最终artifacts/vehicle-slopes-m73-verified/result.json，经典离路15/20/25°前进38.20/8.15/0.28m，GT25°5.74m，Sport25/30°37.70/11.95m。首400m平面最快车越界记录first-short-plane保留并排除。
+- M73当前世界work-only4199/session87654，recipe只暴露private物理/导出实际面，不发布！双几何档真实键盘W8.5/S3.5，末坡27.44/28.60°，末2s四轮接地而底盘solver contacts0，能倒退−6.14/−6.23m/s，0errors，四图contact已看。实际世界3车型12sCPU重放：经典3.22/5.91m，Sport33.88/35.42m跨坡，说明主要为车型牵引限度；旧失败路线保留，不调阈值称通过，也不保证全世界离路通行。
+- 下一步回到自然风景：检查草地近景体积、植被群落与地表层次，保留干燥加州海岸感和已确认手机性能；陡坡路线的可读性继续列入探索体验。没有待用户问题或后台测量任务。
+
 ## M72 · 可见镜面约30Hz与精确车身裁剪
 
 - 代码已提交6ecaa6c，立即cat-file检查UTF8正常、临时消息删除、无push。用户随后普通5190一加12Chrome复核选择“镜面更顺滑，主画面流畅”，本次该设备镜面体验通过；没有新FPS数值，不复用M71旧低频60FPS为新版测量。无待镜面问题，继续草坡诊断与自然风景。真实iPhone/长时间热稳定未验证。

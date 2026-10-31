@@ -1,11 +1,12 @@
 import {test,expect} from '@playwright/test';
 
 test('三车镜面保留实际后方、左右反射与资源生命周期',async({page},info)=>{
+ const label=process.env.MIRROR_TEST_LABEL??'mirror-smooth-m72';
  test.setTimeout(180000);await page.setViewportSize(info.project.name.includes('mobile')?{width:844,height:390}:{width:1280,height:720});
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.addInitScript(()=>{
-  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as any;w.mirrorObjects=[];w.mirrorTargets={};w.mirrorPasses=[];w.__THREE_DEVTOOLS__=new EventTarget();
-  w.__THREE_DEVTOOLS__.addEventListener('observe',(event:any)=>{const object=event.detail;w.mirrorObjects.push(object);if(object.isWebGLRenderer){const original=object.setRenderTarget,render=object.render;object.setRenderTarget=function(target:any,...args:any[]){if(target?.texture.name.startsWith('rearview-'))w.mirrorTargets[target.texture.name]=target;return original.call(this,target,...args);};object.render=function(scene:any,camera:any){if(object.getRenderTarget()===null)w.mirrorMainCamera=camera;else if(object.getRenderTarget().texture.name.startsWith('rearview-'))w.mirrorPasses.push({name:object.getRenderTarget().texture.name,at:performance.now()});return render.call(this,scene,camera);};}});
+  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as any;w.mirrorObjects=[];w.mirrorTargets={};w.mirrorPasses=[];w.mirrorFrame=0;w.__THREE_DEVTOOLS__=new EventTarget();
+  w.__THREE_DEVTOOLS__.addEventListener('observe',(event:any)=>{const object=event.detail;w.mirrorObjects.push(object);if(object.isWebGLRenderer){const original=object.setRenderTarget,render=object.render;object.setRenderTarget=function(target:any,...args:any[]){if(target?.texture.name.startsWith('rearview-'))w.mirrorTargets[target.texture.name]=target;return original.call(this,target,...args);};object.render=function(scene:any,camera:any){if(object.getRenderTarget()===null){w.mirrorMainCamera=camera;w.mirrorFrame++;}else if(object.getRenderTarget().texture.name.startsWith('rearview-'))w.mirrorPasses.push({name:object.getRenderTarget().texture.name,at:performance.now(),frame:w.mirrorFrame});return render.call(this,scene,camera);};}});
  });
  await page.goto('/?test=1');await page.waitForFunction(()=>Boolean(window.__THREE_GAME_TEST_HOOKS__));
  const read=()=>page.evaluate(()=>structuredClone(window.__THREE_GAME_DIAGNOSTICS__!));
@@ -23,7 +24,7 @@ test('三车镜面保留实际后方、左右反射与资源生命周期',async(
    return{heightCss:(Math.max(...ys)-Math.min(...ys))*.5*innerHeight,width:target.width,height:target.height,samples:target.samples,actualSamples,directMultisample:Boolean(properties.__useRenderToTexture),mips:target.texture.generateMipmaps,minFilter:target.texture.minFilter,rendererDpr:renderer.getPixelRatio(),glError:gl.getError(),screenExcluded:['left','right'].filter(name=>{const mesh=scene.getObjectByName('rearview-'+name),p=mesh.geometry.attributes.position,x=[];for(let i=0;i<p.count;i++)x.push(mesh.position.clone().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld).project(camera).x);return Math.max(...x)<-1||Math.min(...x)>1;})};
   });
   expect(clarity.heightCss).toBeGreaterThan(info.project.name.includes('mobile')?28:55);expect(clarity.width).toBe(384);expect(clarity.height).toBe(128);expect(clarity.samples).toBe(info.project.name.includes('mobile')?0:4);if(clarity.samples===0){expect(clarity.actualSamples).toBe(null);expect(clarity.directMultisample).toBe(false);}else if(clarity.actualSamples!==null)expect(clarity.actualSamples).toBeGreaterThanOrEqual(clarity.samples);else expect(clarity.directMultisample).toBe(true);expect(clarity.mips).toBe(true);expect(clarity.minFilter).toBe(1008);expect(clarity.rendererDpr).toBe(1);expect(clarity.glError).toBe(0);for(const name of clarity.screenExcluded)expect(forward.vehicleMirrors!.views.find(v=>v.name==='rearview-'+name)!.updates).toBe(0);
-  const image=`artifacts/mirror-perf-m69-${info.project.name}-${car}-forward.png`;await page.screenshot({path:image});
+  const image=`artifacts/${label}-${info.project.name}-${car}-forward.png`;await page.screenshot({path:image});
   if(car===0){
    await page.evaluate(()=>{window.__THREE_GAME_TEST_HOOKS__!.stepDriving!(3,{throttle:0,brake:0,steer:0,handbrake:true});window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(false);});
    await expect.poll(async()=>Math.abs((await read()).player.speed)).toBeLessThan(.15);
@@ -44,15 +45,27 @@ test('三车镜面保留实际后方、左右反射与资源生命周期',async(
     return{width:target.width,height:target.height,red,blue,redX:redX/red,blueX:blueX/blue};
    });
    expect(pixels.red).toBeGreaterThan(40);expect(pixels.blue).toBeGreaterThan(40);expect(pixels.redX).toBeGreaterThan(pixels.width*.6);expect(pixels.blueX).toBeLessThan(pixels.width*.4);
-   await page.screenshot({path:`artifacts/mirror-perf-m69-${info.project.name}-colored-rays.png`});
+   await page.screenshot({path:`artifacts/${label}-${info.project.name}-colored-rays.png`});
    await page.evaluate(names=>{const scene=(window as any).mirrorObjects.find((o:any)=>o.isScene&&o.getObjectByName('Coastal landscape'));for(const name of names){const board=scene.getObjectByName(name);board.removeFromParent();board.geometry.dispose();board.material.dispose();}},names);
    records.push({pixels});
-   const scheduleStart=await page.evaluate(()=>({index:(window as any).mirrorPasses.length,at:performance.now()}));
+   const scheduleStart=await page.evaluate(()=>({index:(window as any).mirrorPasses.length,at:performance.now(),frame:(window as any).mirrorFrame}));
    await page.waitForTimeout(1500);
-   const schedule=await page.evaluate(start=>({seconds:(performance.now()-start.at)/1000,passes:(window as any).mirrorPasses.slice(start.index)}),scheduleStart);
+   // Require enough rendered frames for an alternating pair to be meaningful.
+   // A1.5s software WebKit window can contain only3 frames (2/1 passes).
+   await page.waitForFunction(start=>(window as any).mirrorFrame>=start+8,scheduleStart.frame,{timeout:20000});
+   const schedule=await page.evaluate(start=>({seconds:(performance.now()-start.at)/1000,mainFrames:(window as any).mirrorFrame-start.frame,passes:(window as any).mirrorPasses.slice(start.index)}),scheduleStart);
    expect(schedule.passes.length).toBeGreaterThan(0);
-   expect(schedule.passes.length).toBeLessThanOrEqual(Math.ceil(schedule.seconds*(info.project.name.includes('mobile')?16:36))+1);
-   for(const name of ['left','center','right'])expect(schedule.passes.filter((p:any)=>p.name==='rearview-'+name+'-linear-view').length).toBeLessThanOrEqual(Math.ceil(schedule.seconds*(info.project.name.includes('mobile')?(name==='center'?8:4):12))+1);
+   expect(schedule.passes.length).toBeLessThanOrEqual(Math.ceil(schedule.seconds*60)+1);
+   expect(new Set(schedule.passes.map((p:any)=>p.frame)).size).toBe(schedule.passes.length);
+   // Slow host WebKit still gets one bounded pass per available main frame.
+   // Native target timestamps, rather than inspected constants, establish cadence.
+   const available=Math.min(schedule.seconds*60,schedule.mainFrames);
+   expect(schedule.passes.length).toBeGreaterThan(available*.75);
+   for(const name of ['left','center','right']){
+    const passes=schedule.passes.filter((p:any)=>p.name==='rearview-'+name+'-linear-view');
+    expect(passes.length).toBeLessThanOrEqual(Math.ceil(schedule.seconds*30)+1);
+    if(name!=='right')expect(passes.length).toBeGreaterThan(available*.35);
+   }
    records.push({schedule});
   }
   await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true));

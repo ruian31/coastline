@@ -13,6 +13,8 @@ export const CAR_DEFINITIONS = [
 export interface Convertible {
   root: THREE.Group;
   mirrors: readonly THREE.Mesh[];
+  /** Rigid body batches only; wheels, driver and instruments animate separately. */
+  mirrorBody: readonly THREE.Mesh[];
   cockpitEye: THREE.Vector3;
   cockpitLook: THREE.Vector3;
   wheelContacts:readonly THREE.Vector3[];
@@ -77,6 +79,7 @@ class GeometryBatch {
   }
 
   finish(parent: THREE.Group) {
+    const meshes:THREE.Mesh[]=[];
     for (const [key, pieces] of this.batches) {
       const merged = mergeGeometries(pieces, false);
       if (merged) {
@@ -85,10 +88,12 @@ class GeometryBatch {
         mesh.castShadow = key !== 'glass' && key !== 'mirror' && key !== 'lens';
         mesh.receiveShadow = true;
         parent.add(mesh);
+        meshes.push(mesh);
       }
       pieces.forEach(g => g.dispose());
     }
     this.batches.clear();
+    return meshes;
   }
 }
 
@@ -547,7 +552,7 @@ export function createConvertible(index = 0): Convertible {
   const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(2.5,4.9),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.46,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
   contactShadow.name='vehicle-contact-shadow';contactShadow.rotation.x=-Math.PI/2;contactShadow.position.y=.008;contactShadow.visible=false;root.add(contactShadow);
   const batch = new GeometryBatch(materials);
-  buildBody(batch, index); buildCabin(batch, index); const mirrors=buildWindshield(batch,index,root,cockpitEye); batch.finish(root);
+  buildBody(batch, index); buildCabin(batch, index); const mirrors=buildWindshield(batch,index,root,cockpitEye); const mirrorBody=batch.finish(root);
 
   // A shared optical mask spreads the low beam across the road and softens
   // its upper cut-off, rather than making two round torch spots near the bumper.
@@ -630,7 +635,7 @@ export function createConvertible(index = 0): Convertible {
   const shadowNormal=new THREE.Vector3(),shadowLocalNormal=new THREE.Vector3(0,0,1);
   root.userData.vehicle = { name: CAR_DEFINITIONS[index].name, length: 4.4, width: 1.9, wheelbase: 2.56, wheelRadius: .338 };
   return {
-    root, mirrors,cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
+    root, mirrors,mirrorBody,cockpitEye, cockpitLook,wheelContacts,setContactShadow(visible){contactShadowEnabled=visible;contactShadow.visible=visible;},
     setLights(headlights,braking,reversing){
       Object.assign(lampState,{headlights,braking,reversing});
       // Keep light count stable on toggles, avoiding full-scene shader rebuilds.

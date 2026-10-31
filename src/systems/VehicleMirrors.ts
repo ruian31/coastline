@@ -77,6 +77,9 @@ export function createVehicleMirrors(renderer:THREE.WebGLRenderer,scene:THREE.Sc
   let cursor=0,enabled=false,nextPass=-Infinity;const data={active:false,passes:0,draws:0,triangles:0,views:entries.map(e=>({name:e.surface.name,updates:0,width:e.target.width,height:e.target.height}))};
   return{
     diagnostics:data,
+    // A paused time-of-day change needs one fresh image per visible glass.
+    // Keep the accepted resolution/cadence and existing GPU allocations.
+    invalidate(){for(const e of entries){e.last=-Infinity;e.next=-Infinity;}nextPass=-Infinity;},
     update(time:number,mainCamera:THREE.PerspectiveCamera,active:boolean,refresh=true){
       data.active=active;data.draws=0;data.triangles=0;
       if(!active){enabled=false;for(const e of entries)e.surface.material=e.original;return;}

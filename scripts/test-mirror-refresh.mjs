@@ -48,7 +48,17 @@ try {
     const frozen = passes.length;
     for (let i = 0; i < 300; i++) { time = 5 + i / 60; controller.update(time, camera, true, false); }
     assert.equal(passes.length, frozen);
-    time = 3000; controller.update(time, camera, true); assert.equal(passes.length, frozen + 1);
+    controller.invalidate();
+    const refreshStart = passes.length;
+    for (let i = 0; i < 300; i++) {
+      time = 10 + i / 60; const before = passes.length;
+      controller.update(time, camera, true, false); assert.ok(passes.length - before <= 1);
+    }
+    assert.equal(passes.length, refreshStart + 2);
+    const refreshed = passes.length;
+    for (let i = 0; i < 120; i++) { time = 15 + i / 60; controller.update(time, camera, true, false); }
+    assert.equal(passes.length, refreshed);
+    time = 3000; controller.update(time, camera, true); assert.equal(passes.length, refreshed + 1);
     // Failure must restore shared renderer state and the original body geometry.
     time += 1; fail = true;
     assert.throws(() => controller.update(time, camera, true), /intentional render failure/);
@@ -57,7 +67,7 @@ try {
     assert.ok(mirrors.every(mirror => mirror.visible));
     let disposed = 0; for (const subset of subsets) subset.addEventListener('dispose', () => { disposed++; });
     controller.dispose(); assert.equal(disposed, subsets.size); assert.equal(originalDisposed, false);
-    rows.push({rate, seconds: 5, views, pausedPasses: 0, resumeBurst: 1, restoredAfterFailure: true, independentGeometryDisposed: true});
+    rows.push({rate, seconds: 5, views, pausedPasses: 0, invalidatedPausedPasses: 2, invalidationBurstPerFrame: 1, resumeBurst: 1, restoredAfterFailure: true, independentGeometryDisposed: true});
     root.traverse(object => { if (object.isMesh) { object.geometry.dispose(); object.material.dispose(); } });
   }
   await writeFile(process.env.MIRROR_REFRESH_REPORT ?? 'artifacts/mirror-smooth-m72-refresh-cpu.json', JSON.stringify({method: 'Production update with a stub renderer and declared synthetic RAF timestamps. Tests16.6ms alias,60/59.94/120/30Hz, two visible glasses and offscreen third, max one render per update, pause, long-gap resume, throw/finally restoration and independent geometry disposal. CPU control-flow only; not actual browser cadence or phone performance.', rows}, null, 2) + '\n');

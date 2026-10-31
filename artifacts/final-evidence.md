@@ -1,4 +1,14 @@
-# M74 · 完整低冠层候选未采用
+# M75 · 五个固定海岸时段已更新本地试玩
+
+- [试玩](http://10.158.204.114:5190/)暂停菜单“海岸时段”可选晨曦/正午/原夕阳/暮色/月夜并记住偏好，默认18:42；背景与IBL、太阳/半球/雾、海水和世界阴影同步，暂停镜面各刷新一次后冻结。**连续昼夜、四季和天气仍未实现**，World1.5/Lighting2.25保持，Goal active。
+- [来源配方](../source-assets/daylight-skies.json)、[输出验证](daynight-m75/source-validation.json)：四份Poly Haven CC0纯天空/4563942B、正午/月夜精确gain2，独立逐值乘回原RGBE零误差，太阳/月光方向校对。默认原天空不改且不请求其他时段；失败/过期选择保留当前有效场景。第一次正规化255/256差异失败保留并修正。[单次独立审查](daynight-m75/review.json)发现重烘临时target释放后为null，已修为每次独立离屏目标并加浏览器断言。
+- [分两批去重浏览器](daynight-m75/browser-consolidated.json)9通过/3条件跳过、最终0失败；当前界面/昼夜6通过，另镜面3项仅CSS修正前通过，[源码等价](daynight-m75/css-only-equivalence.json)保留。不是一次9项调用，不称真实iPhone。WebKit网络与移动端机位控制流条件跳过，失败历史和修正理由见文档08。[镜面五档CPU](daynight-m75/mirror-invalidate-cpu.json)保持每主帧最多1pass与暂停两镜各补一次。
+- [12正式同机位](evidence-daylight-m75.json)的[桌面](pass-m75-daylight-fixed/desktop-contact.png)/[手机](pass-m75-daylight-fixed/mobile-contact.png)全部查看，0错误；首漏query与异步机位行驶记录保留，最终临时冻结后同时间/位置。[三车夜间及前灯开/关](daynight-m75-night-cars/result.json)、[8图联图](daynight-m75-night-cars/contact.png)全看，实际路面ROI开灯更亮。车灯遮挡漏光限制仍在，不宣告F04完整验收。
+- [实际夜间驾驶](daynight-m75-motion-final/result.json)：键盘75.42m/触控78.26m，制动倒车最低−3.41/−3.38m/s，再前进转弯、转头/新侧镜更新、暂停恢复及外部视角，0错误。[22.48秒桌面](daynight-m75-motion-final/desktop-keyboard.webm)/[19.56秒原生Android触控](daynight-m75-motion-final/android-touch.webm)只抽查[6个编码时间样本](daynight-m75-motion-final/sampled-frames.json)和[联图](daynight-m75-motion-final/filmstrip.png)，Android末样本为暂停菜单，另侧看/外部原PNG已看，不称完整逐帧或真机帧率。
+- [隔离GPU/4倍CPU汇总](daynight-m75/cost-summary.json)：M72→夕阳→月夜每状态90有效整帧GPU样本，活跃峰149/372235/209/56；夕阳镇旁P95 5.123→8.531ms上升，夜景相近，不宣称总体提速。CPU任务接近8s窗口上限，旧预算超额保持；详见文档09。M72一加12体验通过不冒充本轮新时段/循环性能验证。
+- [源码/构建SHA](daynight-m75/build-source.json)、[原子本地发布](daynight-m75/local-release.json)核对4207/5190/LAN的9个运行资产（27行）、18旧JS保留，无push。主包CeEI7Ht_937176B，车辆块6139B/Rapier源码未改；[普通入口](fineleaf-m75-daylight-release/result.json)前进5.02m、116投影一次缓存、原资源与压草绑定/测试全局关闭，默认只原sky-mobile.hdr、0错误，[普通图](fineleaf-m75-daylight-release/normal.png)已看。下一步连续时钟/天空与光照过渡，之后继续自然群落和季节/天气。
+
+## M74 · 完整低冠层候选未采用
 
 - Didelta Spinosa完整扫描来自[Poly Haven](https://polyhaven.com/a/didelta_spinosa)，CC0、作者Jenelle van Heerden；官方逐文件size/MD5及本地SHA在work/low-cover-m74-source/downloaded-source.json。不是加州原生物种保证，未新增产品资产。凭据探测三个生成服务均MISSING，无付费生成任务。
 - [原生7幅](lowcover-m74-source-shapes/result.json)、[源/简化嵌土9幅](lowcover-m74-lod-embedded/result.json)和完整联图均已查看。large234552面简为9665/15631面，只选前者做实际场景试验。首家族同株两形，far2186面；[首16幅实际对照](didelta-m74-world-first/result.json)与[手机](didelta-m74-world-first/mobile-contact.png)/[桌面](didelta-m74-world-first/desktop-contact.png)联图0错误、原摆放/数量/上限保持，但鲜绿和变宽矮不协调，未采用。未替换的中央coastal_tree不算新资产收益。

@@ -2,7 +2,14 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## M74 · 完整低冠层扫描候选，场景校准中
+## 最新检查点 · M75已发布，继续F07连续昼夜
+
+- 当前5190已从M72原子更新到M75固定五时段，main CeEI7Ht_937176B；4207/5190/LAN九资产SHA一致、18旧JS保留，无push。普通入口前进5.02m、原资源/压草/116投影一次缓存、默认18:42仅原sky-mobile.hdr、测试全局关闭、0错误，普通图已看。LAN仍10.158.204.114。
+- 最终浏览器两批去重9过/3条件跳过，正式12同机位全看。夜间实际键盘/原生Android触控75.42/78.26m、倒车−3.41/−3.38m/s，转弯转头/新镜更新、暂停恢复及外部视角通过；22.48/19.56s视频抽查六编码帧，Android末帧实际菜单，另侧看/车外原PNG已看。三车夜间车内和经典车灯开/关ROI通过，0错误，遮挡漏光仍在。
+- M72控制→M75夕阳→月夜隔离主机GPU每状态90有效整帧查询/无disjoint，活跃峰149/372235/209/56；夕阳镇旁P95 5.123→8.531ms上升，夜景接近，CPU任务近8秒上限且基线也少于480帧，不称总体提速或手机FPS。正式冻结诊断可能含旧镜面刷新，不能直接当活跃成本。原始/成本汇总、源码/发布清单与失败历史在daynight-m75目录。
+- M72镜面已获一加12确认，新M75尚无真实手机性能结论。World1.5/Lighting2.25保持；固定选择只是F07一部分，连续天空/环境/光照/海面插值与时钟现在继续。F06季节/F08天气、自然群落和陡坡路线可读性仍待完成，Goal active。下方M75逐步记录是历史过程，发布状态以上述检查点为准。
+
+## M74 · 完整低冠层扫描候选，已结束且未采用
 
 - M73测量与诊断已提交c9e3153，立即HEAD中文UTF8核验/临时消息删除，无push。手机M72镜面确认仍有效；稳定5190不改。
 - 回看当前草坡/灯塔实际图，低冠层体量与群落仍弱；M65只改覆盖被拒绝，M66四种扫描株侧面过疏，避免重复那两种方案。尝试一个新完整旱生灌木Didelta Spinosa作为形体候选，官方页/API与CC0核对，作者Jenelle van Heerden；不是加州本土物种保证，尚未选入产品。
@@ -13,6 +20,23 @@
 - 修正版仅work/didelta-family-m74-muted：真实large/medium两株near9665/6446面、far2186/1592面，0.08m嵌土；24.40万叶片像素在线性光下减饱和/亮度，54.27万树皮像素逐字不变、原alpha零差值。删除任意格校正，原生图改线性光alpha加权未膨胀mip，远代理仍按实际烘焙视图处理；需实际场景/近远运动检验，不能称解决所有LOD。
 - 修正版代理烘焙完成，校准颜色0/法线1码值误差，单位法线最大误差.006465；work独立4201/session82670构建和另16幅同机位对照0错误、摆放SHA/数量/上限相同。两张完整联图已看，鲜绿减轻但偏冷灰、轮廓层次改善有限，仍不采用整家族替换；当前也不继续堆叠M65分布掩码来包装这次弱改善。两轮控制机位重叠，不计32项独立正式游戏验收。
 - 本轮未执行运动/压力/三浏览器或GPU性能验收，未加入public资产、未改运行源码、未发布5190，不提高World1.5/Lighting2.25。全部下载/烘焙/构建/捕获已结束，无待用户问题。下一阶段处理天空与光照的整体观感，并开始文档11的F07昼夜变化；季节/天气仍保留后续，Goal active。
+
+## M75 · 昼夜代表时段工作验证
+
+- M74未采用结论已提交9ba52f8，立即HEAD核验中文UTF8/临时消息清理，无push。M72实际一加12镜面通过；稳定5190继续BnTV9v9-，不受工作构建影响。
+- F07进入对应阶段，文档11先登记默认固定18:42夕阳、可选时段/时间流动与30分钟全天、暂停/后台停止的方向；不是已实现承诺或F07完成。先验证各时段统一受光，再实现实际连续状态，避免只移动太阳。
+- 官方Poly Haven确认Qwantani Sunrise/Noon/Dusk2/Night纯天空和CC0，Greg Zaal摄影/Jarod Guest处理；四份1k HDR下载总约4.68MB，官方size/MD5与本地SHA全部核对，work/daynight-m75-source/downloaded-source.json。不新增public资源；四张全景CPU近似ACES预览和source-contact已看，真实游戏tone mapping另验。Noon原浮点太阳峰超过HalfFloat范围，后续须明确处理高光上限。
+- work/build-daynight-m75.mjs只在独立4202/session72171的构建暴露固定时段工作钩子，并同步HDR背景/IBL、半球/主光/雾、海面反射/底色/泡沫/高光和每阶段重烘世界阴影；这是工作art study，不是最终连续缓存/资源预算实现。原始源文件SHA及全部变换在artifacts/daynight-m75/recipe.json。
+- 首30张固定场景捕获完成并逐图查看：桌面/手机低档×5时段×沿海/车内/小镇，0错误；月夜前的无月夜景太暗，未采用。随后加入Qwantani Moon Noon纯天空并校准月光/环境，实际新月夜原图已看，远路/护栏/路肩可读。work/daynight-m75-world-moon的正午误用gain4（实际准备器为2），这些正午图排除；artifacts/daynight-m75-world-day-gain-fixed另6图使用正确gain2，原图已看。首轮与后续重叠机位不相加称正式独立验收。
+- scripts/prepare-daylight-skies.mjs与source-assets/daylight-skies.json已整理固定来源，四个HDR正规化到HalfFloat范围：正午/月夜gain2、晨/暮gain1，所有RGBE浮点值乘回gain后逐值零差。首次编码误按256而当前HDRLoader用255导致差值16.06的失败保留，已按安装版解码约定修正；独立validate-daylight-skies逐文件hash/原图恢复及可见光源方向通过。4份运行HDR共4563942B，按选择请求，默认夕阳源不变。
+- 已接入真实源码：五个固定时段/暂停菜单44px选择器、保存偏好、异步旧请求丢弃及失败保留旧天空；背景/IBL、主光/半球/雾、海水反射/底色/泡沫/高光、世界阴影同步。昼夜连续循环尚未实现，F07未完成，不用固定选择冒充循环。
+- 一次daylight_review只读审查发现重烘临时target首次释放后为null，现每次重建1×1目标且finally清理；新浏览器回归监视blankCamera不得渲染到主画布。镜面新增不分配目标的invalidate，暂停时各可见镜只补一次；五档CPU更新回归通过（单帧最多1pass、两可见镜共2次后再冻结、旧30Hz规则不变）。TS首次漏Scenery显式返回类型的失败保留并已修，最终typecheck通过。
+- 第一版4204/session49418桌面Chrome两项通过，约23.90s；4205/session96796三浏览器受影响检查8通过/1条件跳过、0失败/重试，347.38s，报告browser-before-fixture-guard.json。跳过的是WebKit的慢请求/失败所有权，Chrome双端另验；三端都测五时段、阴影、实际水面绑定、暂停镜面及原三车镜面。
+- 正式采集初次忘带?test=1导致钩子关闭，12失败日志/目录missing-query保留；补query后12图通过但发现新异步时段机位在HDR加载期间先自动前进，不作为最终固定机位。现只给测试专用daylight-*机位的加载窗口加截图暂停/finally还原，并增加延迟网络下车辆/时钟不动回归；没有改实际菜单时段或驾驶代码。
+- 新最终冻结work/daylight-m75-stable-dist/4206/session76221，主index-B5_t2q5c937176B/SHA4ebd7cd1…，车辆Ben9v2ZJ6139B，RapierSHA不变、VehicleDynamics源SHA仍ecad100e…；清单在artifacts/daynight-m75/build-source.json。session21052正在重新执行受影响三浏览器与原镜面，不并行其他GPU。正式12机位清单已改为pass-m75-daylight-fixed且仍预先声明；运动/性能/普通入口/发布待完成，5190保持M72。
+- 第二批完整检查8过/3条件跳过/1失败（366.70s）：新冻结回归的车辆位置与时钟断言已过，失败仅是把道路投影参数硬比.84，实值.8400024849；已改为前后实际progress严格相等，不放宽位置/时钟。原始browser-fixture-progress-assertion.json保留。查看菜单原图还确认Safari原生select白底浅字，现只补appearance:none/深色背景/箭头，未改变游戏TS逻辑。
+- 当前最终候选是work/daylight-m75-ui-dist，4207/session52674；主index-CeEI7Ht_937176B/SHA4dfc2c44…、车辆D4vqsUiq6139B、CSS17904B、Rapier仍原SHA。所有运行TS/HTML与上一完整镜面检查相同，只有CSS变化，css-only-equivalence.json已按SHA独立证明。新UI三浏览器时段6过/3条件跳过（190.79s），与原镜面三过最终去重9过/3跳过、0最终失败；不是一次9项运行，分批来源在browser-consolidated.json。三端菜单原图已看，Safari深色可读，44px目标与实际选择/偏好重载通过。
+- 正式12机位已在当前4207按声明重新采集，pass-m75-daylight-fixed桌面/手机全图联图已看，0错误、elapsed30且同一实际车位。冻结诊断可能仍含80ms前的镜面首次刷新，不能将快照与旧M72静止峰机械对比或当手机FPS；后续活跃同机位计时另验。夜间键盘/Android原生触控录像脚本已在当前候选执行，日志motion-final；接着补三车月夜/实际灯光开关及性能。稳定5190仍M72，尚未发布新时段。
 
 ## M73 · 草坡爬坡力上限已分离
 

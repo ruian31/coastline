@@ -16,11 +16,8 @@ import boulderShapeText from './boulder-shape.json?raw';
 import inlandReliefText from './inland-relief-v2.json?raw';
 import type {CameraSurfaceSource} from '../systems/CameraCollision';
 import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
-
-// Dominant sun opening in the photographed Kloppenheim 06 sky (2k source).
-// Background, water and fixed shadows use this same world direction.
-export const GOLDEN_HOUR_SUN=new THREE.Vector3(.7557054630227001,.08121144680959244,.6498568719839308);
-export const GOLDEN_HOUR_SKY_INTENSITY=.26;
+import {GOLDEN_HOUR_SUN,GOLDEN_HOUR_SKY_INTENSITY,type DaylightPreset} from './Daylight';
+export {GOLDEN_HOUR_SUN,GOLDEN_HOUR_SKY_INTENSITY} from './Daylight';
 
 /** Sampled from the existing photographed CC0 reef; the underwater edge and
  * bottom form a closed body. Different crops retain broken natural ridges. */
@@ -64,6 +61,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   addShoreWetness:(material:THREE.MeshStandardMaterial)=>void;
   createShadowCasters:()=>THREE.Group;
   setSkyReflection:(texture:THREE.Texture)=>void;
+  setDaylight:(preset:DaylightPreset)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
   const root = new THREE.Group();
@@ -1126,6 +1124,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setSkyReflection:texture=>water.setSkyReflection(texture),
+    setDaylight:water.setDaylight,
     updateVehicle:vegetationInteraction.update,
     setLowDetail(enabled){
       grassCanopy.setLowDetail(enabled);

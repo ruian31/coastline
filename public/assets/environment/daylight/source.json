@@ -1,0 +1,110 @@
+{
+  "purpose": "Four licensed pure-sky HDRs for representative coast daylight states. Source files remain unmodified in the local cache; runtime gains restore their original radiance. Default golden-hour files are separate and unchanged.",
+  "licensePage": "https://polyhaven.com/license",
+  "files": [
+    {
+      "id": "qwantani_sunrise_puresky",
+      "original": {
+        "id": "qwantani_sunrise_puresky",
+        "page": "https://polyhaven.com/a/qwantani_sunrise_puresky",
+        "license": "CC0-1.0",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jarod Guest": "Processing"
+        },
+        "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_sunrise_puresky_1k.hdr",
+        "bytes": 1033946,
+        "md5": "9803c0c384d5175805c28f83b8489338",
+        "sha256": "af34ac1f1e859b44956eda8f6eedc2b8fc0b71a2beac74a5a365fab03f20f574"
+      },
+      "gain": 1,
+      "method": "Original RGBE radiance divided by an exact power of two, RLE re-encoded; every decoded source RGB value restored with zero error by multiplying the recorded gain.",
+      "width": 1024,
+      "height": 512,
+      "originalMax": 3678.36865234375,
+      "encodedMax": 3678.36865234375,
+      "maxRestoredError": 0,
+      "path": "qwantani_sunrise_puresky.hdr",
+      "bytes": 1048047,
+      "sha256": "a4fbef230dd8270307fb89a49b86b14b3b8f96d0866193648416a533b33c3b93"
+    },
+    {
+      "id": "qwantani_noon_puresky",
+      "original": {
+        "id": "qwantani_noon_puresky",
+        "page": "https://polyhaven.com/a/qwantani_noon_puresky",
+        "license": "CC0-1.0",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jarod Guest": "Processing"
+        },
+        "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_noon_puresky_1k.hdr",
+        "bytes": 1089069,
+        "md5": "ecd559633c4a70e069ab3bdd2e9a58f8",
+        "sha256": "7b51637c363377f25bcd1df8ab679127353de7f7ee0622b046f392e822e2ec76"
+      },
+      "gain": 2,
+      "method": "Original RGBE radiance divided by an exact power of two, RLE re-encoded; every decoded source RGB value restored with zero error by multiplying the recorded gain.",
+      "width": 1024,
+      "height": 512,
+      "originalMax": 109483.671875,
+      "encodedMax": 54741.8359375,
+      "maxRestoredError": 0,
+      "path": "qwantani_noon_puresky.hdr",
+      "bytes": 1105785,
+      "sha256": "3b404fbbf975cf23381e4040c78fafefd0f932f4045325112e5911898ab27dfb"
+    },
+    {
+      "id": "qwantani_dusk_2_puresky",
+      "original": {
+        "id": "qwantani_dusk_2_puresky",
+        "page": "https://polyhaven.com/a/qwantani_dusk_2_puresky",
+        "license": "CC0-1.0",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jarod Guest": "Processing"
+        },
+        "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_dusk_2_puresky_1k.hdr",
+        "bytes": 1166018,
+        "md5": "d400530e33f683654e70b4a087b6fe8d",
+        "sha256": "56dc9cb681f2641c08377e20e83fa5e4865fd900bcce26a15a1883580139b5e2"
+      },
+      "gain": 1,
+      "method": "Original RGBE radiance divided by an exact power of two, RLE re-encoded; every decoded source RGB value restored with zero error by multiplying the recorded gain.",
+      "width": 1024,
+      "height": 512,
+      "originalMax": 10.290196418762207,
+      "encodedMax": 10.290196418762207,
+      "maxRestoredError": 0,
+      "path": "qwantani_dusk_2_puresky.hdr",
+      "bytes": 1176718,
+      "sha256": "fa1c9981ae22ec3bf086a4c6476e26b2ea73996482c43c17861f35f9d7be0d4c"
+    },
+    {
+      "id": "qwantani_moon_noon_puresky",
+      "original": {
+        "id": "qwantani_moon_noon_puresky",
+        "page": "https://polyhaven.com/a/qwantani_moon_noon_puresky",
+        "license": "CC0-1.0",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jarod Guest": "Processing"
+        },
+        "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/qwantani_moon_noon_puresky_1k.hdr",
+        "bytes": 1220313,
+        "md5": "2438bdf37b5d679b6f5ee46f7e18384c",
+        "sha256": "0910eaf209c5988db4a5aa9cfae6bc972ea7e6e61b76d6a00f01cd9b93a8bb3b"
+      },
+      "gain": 2,
+      "method": "Original RGBE radiance divided by an exact power of two, RLE re-encoded; every decoded source RGB value restored with zero error by multiplying the recorded gain.",
+      "width": 1024,
+      "height": 512,
+      "originalMax": 81213.2421875,
+      "encodedMax": 40606.62109375,
+      "maxRestoredError": 0,
+      "path": "qwantani_moon_noon_puresky.hdr",
+      "bytes": 1233392,
+      "sha256": "5d89a3aec7d1308ffef3b713f15a01606861354898a0e6d13ab77c2ab2c33461"
+    }
+  ]
+}

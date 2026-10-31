@@ -7,7 +7,7 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
  const worldSun=new THREE.DirectionalLight(localSun.color,2.5);worldSun.name='Cached golden-hour world sun';worldSun.castShadow=true;
  const shadow=worldSun.shadow;shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);shadow.autoUpdate=false;shadow.normalBias=.035;
  const data={ready:false,mode:'loading',bakes:0,bakeDraws:0,localPasses:0,localDraws:0,localTriangles:0,casters:0,mapSize:shadow.mapSize.x,projectedWidth:0,projectedHeight:0};scene.userData.sunShadows=data;
- const proxyScene=new THREE.Scene(),blankCamera=new THREE.PerspectiveCamera(30,1,.1,1);
+ const proxyScene=new THREE.Scene(),blankCamera=new THREE.PerspectiveCamera(30,1,.1,1),cachedDirection=new THREE.Vector3();
  blankCamera.position.set(0,2000,0);blankCamera.lookAt(0,3000,0);
  const uniforms={coastLocalEnabled:{value:false},coastLocalMap:{value:null as THREE.DepthTexture|null},coastLocalMatrix:{value:localSun.shadow.matrix},coastLocalSize:{value:localSun.shadow.mapSize},coastLocalBias:{value:localSun.shadow.bias},coastLocalNormalBias:{value:localSun.shadow.normalBias}};
  const decorated=new WeakSet<THREE.Material>();
@@ -51,6 +51,7 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
  function prepare(){
   if(data.ready||disposed)return;
   scene.updateMatrixWorld(true);
+  data.casters=0;
   const casters=makeSceneryCasters();proxyScene.add(casters);
   // Scanned rock and built structures are static. Small instanced shrubs remain
   // excluded here; their compacted buffers are not an authored placement set.
@@ -64,7 +65,7 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
    });
   }
   casters.traverse(object=>{const mesh=object as THREE.Mesh;if(mesh.isMesh){mesh.castShadow=true;mesh.onBeforeShadow=()=>{data.bakeDraws++;};data.casters++;}});
-  const direction=localSun.position.clone().sub(localSun.target.position).normalize();worldSun.target.position.set(0,20,0);worldSun.position.copy(worldSun.target.position).addScaledVector(direction,1400);
+  const direction=localSun.position.clone().sub(localSun.target.position).normalize();cachedDirection.copy(direction);worldSun.target.position.set(0,20,0);worldSun.position.copy(worldSun.target.position).addScaledVector(direction,1400);
   proxyScene.add(worldSun,worldSun.target);proxyScene.updateMatrixWorld(true);shadow.updateMatrices(worldSun);
   const lightBounds=new THREE.Box3(),point=new THREE.Vector3(),worldBox=new THREE.Box3();
   casters.updateMatrixWorld(true);
@@ -86,6 +87,7 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
   // while the separate shadow camera still visits the complete static world.
   const previousTarget=renderer.getRenderTarget(),previousEnabled=renderer.shadowMap.enabled;
   try{
+   target??=new THREE.WebGLRenderTarget(1,1);
    renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;shadow.needsUpdate=true;renderer.setRenderTarget(target);renderer.render(proxyScene,blankCamera);
    data.ready=!!shadow.map;data.bakes++;
   }finally{
@@ -107,5 +109,13 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
   }finally{if(parent)parent.add(car);else car.removeFromParent();renderer.setRenderTarget(previousTarget);renderer.info.autoReset=autoReset;}
  }
 
- return{prepare,update,registerReceivers,diagnostics:data,setQuality(value:string){tier=value;if(tier!=='low')fallback=false;applyQuality();},restore(){fallback=false;applyQuality();},reduceForPerformance(){if(tier!=='low'||fallback)return false;fallback=true;applyQuality();return true;},dispose(){disposed=true;worldSun.removeFromParent();worldSun.target.removeFromParent();worldSun.dispose();localSun.shadow.dispose();target?.dispose();proxyScene.clear();renderer.shadowMap.autoUpdate=previousAutoUpdate;delete scene.userData.sunShadows;}};
+ function setLighting(color:THREE.Color,intensity:number){
+  worldSun.color.copy(color);worldSun.intensity=intensity;
+  const direction=localSun.position.clone().sub(localSun.target.position).normalize();
+  // At startup the complete world is still loading. Its first bake stays with
+  // sceneReady; fixed-hour changes later rebuild only when direction changed.
+  if(!data.ready||direction.distanceToSquared(cachedDirection)<1e-12)return;
+  data.ready=false;prepare();
+ }
+ return{prepare,update,registerReceivers,setLighting,diagnostics:data,setQuality(value:string){tier=value;if(tier!=='low')fallback=false;applyQuality();},restore(){fallback=false;applyQuality();},reduceForPerformance(){if(tier!=='low'||fallback)return false;fallback=true;applyQuality();return true;},dispose(){disposed=true;worldSun.removeFromParent();worldSun.target.removeFromParent();worldSun.dispose();localSun.shadow.dispose();target?.dispose();proxyScene.clear();renderer.shadowMap.autoUpdate=previousAutoUpdate;delete scene.userData.sunShadows;}};
 }

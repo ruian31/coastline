@@ -7,6 +7,8 @@
 @media(max-width:480px) and (orientation:portrait){.radio{width:44px;bottom:calc(112px + var(--safe-b))}.radio-copy{display:none}.radio .icon-button{width:44px;height:44px;border:1px solid var(--edge);border-radius:50%;background:#17333355}.radio .icon-button svg{width:18px}}
 
 .panel-note a{color:inherit;text-decoration-color:#e8d5a840;text-underline-offset:3px}
+#daylight-select{min-height:44px;min-width:145px}.settings-status{font-size:11px;line-height:1.6;color:var(--gold);margin:0 0 8px;text-align:right}
+.settings select{-webkit-appearance:none;appearance:none;color-scheme:dark;background-color:#244044;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23f9edce' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:27px}
 
 .topbar{z-index:5}
 

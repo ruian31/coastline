@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {DaylightPreset} from './Daylight';
 
 export const SEA_LEVEL=-1.5;
 const FIELD_WIDTH=1060,FIELD_DEPTH=940,HEIGHT_MIN=-8,HEIGHT_RANGE=80,SHORE_RANGE=32;
@@ -47,7 +48,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
  const field={value:fieldTexture},texel={value:new THREE.Vector2(1,1)},hasField={value:0},sky={value:null as THREE.Texture|null},hasSky={value:0},patchCenter={value:new THREE.Vector2()};
  const uniforms={uShoreField:field,uShoreTexel:texel,uShoreReady:hasField,uShoreTime:time,uShorePatchCenter:patchCenter,uShoreHarmonic:{value:mobile?0:.035}};
  fieldTexture.needsUpdate=true;
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyYaw:{value:0},uSkyClamp:{value:6},uWaterLight:{value:1},uGlitterColor:{value:new THREE.Vector3(2.5,1.35,.49)},uWaterHorizon:{value:new THREE.Color().setRGB(.51,.32,.28)},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
   vertexShader:`${shoreGLSL}
    varying vec3 vWaterPlane;void main(){vec4 p=modelMatrix*vec4(position,1.0);
    #if WATER_PATCH == 1
@@ -55,7 +56,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
    #endif
    vWaterPlane=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
   fragmentShader:`${shoreGLSL}
-   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity;uniform vec3 uSun;varying vec3 vWaterPlane;
+   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity,uSkyYaw,uSkyClamp,uWaterLight;uniform vec3 uSun,uGlitterColor,uWaterHorizon;varying vec3 vWaterPlane;
    float waterHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    float waterNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(waterHash(i),waterHash(i+vec2(1,0)),f.x),mix(waterHash(i+vec2(0,1)),waterHash(i+1.0),f.x),f.y);}
    void main(){
@@ -79,15 +80,15 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
     vec3 view=normalize(cameraPosition-world);float fresnel=pow(1.0-max(dot(normal,view),0.0),4.0);
     float opticalDepth=max(depth,max(0.0,-distance)*.13);
     vec3 water=mix(vec3(.008,.038,.057),vec3(.022,.115,.108),exp(-opticalDepth*.65)),reflection=vec3(.18,.23,.31);
-    if(uHasSky>.5){vec3 reflected=reflect(-view,normal);vec2 uv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);reflection=min(texture2D(uSkyMap,uv).rgb,vec3(6.0))*uSkyIntensity;}
-    vec3 color=mix(water,reflection,.025+fresnel*.88),halfway=normalize(view+uSun);
-    float glitter=pow(max(dot(normal,halfway),0.0),220.0)*(.45+waterNoise(p*1.1+t*.14)*.55);color+=vec3(2.5,1.35,.49)*glitter;
-    color+=vec3(.025,.035,.038)*(waterNoise(p*.31+warp*.05)-.5);
+    if(uHasSky>.5){vec3 reflected=reflect(-view,normal);vec2 uv=vec2(atan(reflected.z,reflected.x)*.159154943+.5,asin(clamp(reflected.y,-1.0,1.0))*.318309886+.5);uv.x=fract(uv.x-uSkyYaw);reflection=min(texture2D(uSkyMap,uv).rgb,vec3(uSkyClamp))*uSkyIntensity;}
+    water*=uWaterLight;vec3 color=mix(water,reflection,.025+fresnel*.88),halfway=normalize(view+uSun);
+    float glitter=pow(max(dot(normal,halfway),0.0),220.0)*(.45+waterNoise(p*1.1+t*.14)*.55);color+=uGlitterColor*glitter;
+    color+=vec3(.025,.035,.038)*uWaterLight*(waterNoise(p*.31+warp*.05)-.5);
     float edge=1.0-smoothstep(.02,.55,depth),bubbles=smoothstep(.25,.7,waterNoise(p*2.7+vec2(t*.1,-t*.06)));
     float foam=edge*(.34+.66*bubbles)*(1.0-smoothstep(2.0,5.0,abs(distance)));
     foam+=exp(-depth*1.6)*pow(max(0.0,sin(phase)),8.0)*bubbles*.12;
-    color=mix(color,vec3(.69,.71,.65),clamp(foam*.78,0.0,.8));
-    float viewDistance=length(cameraPosition.xz-p);color=mix(color,vec3(.51,.32,.28),smoothstep(650.0,3800.0,viewDistance)*.72);
+    color=mix(color,vec3(.69,.71,.65)*uWaterLight,clamp(foam*.78,0.0,.8));
+    float viewDistance=length(cameraPosition.xz-p);color=mix(color,uWaterHorizon,smoothstep(650.0,3800.0,viewDistance)*.72);
     float alpha=max(1.0-exp(-max(opticalDepth,.02)*1.8),fresnel*.8);alpha=mix(alpha,1.0,foam*.8);
     gl_FragColor=vec4(color,alpha);
     #include <tonemapping_fragment>
@@ -128,6 +129,12 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
   prepare(sample:(x:number,z:number)=>number,solidFloor:(x:number,z:number)=>number){if(disposed)return;const built=buildShoreField(sample,mobile?512:768,solidFloor),texture=new THREE.DataTexture(built.data,built.size,built.size);texture.minFilter=texture.magFilter=THREE.LinearFilter;texture.needsUpdate=true;fieldTexture.dispose();fieldTexture=texture;field.value=texture;cpuField={distance:built.distance,size:built.size};texel.value.set(1/built.size,1/built.size);hasField.value=1;ready=true;ocean.userData.shoreField={size:built.size,bytes:built.data.byteLength,waterLevel:SEA_LEVEL};patchCell.set(Infinity,Infinity);update(new THREE.Vector3(patchCenter.value.x,0,patchCenter.value.y));},
   update,
   setSkyReflection(texture:THREE.Texture){sky.value=texture;hasSky.value=1;},
+  setDaylight(preset:DaylightPreset){
+   sun.fromArray(preset.direction).normalize();
+   material.uniforms.uSkyIntensity.value=preset.sky*preset.gain;material.uniforms.uSkyClamp.value=6/preset.gain;material.uniforms.uSkyYaw.value=preset.rotation/(Math.PI*2);
+   material.uniforms.uWaterLight.value=preset.waterLight;material.uniforms.uGlitterColor.value.fromArray(preset.glitter);
+   if(preset.id==='golden')material.uniforms.uWaterHorizon.value.setRGB(.51,.32,.28);else material.uniforms.uWaterHorizon.value.set(preset.fog);
+  },
   addWetness(target:THREE.MeshStandardMaterial){
    if(decorated.has(target))return;decorated.add(target);const previous=target.onBeforeCompile,key=target.customProgramCacheKey();
    target.onBeforeCompile=(shader,renderer)=>{previous.call(target,shader,renderer);Object.assign(shader.uniforms,uniforms);

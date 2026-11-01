@@ -15,6 +15,7 @@ export default defineConfig({
   },
   use: {
     baseURL,
+    headless: process.env.HEADED_BROWSER!=='1',
     launchOptions: {args: ['--enable-gpu', '--use-gl=angle', '--use-angle=gl']},
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

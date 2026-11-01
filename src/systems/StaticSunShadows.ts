@@ -109,12 +109,13 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
   }finally{if(parent)parent.add(car);else car.removeFromParent();renderer.setRenderTarget(previousTarget);renderer.info.autoReset=autoReset;}
  }
 
- function setLighting(color:THREE.Color,intensity:number){
+ function setLighting(color:THREE.Color,intensity:number,directionStep=0){
   worldSun.color.copy(color);worldSun.intensity=intensity;
   const direction=localSun.position.clone().sub(localSun.target.position).normalize();
-  // At startup the complete world is still loading. Its first bake stays with
-  // sceneReady; fixed-hour changes later rebuild only when direction changed.
-  if(!data.ready||direction.distanceToSquared(cachedDirection)<1e-12)return;
+  // Light moves continuously. The static occlusion map has a bounded angular
+  // error until its next bake; fixed selections still request an exact bake.
+  worldSun.position.copy(worldSun.target.position).addScaledVector(direction,1400);
+  if(!data.ready||direction.distanceToSquared(cachedDirection)<Math.max(1e-12,2-2*Math.cos(THREE.MathUtils.degToRad(directionStep))))return;
   data.ready=false;prepare();
  }
  return{prepare,update,registerReceivers,setLighting,diagnostics:data,setQuality(value:string){tier=value;if(tier!=='low')fallback=false;applyQuality();},restore(){fallback=false;applyQuality();},reduceForPerformance(){if(tier!=='low'||fallback)return false;fallback=true;applyQuality();return true;},dispose(){disposed=true;worldSun.removeFromParent();worldSun.target.removeFromParent();worldSun.dispose();localSun.shadow.dispose();target?.dispose();proxyScene.clear();renderer.shadowMap.autoUpdate=previousAutoUpdate;delete scene.userData.sunShadows;}};

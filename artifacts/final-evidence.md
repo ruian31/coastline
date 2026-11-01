@@ -1,3 +1,11 @@
+# M76 · 可选连续昼夜已更新本地试玩
+
+- [试玩](http://10.158.204.114:5190/)暂停菜单开启“时间自然流动”，30分钟一昼夜；默认仍固定18:42。天空、环境辐射、日/月光、雾、海水与阴影共同变化，暂停/未开始不推进，可冻结当前时间并记住偏好。正常速度完整一昼夜驾驶正在验证，四季/天气尚未实现，World1.5/Lighting2.25保持，Goal active。
+- [CPU时间线](daynight-m76/timeline-cpu.json)2881时刻、边界连续性/时钟格式通过。[实际GPU辐射读回](daynight-m76/gpu-radiance-blend.json)半浮点等权混合最大相对误差0.000772476，单源免混合draw。[12正式机位](evidence-daylight-cycle-m76.json)两端六时段及月夜车内，[桌面](pass-m76-daylight-cycle-final/desktop-contact.png)/[手机](pass-m76-daylight-cycle-final/mobile-contact.png)联图全部已看、0错误；峰桌面155calls/768435tri/206geo/58tex、手机112/294170/203/55，不当运动或手机FPS证明。
+- 浏览器分批而非一次总数：[基础回归](daynight-m76/browser-source-full.json)16过/5条件跳过；[过滤和时钟](daynight-m76/browser-cycle-mips-final.json)10过/5跳过；[最终生命周期](daynight-m76/browser-final-source-lifecycle.json)3过；[最后取消所有权修正](daynight-m76/browser-cancel-owner.json)4过。[实际有窗口失焦](daynight-m76/browser-headed-native-focus.json)2过，观测hidden:false/focused:false，只证明失焦暂停，不当手机后台。失败历史和条件跳过见文档08。[活跃方法字节等价](daynight-m76/active-loop-equivalence.json)说明最后取消修正与已测渲染版本关系。
+- [完整RAF成本](daynight-m76/cost-summary.json)M75固定/M76固定/循环夕阳/月夜，每两状态各540有效GPU帧，含镜面和实际世界重烘；镇旁夕阳循环GPU中位2.985→4.479ms，不能宣称整体提速。循环烘焙峰265calls/777945tri，镇旁末211geo/61tex，已有预算超额保留。[冷源原生RAF](daynight-m76-cold-prefetch/result.json)两状态各10秒，P95约16.8/max33.4ms、无超过50ms，源准备确实发生；主机短测不代表手机或热稳定。
+- [源码/11资产SHA](daynight-m76/build-source.json)、[原子本地发布](daynight-m76/local-release.json)核对4209/5190/LAN共33行、20旧JS保留，无push。主包DzRHJTJG952364B，车辆物理源码SHA不变。[普通入口](fineleaf-m76-cycle-release/result.json)前进5.03m、原资源/压草/116物体一次缓存及测试全局关闭；[菜单开启循环再驾驶](fineleaf-m76-cycle-release/cycle.json)前进6.00m、时钟18.7→18.712665、测试/工作钩子仍关闭，0错误，两张原图已看。[本轮一加12 Chrome反馈](daynight-m76/phone-feedback.json)确认开启流动后“主画面和后视镜都顺畅”，这次体验通过；无新增帧时间或热稳定采样，iPhone仍待实测。
+
 # M75 · 五个固定海岸时段已更新本地试玩
 
 - [试玩](http://10.158.204.114:5190/)暂停菜单“海岸时段”可选晨曦/正午/原夕阳/暮色/月夜并记住偏好，默认18:42；背景与IBL、太阳/半球/雾、海水和世界阴影同步，暂停镜面各刷新一次后冻结。**连续昼夜、四季和天气仍未实现**，World1.5/Lighting2.25保持，Goal active。

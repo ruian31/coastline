@@ -1,6 +1,45 @@
-# 当前进展 · 2026-10-31
+# 当前进展 · 2026-11-01
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
+
+## 当前检查点 · 2026-11-01 / M76已更新本地试玩，待提交
+
+- 目标active，HEAD9f12f08为上一步已提交M75。M76连续昼夜源码及检查已完成，中文commit尚待文档/证据核对。新文件DaylightCycle.ts、两份CPU/GPU脚本及daylight-cycle.spec.ts，其余改动沿现有模块局部演进；不push。
+- 稳定5190/session52233已原子更新M76（0.0.0.0、10.158.204.114），候选4209/session63195，M75对照4207/session39342；4208仅旧work研究。当前主包index-DzRHJTJG.js952364B/SHA6f4b9f29…、CSS17947B；源/11资产和未改physicsSHA见daynight-m76/build-source.json。三入口33行SHA核对、20旧JS保留。早先5190/4207确实停止且HTTP refused，已明确恢复并验证，不将进程失效写成浏览器超时。
+- 最终wrap/mip/单源免混合构建12正式机位pass-m76-daylight-cycle-final已采集且全部联图已看，0错误；峰桌面155/768435/206/58、手机112/294170/203/55（calls/tri/geo/tex）。这是冻结诊断，不当活跃或手机FPS。单源环境现在直接用同一PMREM，真实GPU校准证明0额外混合draw；双色输入/输出半浮点最大相对误差0.000772476。旧校准一次误把shadow proxyScene当主Scene导致probe null，限定主画布后通过，失败保留。
+- 浏览器分批：16过/5跳过基础回归、mip/format专项10过/5跳过、最终生命周期3过；最后候选取消/幂等释放后Chrome受影响4过。活跃循环等方法字节等价证明在active-loop-equivalence.json，不声称所有检查是同一调用。原生焦点case头两轮失败来自Playwright默认强制focus；取消该仿真后headed2Chrome过（hidden:false/focused:false，只证明失焦暂停、无自动恢复、手动恢复后流动）。
+- 四组GPU/CPU采样已全部完成，每状态540完整RAF有效/无disjoint、包含镜面及世界重烘，结果见cost-summary.json。夕阳镇旁中位增加到4.479ms，夜间5.681ms，不称总体提速。冷预取两段10秒原生RAF P95约16.8/max33.4ms、无超过50ms，实有下一源烘焙及世界重烘；仅主机短测，不当真机FPS。
+- normal候选/稳定均通过：稳定前进5.03m，原资源、压草、116投影一次缓存及测试全局关闭；实际菜单开启循环再驾驶6.00m、时钟推进、0错误，普通与流动两图已看。最终候选所有权取消修正只影响载入/释放，4受影响检查通过，源码SHA已重录。
+- 正常速度整日驾驶已在稳定5190开始，session44041，artifacts/daynight-m76-full-normal，约30分钟/真实自动巡航与镜头/岔路UI，不加速、不teleport、不设置车速；每秒诊断、每5分钟图、完整录像保留。只此一个GPU任务，禁止并行浏览器/重CPU。尚在跑，不把旧36倍work回放替代。随后看实际视频、汇总/文档并单独提交该验证步骤。World1.5/Lighting2.25保持，真实一加12 Chrome已确认开启流动后“主画面和后视镜都顺畅”，保存phone-feedback.json，不推断完整热稳定；季节/天气、自然群落与陡坡可读性继续后续。
+
+- 历史性能过程：旧对照曾因4207未监听失败，保留profile-m75-control.log、空旧目录，不重用失败标签，最终为m76-m75-control-live。四组均已完成，完整数据在mirrors-m67-profile-m76-*。
+- cycle18.7实际采到每状态2次世界重烘，116个额外draw，峰248/265calls及775279/777945tri；对应GPU7.88/8.25和9.33/5.60ms。它们确实在全RAF GPU查询内，不是只测主画面。常态树旁/镇旁GPU P50 2.679/4.479，旧控制3.150/2.985，镇旁中位增加；不要称全局提速或手机FPS。先完成夜景和冷预取帧间隔，再决定是否需要修正。
+
+## M76 · 连续昼夜的天空与受光工作研究
+
+- M75固定五时段已提交9f12f08，立即HEAD中文UTF8核验/临时消息删除、无push；稳定5190仍已验证CeEI7Ht_。
+- 下一步是实际连续F07，不能把五张图硬切当循环。work/cycle-skies-m76.ts在任意小时计算连续太阳/月亮轨迹，混合相邻摄影天空、去除原照片局部光源后只添加一个移动光源；工作状态同步半球/主光/雾、海水与阴影。效果需逐图检查，尚不视为可发布。
+- 独立4208/session28420，来源/实际OceanDrive变换在artifacts/daynight-m76/art-study-recipe.json；工作版为便于任意时刻比较驻留全部五源、逐次PMREM，不是正式缓存或性能方案。新的实际双端十时刻捕获已启动（capture-first.log），正式5190/源码未改，不把无自动时钟的研究称循环完成。
+
+- M76进展：初次20图0错误但天空因Scene.background对动态equirect缓存停在首帧，原记录daynight-m76-first保留并排除。改直接采样live RT背景后20图全看，实际天空变化成立；单次cycle_art_review指出海面19:30颜色按id跳变、IBL比值混合交叉项、旧光晕高度和低分辨率光盘四问题。已分别改连续waterHorizon字段、先分源预滤波再混环境、保持地平线纬度映射、最终屏幕fwidth光盘，非重复审查。
+- 连续纯模型已移入src/world/Daylight.ts，2881时刻/30分钟全天/非活动冻结/环绕/光源向量与各交界颜色-水面-高光-有效直射连续通过；首次在非key19.0的2微小时范围用1e-6过严颜色阈值失败保留，改对称1e-7小时极限观察而保持原颜色阈值。有效小时不再无意义取模改变浮点值，颜色直接在线性光插值、不转8bit字符串。TypeScript通过；尚未发布该模型或完成F07。
+- 新work缓存候选每源PMREM只烘一次，相邻两源及下一源驻留；十时刻双端20图0错误，观测峰3源，末夜仅1源。任意跳时刻的短暂旧/新两对峰仍需检查，不称全部路径≤3；work/cycle-skies-m76-cache.ts，4208不动正式5190。正在session43129做原真实巡航的36倍时间全日回放/暂停恢复，非真机或普通速率性能证据。
+
+- 工作版36倍时间、真实start-auto/暂停恢复两端完整回放已结束：Android/桌面累计27.37/27.62游戏小时，实际物理巡航661.56/668.44m，0错误；各112样本、最多3源、9源烘焙（跨过一个全天后再次进入夜晚），世界1°阈值422/426次烘焙仅属于加速回放，不当正常速率性能。录像仍待抽帧/完整关键段观看，不能仅凭无错误验收运动。
+- 正式源码新增src/world/DaylightCycle.ts、菜单时间自然流动、30分钟全天，默认固定夕阳不动；当前4209/session63195独立source-dist，5190仍M75。含相邻源/预取缓存、分源IBL预滤波、动态天空/屏幕光盘、暂停/未开始/后台门控、保存当前时间/冻结以及切回固定时段释放。初次tsc只有一个unused night解构报错，已删除；之后生产构建通过。
+- 正式Chrome首3项1过2失败（35.38s）：真实暮色跨界/阴影阈值通过；新标签44px被更高specificity旧43px规则覆盖，已改.settings .time-flow-label；失败网络用旧80ms诊断先返回，改等实际路由abort及控件复原后再读诊断，并在激活起始立即标aria-busy。原报告保留。当前session81759重跑Chrome3项，勿并行GPU；尚未发布、未提交M76、未宣告F07完成。
+
+- Chrome修正后3项全部通过/25.45s/0跳过失败，browser-source-chrome-ui-fixed.json；菜单原图已看。网络原失败实际是用过期80ms诊断过早断言，已等待实际abort/控件复原，保留失败而不冒充运行逻辑大修。source UI44px优先级修正已实测。
+- 看完缓存版20图后，17.5的低太阳照片被拉出不自然长条；DAYLIGHT_KEYS的day保持到18.0（原15.5），仅接近日落再混云隙夕阳，避免高度差过大。CPU模型重新通过，旧工作回放/图仅作为前一美术方案，不当最终源码证据。当前source重新构建后session15140运行三浏览器cycle+fixed daylight+mirror受影响回归，正式5190保持M75。
+
+- 第一批完整三浏览器回归已结束：browser-source-full.json 16过/5条件跳过/0失败重试，433.04s；三端循环开关/冻结/重载、原五固定时段和三车镜面均过。随后对计数/自有全屏三角形/测试机位的源更新构建，session5735运行cycle专项四case×三端（包含新欢迎页与真实标签切换）；不要并行GPU。
+- DaylightCycle现在自有全屏三角形，避免add-on FullScreenQuad的共享geometry在旧周期dispose时使新周期VAO失效；新增2混合pass计入主诊断，源PMREM烘焙绘制/CPU提交时间另列累计而不冒充每帧GPU时间。启动保存周期时原程序天空也隐藏，固定偏好ID保留。正式12机位已预先声明于artifacts/evidence-daylight-cycle-m76.json，尚未采集。
+- 新scripts/check-daylight-blend.mjs准备直接读真实GPU uniform与两PMREM输入/输出半浮点FBO，证明分源环境系数和混合无旧交叉项；待GPU专项完成再执行。当前还补了显示时间浮点边界（06:10/18:42不显示成上一分钟）的formatDaylightHour及CPU断言、摄影源mip过滤，需下一最终构建，勿把5735前的构建当这些末改已验。
+
+- 追加cycle专项结果browser-cycle-counters-final.json：8过/2条件跳过/2失败，199.52s。两Chrome后台case因headless另开tab仍不触发visibility/blur而失败（未证明运行后台有bug），WebKit欢迎页/循环生命周期已过。没有伪造隐藏事件或直接把失败算过；拆为所有引擎欢迎页与HEADED_BROWSER=1真实窗口标签切换两类，playwright.config.ts提供显式开关，独立Xvfb的headed Chrome双端session73261正在验证，勿并行GPU。
+- 最终当前source构建包含format与摄影源GPU mip过滤，真实GPU辐射校准scripts/check-daylight-blend.mjs已通过：桌面/手机五个相同像素中心、输入两RGBA16F PMREM与输出读回，最大相对误差0.000772476（半浮点舍入），源环境gain实际GPU uniform为day/golden各0.7、50%混合，无旧比值交叉项。gpu-radiance-blend.json/log保留，0错误，不当性能结论。
+
+- 已查明后台验证的真实原因：安装版Playwright coreBundle.js:36220默认发送Emulation.setFocusEmulationEnabled(true)，不是游戏代码丢失监听。headed case改为关闭这个强制模拟后，browser-headed-native-focus.json双Chrome2过/0失败，15.0s；实际记录hidden:false/focused:false（原生失焦），时钟停留、回前台仍暂停、手动恢复后推进。只证明失焦，不伪称隐藏tab或真实手机后台都已验。当前session为三端最终mip/format循环专项browser-cycle-mips-final，GPU顺序继续。
 
 ## 最新检查点 · M75已发布，继续F07连续昼夜
 

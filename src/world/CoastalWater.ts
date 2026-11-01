@@ -133,7 +133,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
    sun.fromArray(preset.direction).normalize();
    material.uniforms.uSkyIntensity.value=preset.sky*preset.gain;material.uniforms.uSkyClamp.value=6/preset.gain;material.uniforms.uSkyYaw.value=preset.rotation/(Math.PI*2);
    material.uniforms.uWaterLight.value=preset.waterLight;material.uniforms.uGlitterColor.value.fromArray(preset.glitter);
-   if(preset.id==='golden')material.uniforms.uWaterHorizon.value.setRGB(.51,.32,.28);else material.uniforms.uWaterHorizon.value.set(preset.fog);
+   material.uniforms.uWaterHorizon.value.set(preset.waterHorizon??preset.fog);
   },
   addWetness(target:THREE.MeshStandardMaterial){
    if(decorated.has(target))return;decorated.add(target);const previous=target.onBeforeCompile,key=target.customProgramCacheKey();

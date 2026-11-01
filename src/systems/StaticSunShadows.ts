@@ -8,6 +8,10 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
  const shadow=worldSun.shadow;shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);shadow.autoUpdate=false;shadow.normalBias=.035;
  const data={ready:false,mode:'loading',bakes:0,bakeDraws:0,localPasses:0,localDraws:0,localTriangles:0,casters:0,mapSize:shadow.mapSize.x,projectedWidth:0,projectedHeight:0};scene.userData.sunShadows=data;
  const proxyScene=new THREE.Scene(),blankCamera=new THREE.PerspectiveCamera(30,1,.1,1),cachedDirection=new THREE.Vector3();
+ // The large ground triangles span several shadow texels. Offset only their
+ // rasterized depth with slope, keeping object casters and receiver contact
+ // bias unchanged as daylight moves across the terrain.
+ const terrainDepth=new THREE.MeshDepthMaterial({polygonOffset:true,polygonOffsetFactor:.5,polygonOffsetUnits:2});terrainDepth.name='Slope-offset terrain shadow';
  blankCamera.position.set(0,2000,0);blankCamera.lookAt(0,3000,0);
  const uniforms={coastLocalEnabled:{value:false},coastLocalMap:{value:null as THREE.DepthTexture|null},coastLocalMatrix:{value:localSun.shadow.matrix},coastLocalSize:{value:localSun.shadow.mapSize},coastLocalBias:{value:localSun.shadow.bias},coastLocalNormalBias:{value:localSun.shadow.normalBias}};
  const decorated=new WeakSet<THREE.Material>();
@@ -53,6 +57,7 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
   scene.updateMatrixWorld(true);
   data.casters=0;
   const casters=makeSceneryCasters();proxyScene.add(casters);
+  const terrainCaster=casters.getObjectByName('Limestone headland and grassy interior') as THREE.Mesh|undefined;if(terrainCaster)terrainCaster.customDepthMaterial=terrainDepth;
   // Scanned rock and built structures are static. Small instanced shrubs remain
   // excluded here; their compacted buffers are not an authored placement set.
   for(const name of['Eroded sandstone headland','Coastal destinations']){
@@ -118,5 +123,5 @@ export function createStaticSunShadows(scene:THREE.Scene,renderer:THREE.WebGLRen
   if(!data.ready||direction.distanceToSquared(cachedDirection)<Math.max(1e-12,2-2*Math.cos(THREE.MathUtils.degToRad(directionStep))))return;
   data.ready=false;prepare();
  }
- return{prepare,update,registerReceivers,setLighting,diagnostics:data,setQuality(value:string){tier=value;if(tier!=='low')fallback=false;applyQuality();},restore(){fallback=false;applyQuality();},reduceForPerformance(){if(tier!=='low'||fallback)return false;fallback=true;applyQuality();return true;},dispose(){disposed=true;worldSun.removeFromParent();worldSun.target.removeFromParent();worldSun.dispose();localSun.shadow.dispose();target?.dispose();proxyScene.clear();renderer.shadowMap.autoUpdate=previousAutoUpdate;delete scene.userData.sunShadows;}};
+ return{prepare,update,registerReceivers,setLighting,diagnostics:data,setQuality(value:string){tier=value;if(tier!=='low')fallback=false;applyQuality();},restore(){fallback=false;applyQuality();},reduceForPerformance(){if(tier!=='low'||fallback)return false;fallback=true;applyQuality();return true;},dispose(){disposed=true;worldSun.removeFromParent();worldSun.target.removeFromParent();worldSun.dispose();localSun.shadow.dispose();target?.dispose();terrainDepth.dispose();proxyScene.clear();renderer.shadowMap.autoUpdate=previousAutoUpdate;delete scene.userData.sunShadows;}};
 }

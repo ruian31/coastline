@@ -1,3 +1,11 @@
+# M76补正 · 地形自阴影已更新试玩，继续自然形体
+
+- 只在大地形缓存深度draw中加入slope polygon offset .5/2，正常颜色、对象caster和receiver normalBias .035保持，自有深度材质复用并释放，无新增目标/贴图/pass。[三浏览器](daynight-m76/browser-terrain-depth.json)一次11过/1设备条件跳过、144.84秒，无失败/重试；[实际GL状态](daynight-m76/terrain-depth-gl-summary.json)每端4次地形偏移正确/1材质UUID，460–464次对象深度draw偏移关闭、颜色无偏移/仍接收阴影、GL0。
+- [有效32工作图](daynight-m76-terrain-depth-study-active/result.json)与[16接触场景图](daynight-m76-terrain-depth-contacts/result.json)联图全部已看；首轮同名代理Scene误判、实际applied=0的32图排除。最终源码[20代表图](daynight-m76-terrain-final/result.json)/[桌面](daynight-m76-terrain-final/desktop-contact.png)/[手机](daynight-m76-terrain-final/mobile-contact.png)全部已看、0错误；两端均844×390低档，实际昼/夜/出洞/小镇等，不混为一次68项正式采集。
+- [真实键盘/原生触控驾驶](daynight-m76-terrain-drive-verified/summary.json)：323.78/348.69m、各3次重烘、镜面/暂停恢复、0错误；[阶段图与6个稀疏编码帧](daynight-m76-terrain-drive-verified/contact.png)已看。键盘段邻护栏时短暂减速未独立取接触证据，不称无碰撞路线。脚本80ms旧诊断、正午观察时长不足的两次失败保留，最终等待状态/延长巡航而保留重烘断言。
+- [完整RAF成本](daynight-m76/terrain-depth-cost-summary.json)控制→补丁树旁GPU P50/P95 4.212/9.674→4.796/9.292ms，镇旁4.665/9.696→3.976/7.008；各540有效/无disjoint、均镜面且含实际世界重烘。CPU任务约+3.8%/+1.8%，不称总体提速/真机FPS。补丁重烘峰248/260calls、775279/775804tri；末210/211geo、54/56tex，旧预算超额保留。
+- [源码/11资产](daynight-m76-terrain-final/build-source.json)、[本地原子发布](daynight-m76-terrain-final/local-release.json)三入口33行验证/24旧JS保留，无push。CPz7ET6p952723B、物理源码SHA未变。[普通入口](fineleaf-m76-terrain-release/result.json)5.03m、[菜单开启循环](fineleaf-m76-terrain-release/cycle.json)再5.95m/18.712667h，原资源/压草/116投影单缓存/测试全局关闭、0错误，两原图已看。World1.5/Lighting2.25保持，真实本补丁手机数据未测；Goal active，下一步实际验证已准备的M77局部岩脚形体，四季/天气仍待实现。
+
 # M76补正 · 天空亮条已修正，继续地形自阴影
 
 - [实际HDR边界旧版](daynight-seams-m76-before/result.json)曲率.879071、[新源码](daynight-seams-m76-after/result.json).038298，固定上限.12，旧版真实失败记录保留。让RepeatWrapping处理源采样，不先fract破坏导数；HDR资产未改。[shader范围等价](daynight-seams-m76-after/shader-only-equivalence.json)证明其余缓存/时钟/管线不变，不把它当性能测试。

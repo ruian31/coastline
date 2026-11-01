@@ -2,13 +2,14 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 最新检查点 · M76天空亮条补丁已发布，待提交
+## 最新检查点 · M76地形自阴影已发布，待提交
 
-- Goal active，原连续昼夜848f8ce与正常速度整日QA66d4e7b均已中文UTF8核验/临时消息删除，无push。此后只改DaylightCycle.ts的源采样两行GLSL及注释：lookup不先fract，光源距离才fract。恢复这段后SHA准确回到原发布639cf9…，其余缓存/时钟/几何/物理不变。
-- 新增scripts/check-daylight-seams.mjs实际FBO边界像素回归；旧5190/DzRHJTJG曲率.879071真实失败、新4211/BQ0R3W1w .038298通过，固定limit .12，四时刻/GL0/0错误，前后完整原报告保留。三浏览器optics生命周期一次3过/0失败跳过重试104.78s；环境GPU双端重新读回误差.000772476、单源0混合draw。最终源码非关键时刻8图全看，不把原12关键机位并称同构建20图。
-- 稳定5190/session52233、10.158.204.114已原子更新BQ0R3W1w952506B（SHA c354d65b…）；候选4211/session90919、旧源码对照4209/session63195。11资产三地址33行验证、22旧JS保留；daynight-seams-m76-after/build-source.json与local-release.json为当前来源。normal无query前进4.85m，实际菜单循环再行5.99m/18.712888小时，原资源/压草/116投影单缓存及测试全局关闭、0错误，普通两图已看。未重复手机采样或完整GPU成本，旧成本与30分钟功能证据准确标明版本。
-- 唯一当前GPU任务：work/study-terrain-depth-bias-m76.mjs，session87863，artifacts/daynight-m76-terrain-depth-study；在实际terrain代理onBeforeShadow深度draw中试polygon offset 0/.5/1/2，onAfterShadow恢复共享depth material，重烘真实缓存。不是产品更改、不提高全局normalBias，保持车/树对象投影精度。等它结束后看实际白昼地形与树/建筑接触，必要时再决定实现；禁止并行浏览器/重CPU。
-- M77岩脚work工厂及build脚本已准备，仍未构建或发布；先消除坡面暗纹，再检验一段岩脚厚度，保持World1.5/Lighting2.25、四季/天气/自然群落/陡坡可读性未完成。当前文档和shader/回归脚本整理后按commit提交，继续目标。
+- Goal active。HEAD75f6f4e为天空亮条修正，原848f8ce/66d4e7b均已UTF8核验/清理临时消息、无push。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
+- 已通过生产构建、三浏览器一次11过/1设备条件跳过（144.84s，无失败重试）；terrain-depth-gl-summary.json每端4次terrain draw偏移正确/同1UUID，其他460–464对象depth draw关闭偏移、颜色无偏移/仍接收阴影、GL0。最终源码daynight-m76-terrain-final 20图（两端844×390低档：白昼/坡地/小镇/出洞/原夕阳/月夜）两张联图全部已看、0错误。
+- 已完成隔离性能：4211/BQ0R3W1w控制→4212/CPz7ET6p，两状态各540完整RAF GPU、无disjoint、均镜面且各含1次世界烘焙；另8s4倍CPU。terrain-depth-cost-summary.json：树GPU P50/P95 4.212/9.674→4.796/9.292ms，镇4.665/9.696→3.976/7.008；CPU任务+3.8%/+1.8%，不能称整体提速。补丁烘焙9.43/9.53ms、峰248/260calls与775279/775804tri，末210/211geo、54/56tex，旧预算超额保留。
+- 真实UI/键盘W/Android原生触控/车内/暂停恢复已完成：daynight-m76-terrain-drive-verified，323.78/348.69m、虚时+.3938/.3975h、各3次重烘/镜面刷新/0错误。两个视频各10/23/29s稀疏编码帧和六个输入阶段原图全看，不称逐帧或真机FPS。键盘末段邻护栏时17.98→1.13m/s，随后巡航恢复；未独立取接触，不当无碰撞路线或新物理故障。两份失败保留：第1过早读80ms诊断，第2近正午17秒不能保证2次1度重烘；最终等待状态、延长自动段20秒，保持>=2断言并存观察数据。
+- 稳定5190/session52233、10.158.204.114已原子更新CPz7ET6p952723B/SHA15d8a620…（CSS17947B）；候选4212/session9437，旧天空补丁对照4211/session90919。daynight-m76-terrain-final/build-source.json及local-release.json三入口11资产33行核对、24旧JS保留，无push，物理源码SHA仍未变。normal无query5.03m、菜单开循环再5.95m/18.712667h、原资源/压草/116投影一次缓存/测试全局关闭、0错误，两原图已看。
+- 工作研究全部结束：首轮32图applied0因代理也有Coastal landscape名字，排除；有效active目录32图实际65应用，contacts16图33应用，四张联图全看。当前无浏览器/GPU或重CPU任务、无待用户问题。下一步整理证据/中文commit本补丁，然后实际构建并查看M77岩脚工厂；work/cliff-apron-m77.ts（496面、周界埋.3m、实际ground采样）和work/build-cliff-apron-m77.mjs已准备，尚未构建或产品接入。World1.5/Lighting2.25保持，季节/天气、自然群落和陡坡可读性仍未完成。
 
 ## M76原功能发布检查点（历史，当前状态以上节为准）
 

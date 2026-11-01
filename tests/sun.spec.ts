@@ -1,6 +1,23 @@
 import {test,expect} from '@playwright/test';
 import type * as THREE from 'three';
 
+test('大地形的坡度深度偏移实际写入GPU且不扩大物体接触偏移',async({page})=>{
+ test.setTimeout(180000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.addInitScript(()=>{
+  localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));const w=window as any;w.depthObjects=[];w.depthDraws=[];w.__THREE_DEVTOOLS__=new EventTarget();w.__THREE_DEVTOOLS__.addEventListener('observe',(event:any)=>{
+   const renderer=event.detail;w.depthObjects.push(renderer);if(!renderer.isWebGLRenderer)return;const render=renderer.renderBufferDirect;
+   renderer.renderBufferDirect=function(...args:any[]){const result=render.apply(this,args),material=args[3],object=args[4];if(material.isMeshDepthMaterial){const gl=this.getContext();w.depthDraws.push({object:object.name,material:material.name,uuid:material.uuid,enabled:gl.isEnabled(gl.POLYGON_OFFSET_FILL),factor:gl.getParameter(gl.POLYGON_OFFSET_FACTOR),units:gl.getParameter(gl.POLYGON_OFFSET_UNITS)});}return result;};
+  });
+ });
+ await page.goto('/?test=1');await page.evaluate(async()=>{await window.__THREE_GAME_TEST_HOOKS__!.setState('active-play');window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true);});
+ for(const hour of[9.9625,13,18.7])await page.evaluate(h=>window.__THREE_GAME_TEST_HOOKS__!.setDaylightCycle!(h,false),hour);
+ const result=await page.evaluate(()=>{const w=window as any,scene=w.depthObjects.find((o:any)=>o.isScene&&o.userData.sunShadows),sun=scene.getObjectByName('Cached golden-hour world sun'),renderer=w.depthObjects.find((o:any)=>o.isWebGLRenderer),ground=scene.getObjectByName('Limestone headland and grassy interior');return{draws:w.depthDraws,normalBias:sun.shadow.normalBias,receives:ground.receiveShadow,colorPolygonOffset:ground.material.polygonOffset,glError:renderer.getContext().getError()};});
+ const terrain=result.draws.filter((d:any)=>d.object==='Limestone headland and grassy interior'),other=result.draws.filter((d:any)=>d.object!=='Limestone headland and grassy interior');
+ expect(terrain.length).toBeGreaterThanOrEqual(4);expect(new Set(terrain.map((d:any)=>d.uuid)).size).toBe(1);expect(terrain.every((d:any)=>d.material==='Slope-offset terrain shadow'&&d.enabled&&d.factor===.5&&d.units===2)).toBe(true);
+ expect(other.length).toBeGreaterThan(100);expect(other.every((d:any)=>!d.enabled)).toBe(true);expect(result.normalBias).toBe(.035);expect(result.receives).toBe(true);expect(result.colorPolygonOffset).toBe(false);expect(result.glError).toBe(0);expect(errors).toEqual([]);
+ await test.info().attach('actual-terrain-and-object-depth-state',{body:JSON.stringify(result,null,2),contentType:'application/json'});
+});
+
 test('夕阳方向在首个动画帧之前确定，流畅档复用完整世界阴影',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.addInitScript(()=>{

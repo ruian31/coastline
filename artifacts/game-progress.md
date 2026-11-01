@@ -2,18 +2,26 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 当前检查点 · 2026-11-01 / M76已更新本地试玩，待提交
+## 当前检查点 · 2026-11-01 / M76已提交并更新本地试玩
 
-- 目标active，HEAD9f12f08为上一步已提交M75。M76连续昼夜源码及检查已完成，中文commit尚待文档/证据核对。新文件DaylightCycle.ts、两份CPU/GPU脚本及daylight-cycle.spec.ts，其余改动沿现有模块局部演进；不push。
+- 目标active，M76已提交848f8ce，立即cat-file核验中文UTF8正常、临时消息清理，无push。连续昼夜源码及受影响检查已完成，证据清单33项存在性通过。新文件DaylightCycle.ts、两份CPU/GPU脚本及daylight-cycle.spec.ts，其余改动沿现有模块局部演进；不push。
 - 稳定5190/session52233已原子更新M76（0.0.0.0、10.158.204.114），候选4209/session63195，M75对照4207/session39342；4208仅旧work研究。当前主包index-DzRHJTJG.js952364B/SHA6f4b9f29…、CSS17947B；源/11资产和未改physicsSHA见daynight-m76/build-source.json。三入口33行SHA核对、20旧JS保留。早先5190/4207确实停止且HTTP refused，已明确恢复并验证，不将进程失效写成浏览器超时。
 - 最终wrap/mip/单源免混合构建12正式机位pass-m76-daylight-cycle-final已采集且全部联图已看，0错误；峰桌面155/768435/206/58、手机112/294170/203/55（calls/tri/geo/tex）。这是冻结诊断，不当活跃或手机FPS。单源环境现在直接用同一PMREM，真实GPU校准证明0额外混合draw；双色输入/输出半浮点最大相对误差0.000772476。旧校准一次误把shadow proxyScene当主Scene导致probe null，限定主画布后通过，失败保留。
 - 浏览器分批：16过/5跳过基础回归、mip/format专项10过/5跳过、最终生命周期3过；最后候选取消/幂等释放后Chrome受影响4过。活跃循环等方法字节等价证明在active-loop-equivalence.json，不声称所有检查是同一调用。原生焦点case头两轮失败来自Playwright默认强制focus；取消该仿真后headed2Chrome过（hidden:false/focused:false，只证明失焦暂停、无自动恢复、手动恢复后流动）。
 - 四组GPU/CPU采样已全部完成，每状态540完整RAF有效/无disjoint、包含镜面及世界重烘，结果见cost-summary.json。夕阳镇旁中位增加到4.479ms，夜间5.681ms，不称总体提速。冷预取两段10秒原生RAF P95约16.8/max33.4ms、无超过50ms，实有下一源烘焙及世界重烘；仅主机短测，不当真机FPS。
 - normal候选/稳定均通过：稳定前进5.03m，原资源、压草、116投影一次缓存及测试全局关闭；实际菜单开启循环再驾驶6.00m、时钟推进、0错误，普通与流动两图已看。最终候选所有权取消修正只影响载入/释放，4受影响检查通过，源码SHA已重录。
-- 正常速度整日驾驶已在稳定5190开始，session44041，artifacts/daynight-m76-full-normal，约30分钟/真实自动巡航与镜头/岔路UI，不加速、不teleport、不设置车速；每秒诊断、每5分钟图、完整录像保留。只此一个GPU任务，禁止并行浏览器/重CPU。尚在跑，不把旧36倍work回放替代。随后看实际视频、汇总/文档并单独提交该验证步骤。World1.5/Lighting2.25保持，真实一加12 Chrome已确认开启流动后“主画面和后视镜都顺畅”，保存phone-feedback.json，不推断完整热稳定；季节/天气、自然群落与陡坡可读性继续后续。
+- 正常速度整日驾驶已在稳定5190完成，session44041已退出，30分钟/21.47km/0错误，详细功能结果与未解决画面缺陷见下节。World1.5/Lighting2.25保持，一加12本次短程确认顺畅；季节/天气、自然群落与陡坡可读性继续后续。
 
 - 历史性能过程：旧对照曾因4207未监听失败，保留profile-m75-control.log、空旧目录，不重用失败标签，最终为m76-m75-control-live。四组均已完成，完整数据在mirrors-m67-profile-m76-*。
 - cycle18.7实际采到每状态2次世界重烘，116个额外draw，峰248/265calls及775279/777945tri；对应GPU7.88/8.25和9.33/5.60ms。它们确实在全RAF GPU查询内，不是只测主画面。常态树旁/镇旁GPU P50 2.679/4.479，旧控制3.150/2.985，镇旁中位增加；不要称全局提速或手机FPS。先完成夜景和冷预取帧间隔，再决定是否需要修正。
+
+## M76正常速度整日完成，回放缺陷修正继续
+
+- session44041已成功结束：稳定5190/DzRHJTJG、真实30分钟时钟与巡航/镜头/岔路UI，1800.918s、24.005483h、21471.996m、1793点、12次隧道区间、hill往返回coast、夜/日车内各一次，0错误/源驻留峰3。artifacts/daynight-m76-full-normal含原始点、全RAF、215756299B WebM、10稀疏编码帧联图均已看，另5/10/15/20分钟原PNG已看。不称逐帧/真机或隔离性能；原生RAF3次>50ms、最大266.6ms，期间有录像/截图/诊断和轻量CPU研究，不归因某单一来源。1Hz峰177/396266/211/65会漏短重烘，保留全RAF专项更高峰。
+- 可复现脚本已原样复制到scripts/check-daylight-long-drive.mjs，node语法与diff通过；标签需未存在、默认30分钟，不隐藏此前画面问题。
+- 实际完整回放发现细长天空亮条与规则坡面暗纹。work/debug-cycle-sky-m76.mjs已在长跑结束后独立运行并成功退出，artifacts/daynight-m76-sky-diagnosis保存RT浮点读回/原画面/无天空/仅天空/不接收阴影/三档normalBias对照。6.748h和9.962h的source-wrap临时修正前后图已看：source shader先fract再texture2D使接缝导数错误选mip，改无fract lookup、仅距离计算取fract后亮条消失，GL0；background gradient另作对照，未产品采用。
+- 坡面关闭接收阴影后暗纹消失；全局normalBias .15/.35减轻、.7基本消除但有接触偏移风险，不直接提高全局偏移。下一步保留对象精确投影，只对大地形caster评估slope depth offset，先实际对照。功能长跑通过，不把视觉缺陷标成通过。
+- 下一阶段M77只读研究与工作工厂已准备：work/cliff-apron-m77.ts（496面封闭体、周界埋0.3m、借用现有材质，合成地面CPU拓扑过）及work/build-cliff-apron-m77.mjs（只准备，未构建/启动）。先处理当前亮条/自阴影，再看一个代表段的双端白昼夕阳实际图，有裙边/细线/接地问题即拒绝；尚未接入产品。
 
 ## M76 · 连续昼夜的天空与受光工作研究
 

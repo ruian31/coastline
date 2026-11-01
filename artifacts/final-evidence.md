@@ -1,3 +1,9 @@
+# M76补正 · 天空亮条已修正，继续地形自阴影
+
+- [实际HDR边界旧版](daynight-seams-m76-before/result.json)曲率.879071、[新源码](daynight-seams-m76-after/result.json).038298，固定上限.12，旧版真实失败记录保留。让RepeatWrapping处理源采样，不先fract破坏导数；HDR资产未改。[shader范围等价](daynight-seams-m76-after/shader-only-equivalence.json)证明其余缓存/时钟/管线不变，不把它当性能测试。
+- [三浏览器受影响检查](daynight-m76/browser-seam-optics.json)一次3通过、无失败/跳过/重试，104.78秒；[实际环境GPU读回](daynight-seams-m76-after/gpu-radiance-blend.json)双端误差仍.000772476、单源零混合draw。[8幅最终源码非关键时刻](daynight-m76-seam-final/result.json)/[联图](daynight-m76-seam-final/contact.png)全部已看、0错误；两端均844×390流畅档，原12关键机位属于补丁前，避免并为同一最终采集。
+- [源码/构建](daynight-seams-m76-after/build-source.json)、[原子本地发布](daynight-seams-m76-after/local-release.json)核对4211/5190/LAN的11资产/33行，保留22旧JS，无push。BQ0R3W1w952506B/CSS17947B。[普通入口](fineleaf-m76-seam-release/result.json)前进4.85m、[菜单开启流动](fineleaf-m76-seam-release/cycle.json)再行5.99m、18.712888小时；原资源/压草/116投影一次缓存/测试全局关闭，0错误。普通两图已看。无新手机或性能结论；坡面暗纹继续处理，M77岩脚工作尚未构建，World1.5/Lighting2.25保持，Goal active。
+
 # M76 · 可选连续昼夜已更新本地试玩
 
 - [试玩](http://10.158.204.114:5190/)暂停菜单开启“时间自然流动”，30分钟一昼夜；默认仍固定18:42。天空、环境辐射、日/月光、雾、海水与阴影共同变化，暂停/未开始不推进，可冻结当前时间并记住偏好。正常速度完整一昼夜已走完，回放发现的天空环绕亮条/坡面自阴影仍需修正，四季/天气尚未实现，World1.5/Lighting2.25保持，Goal active。

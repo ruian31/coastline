@@ -2,7 +2,15 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 当前检查点 · 2026-11-01 / M76已提交并更新本地试玩
+## 最新检查点 · M76天空亮条补丁已发布，待提交
+
+- Goal active，原连续昼夜848f8ce与正常速度整日QA66d4e7b均已中文UTF8核验/临时消息删除，无push。此后只改DaylightCycle.ts的源采样两行GLSL及注释：lookup不先fract，光源距离才fract。恢复这段后SHA准确回到原发布639cf9…，其余缓存/时钟/几何/物理不变。
+- 新增scripts/check-daylight-seams.mjs实际FBO边界像素回归；旧5190/DzRHJTJG曲率.879071真实失败、新4211/BQ0R3W1w .038298通过，固定limit .12，四时刻/GL0/0错误，前后完整原报告保留。三浏览器optics生命周期一次3过/0失败跳过重试104.78s；环境GPU双端重新读回误差.000772476、单源0混合draw。最终源码非关键时刻8图全看，不把原12关键机位并称同构建20图。
+- 稳定5190/session52233、10.158.204.114已原子更新BQ0R3W1w952506B（SHA c354d65b…）；候选4211/session90919、旧源码对照4209/session63195。11资产三地址33行验证、22旧JS保留；daynight-seams-m76-after/build-source.json与local-release.json为当前来源。normal无query前进4.85m，实际菜单循环再行5.99m/18.712888小时，原资源/压草/116投影单缓存及测试全局关闭、0错误，普通两图已看。未重复手机采样或完整GPU成本，旧成本与30分钟功能证据准确标明版本。
+- 唯一当前GPU任务：work/study-terrain-depth-bias-m76.mjs，session87863，artifacts/daynight-m76-terrain-depth-study；在实际terrain代理onBeforeShadow深度draw中试polygon offset 0/.5/1/2，onAfterShadow恢复共享depth material，重烘真实缓存。不是产品更改、不提高全局normalBias，保持车/树对象投影精度。等它结束后看实际白昼地形与树/建筑接触，必要时再决定实现；禁止并行浏览器/重CPU。
+- M77岩脚work工厂及build脚本已准备，仍未构建或发布；先消除坡面暗纹，再检验一段岩脚厚度，保持World1.5/Lighting2.25、四季/天气/自然群落/陡坡可读性未完成。当前文档和shader/回归脚本整理后按commit提交，继续目标。
+
+## M76原功能发布检查点（历史，当前状态以上节为准）
 
 - 目标active，M76已提交848f8ce，立即cat-file核验中文UTF8正常、临时消息清理，无push。连续昼夜源码及受影响检查已完成，证据清单33项存在性通过。新文件DaylightCycle.ts、两份CPU/GPU脚本及daylight-cycle.spec.ts，其余改动沿现有模块局部演进；不push。
 - 稳定5190/session52233已原子更新M76（0.0.0.0、10.158.204.114），候选4209/session63195，M75对照4207/session39342；4208仅旧work研究。当前主包index-DzRHJTJG.js952364B/SHA6f4b9f29…、CSS17947B；源/11资产和未改physicsSHA见daynight-m76/build-source.json。三入口33行SHA核对、20旧JS保留。早先5190/4207确实停止且HTTP refused，已明确恢复并验证，不将进程失效写成浏览器超时。

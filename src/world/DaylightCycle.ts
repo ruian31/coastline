@@ -38,8 +38,10 @@ export function createDaylightCycle(renderer:THREE.WebGLRenderer){
    // Smooth monotonic latitude remap keeps the horizon and zenith fixed while
    // moving the whole photographed light halo to the current solar altitude.
    if(uv.y>.5&&peak.y>.5){float q=(uv.y-.5)*2.,s=(peak.y-.5)*2.,t=max(.003,elevation/1.57079633),k=t*(1.-s)/max(.0001,s*(1.-t));uv.y=.5+.5*q/(k+(1.-k)*q);}
-   uv=vec2(fract(uv.x),clamp(uv.y,.001,.999));vec3 c=texture2D(tex,uv).rgb;
-   float dx=abs(uv.x-peak.x);dx=min(dx,1.-dx)*cos((peak.y-.5)*3.14159265);float d=length(vec2(dx,(uv.y-peak.y)*.5));
+   // Let RepeatWrapping wrap the lookup. A fract here makes the implicit
+   // texture gradient jump across the seam and samples a coarse bright mip.
+   uv.y=clamp(uv.y,.001,.999);vec3 c=texture2D(tex,uv).rgb;
+   float dx=abs(fract(uv.x)-peak.x);dx=min(dx,1.-dx)*cos((peak.y-.5)*3.14159265);float d=length(vec2(dx,(uv.y-peak.y)*.5));
    // Remove the photographed source luminary before adding one moving disc.
    // The surrounding photographic cloud field remains the source of detail.
    if(d<.008){vec3 ring=vec3(0.);for(int i=0;i<8;i++){float angle=float(i)*.785398;vec2 offset=vec2(cos(angle)/max(.15,cos((peak.y-.5)*3.14159265)),sin(angle)*2.)*.008;ring+=texture2D(tex,vec2(fract(peak.x+offset.x),clamp(peak.y+offset.y,.001,.999))).rgb;}c=mix(ring*.125,c,smoothstep(.003,.008,d));}

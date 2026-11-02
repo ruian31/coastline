@@ -7,7 +7,7 @@ import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
 import {scanSurface} from './SurfaceHeight';
 
 type Collider = { x: number; z: number; halfX: number; halfZ: number };
-export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight:(x:number,z:number)=>number=heightAt): {
+export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight:(x:number,z:number)=>number=heightAt,addWetness?:(material:THREE.MeshStandardMaterial)=>void): {
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   dispose: () => void;
   colliders: Collider[];
@@ -59,6 +59,7 @@ export function createLandmarks(scene: THREE.Scene, mobile: boolean,groundHeight
   const plasterMap=surfaceTexture('plaster'),stoneMap=surfaceTexture('limestone'),roofMap=surfaceTexture('tile'),liningMap=surfaceTexture('tunnel');
   for(const wall of walls){wall.map=plasterMap;wall.bumpMap=plasterMap;wall.bumpScale=.025;wall.roughnessMap=plasterMap;}
   stone.map=stoneMap;stone.bumpMap=stoneMap;stone.bumpScale=.025;
+  addWetness?.(paving);
   paving.map=stoneMap;paving.bumpMap=stoneMap;paving.bumpScale=.035;
   terracotta.map=roofMap;terracotta.bumpMap=roofMap;terracotta.bumpScale=.035;
   tunnelMaterial.map=liningMap;tunnelMaterial.bumpMap=liningMap;tunnelMaterial.bumpScale=.055;tunnelMaterial.roughnessMap=liningMap;

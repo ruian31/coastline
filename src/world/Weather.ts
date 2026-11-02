@@ -34,5 +34,13 @@ export class CoastalWeather {
   }
  }
  get transitioning(){return this.progress<1;}
+ snapshot(){return{target:this.target,natural:this.natural,value:{...this.value},from:{...this.from},progress:this.progress,wetness:this.wetness,seconds:this.seconds,stage:this.stage,hold:this.hold};}
+ restore(saved:unknown){
+  if(!saved||typeof saved!=='object')return false;const s=saved as ReturnType<CoastalWeather['snapshot']>;
+  const finite=(v:unknown,min:number,max=Infinity):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
+  const values=(v:WeatherValues)=>v&&keys.every(key=>finite(v[key],0,key==='wind'?3:1));
+  if(!isWeatherId(s.target)||typeof s.natural!=='boolean'||!values(s.value)||!values(s.from)||!finite(s.progress,0,1)||!finite(s.wetness,0,1)||!finite(s.seconds,0)||!Number.isInteger(s.stage)||s.stage<0||s.stage>=journey.length||!finite(s.hold,0,360))return false;
+  this.target=s.target;this.natural=s.natural;Object.assign(this.value,s.value);this.from={...s.from};this.progress=s.progress;this.wetness=s.wetness;this.seconds=s.seconds;this.stage=s.stage;this.hold=s.hold;return true;
+ }
  get diagnostics(){return{target:this.target,natural:this.natural,transitioning:this.transitioning,seconds:this.seconds,...this.value,wetness:this.wetness};}
 }

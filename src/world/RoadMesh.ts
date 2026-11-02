@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { roads,coast,heightAt,nearestRoad,roadSurfaceHeight,vergeHeight,SHOULDER_WIDTH,VERGE_WIDTH,guardrailSpans,type RoadRoute } from './roads';
 import {createSeededRandom} from '../utils/random';
 import type {VehicleSurface,VehiclePrimitive} from '../systems/VehicleDynamics';
-export function createRoadMesh(scene:THREE.Scene,loadingManager=THREE.DefaultLoadingManager,ground=heightAt,terrainMaterial?:THREE.Material){
+export function createRoadMesh(scene:THREE.Scene,loadingManager=THREE.DefaultLoadingManager,ground=heightAt,terrainMaterial?:THREE.Material,addWetness?:(material:THREE.MeshStandardMaterial)=>void){
  const root=new THREE.Group();root.name='road-network';scene.add(root);const vergeGeometries:THREE.BufferGeometry[]=[],vehicleSurfaces:VehicleSurface[]=[],vehiclePrimitives:VehiclePrimitive[]=[];
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d')!,rng=createSeededRandom(814);
  ctx.fillStyle='#494c49';ctx.fillRect(0,0,256,256);
@@ -10,7 +10,7 @@ export function createRoadMesh(scene:THREE.Scene,loadingManager=THREE.DefaultLoa
  const map=new THREE.CanvasTexture(canvas);map.wrapS=map.wrapT=THREE.RepeatWrapping;map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=4;
  const loader=new THREE.TextureLoader(loadingManager);const runtimeMaps:THREE.Texture[]=[];const loadRoad=(name:string,color=false)=>{const texture=loader.load(`${import.meta.env.BASE_URL}assets/environment/road-${name}.jpg`);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=8;if(color)texture.colorSpace=THREE.SRGBColorSpace;runtimeMaps.push(texture);return texture;};
  const asphalt=new THREE.MeshStandardMaterial({map:loadRoad('color',true),normalMap:loadRoad('normal'),normalScale:new THREE.Vector2(.35,.35),roughnessMap:loadRoad('roughness'),roughness:.95,color:0xb8b8b3}),gravel=new THREE.MeshStandardMaterial({color:0xbcb09a,roughness:1}),paint=new THREE.MeshStandardMaterial({color:0xeee1b7,roughness:.88}),steel=new THREE.MeshStandardMaterial({color:0xa6aaa0,metalness:.65,roughness:.44});
- asphalt.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor = .82 + .16 * roughnessFactor;');};asphalt.customProgramCacheKey=()=> 'coast-dry-asphalt-v1';
+ asphalt.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor = .82 + .16 * roughnessFactor;');};asphalt.customProgramCacheKey=()=> 'coast-dry-asphalt-v1';[asphalt,gravel,paint].forEach(m=>addWetness?.(m));
  function strip(route:RoadRoute,lo:number,hi:number,y:number,material:THREE.Material){const n=Math.ceil(route.length/2),p:number[]=[],uv:number[]=[],idx:number[]=[];
  for(let i=0;i<=n;i++){const s=route.sample(i/n);for(const x of[lo,hi]){p.push(s.position.x+s.right.x*x,s.position.y+y,s.position.z+s.right.z*x);uv.push(x/3,i*route.length/n/3);}
  if(i<n){const k=i*2;idx.push(k,k+2,k+1,k+1,k+2,k+3);}}

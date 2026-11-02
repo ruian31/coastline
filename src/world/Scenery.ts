@@ -48,6 +48,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   updateVehicle:(elapsed:number,car:THREE.Object3D,wheelContacts:readonly THREE.Vector3[])=>void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
+  rainCoverHeight:(x:number,z:number)=>number;
   terrainHeight: (x:number,z:number) => number;
   terrainMaterial: THREE.Material;
   cameraSurfaces: CameraSurfaceSource[];
@@ -62,6 +63,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   createShadowCasters:()=>THREE.Group;
   setSkyReflection:(texture:THREE.Texture)=>void;
   setWeatherFog:(density:number,color:THREE.Color)=>void;
+  setWeather:(wind:number,wetness:number)=>void;
   setDaylight:(preset:DaylightPreset)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -69,7 +71,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   root.name = 'Coastal landscape';
   scene.add(root);
   let random = createSeededRandom(864203);
-  const time = { value: 0 };
+  const time = { value: 0 },windStrength={value:1};
   const sun = GOLDEN_HOUR_SUN.clone();
   const water=createCoastalWater(scene,mobile,time,sun,GOLDEN_HOUR_SKY_INTENSITY);
   const windMaterials: THREE.MeshStandardMaterial[] = [];
@@ -246,7 +248,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
 
   const headland=createTunnelHeadland(mobile,groundHeight);
   const cap=place(headland.geometry,groundMaterial,'Eroded headland over the mountain tunnel');cap.castShadow=true;cap.receiveShadow=true;
-  const cameraGroundHeight=headland.groundHeight;
+  const cameraGroundHeight=headland.groundHeight;headland.geometry.computeBoundingBox();water.setRainCover(headland.rainCoverHeight,headland.geometry.boundingBox!);
 
   // A sky dome avoids an external HDR dependency while retaining a consistent sunset direction.
   const sky = place(new THREE.SphereGeometry(1900, 32, 16), new THREE.ShaderMaterial({
@@ -347,15 +349,15 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     material.userData.coastalVegetation=true;
     if(crownRoot)material.userData.rigidTree=true;
     material.onBeforeCompile = shader => {
-      shader.uniforms.uSceneryTime = time;
-      shader.vertexShader = 'uniform float uSceneryTime;\n' + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      shader.uniforms.uSceneryTime = time;shader.uniforms.uSceneryWind=windStrength;
+      shader.vertexShader = 'uniform float uSceneryTime,uSceneryWind;\n' + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
         float phase=0.0;
         #ifdef USE_INSTANCING
           phase=instanceMatrix[3].x*.34+instanceMatrix[3].z*.19;
         #endif
         float anchoredHeight=${crownRoot?'length(position-vec3(.65,7.8,0.0))':'max(position.y,0.0)'};
-        transformed.x+=sin(uSceneryTime*1.25+phase+position.y*.2)*${amplitude.toFixed(4)}*anchoredHeight;
-        transformed.z+=cos(uSceneryTime*.83+phase)*${(amplitude * .55).toFixed(4)}*anchoredHeight;`);
+        transformed.x+=sin(uSceneryTime*1.25+phase+position.y*.2)*${amplitude.toFixed(4)}*anchoredHeight*uSceneryWind;
+        transformed.z+=cos(uSceneryTime*.83+phase)*${(amplitude * .55).toFixed(4)}*anchoredHeight*uSceneryWind;`);
     };
     material.customProgramCacheKey = () => `coast-wind-${amplitude}-${crownRoot}`;
     windMaterials.push(material);
@@ -983,7 +985,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   const pineCrownGroup=treeBatch(createPineCrown(),pineMaterial,pineCrowns,pineColors,createPineCrown(true));pineCrownGroup.name='Sheltered stone pine boughs';
   const pineObstacles=pines.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.hypot(m.elements[0],m.elements[2])+.78}));
   root.userData.coastalTrees={ready:false};
-  const treeReady=loadCoastalTree(mobile,time,loadingManager).then(asset=>{
+  const treeReady=loadCoastalTree(mobile,time,loadingManager,windStrength).then(asset=>{
     if(disposed){asset.near.dispose();asset.far.dispose();asset.material.dispose();asset.textures.forEach(t=>t.dispose());return;}
     // The independent tree seed/roots are unchanged. Use a complete scanned
     // tree at each existing inland anchor instead of a flat scaled crown.
@@ -1033,7 +1035,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     ready:Promise.all([grassReady,scrubReady,barkReady,frondsReady,treeReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
     prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
-    groundHeight:cameraGroundHeight,
+    groundHeight:cameraGroundHeight,rainCoverHeight:headland.rainCoverHeight,
     terrainHeight:groundHeight,
     terrainMaterial:groundMaterial,
     cameraSurfaces:[{geometry:terrain},{geometry:headland.geometry},...rocks.map(transform=>({geometry:rockShape,transform}))],
@@ -1124,6 +1126,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       }
       if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
+    setWeather(wind,wetness){windStrength.value=wind;grassCanopy.setWind(wind);water.setWeather(wind,wetness);},
     setWeatherFog:water.setWeatherFog,
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setDaylight:water.setDaylight,

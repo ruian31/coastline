@@ -33,7 +33,7 @@ export function createWeatherSky(renderer:THREE.WebGLRenderer,mobile=false){
     gl_FragColor=vec4(max(mix(col,fogColor,haze),vec3(0.)),1.);
    }`});
   const camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1),quad=new THREE.Mesh(geometry,material);quad.frustumCulled=false;
-  const environmentMaterial=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,vertexShader:vertex,uniforms:{source:{value:null as THREE.Texture|null},gain:{value:1},amount:{value:0},fogColor:uniforms.fogColor},fragmentShader:'varying vec2 vUv;uniform sampler2D source;uniform float gain,amount;uniform vec3 fogColor;void main(){gl_FragColor=vec4(mix(texture2D(source,vUv).rgb*gain,fogColor*.85,amount),1.);}'});
+  const environmentMaterial=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,vertexShader:vertex,uniforms:{source:{value:null as THREE.Texture|null},gain:{value:1},amount:{value:0},peakLimit:{value:0},fogColor:uniforms.fogColor},fragmentShader:'varying vec2 vUv;uniform sampler2D source;uniform float gain,amount,peakLimit;uniform vec3 fogColor;void main(){vec3 base=texture2D(source,vUv).rgb*gain;base=mix(base,min(base,fogColor*1.7+vec3(.01)),peakLimit);gl_FragColor=vec4(mix(base,fogColor*.85,amount),1.);}'});
   const environmentQuad=new THREE.Mesh(geometry,environmentMaterial);environmentQuad.frustumCulled=false;
   const backgroundMaterial=new THREE.ShaderMaterial({side:THREE.BackSide,depthTest:false,depthWrite:false,fog:false,uniforms:{sky:{value:target.texture},sun:{value:new THREE.Vector3()},moon:{value:new THREE.Vector3()},sunColor:{value:new THREE.Color()},sunVisible:{value:0},moonVisible:{value:0}},vertexShader:'varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*mat4(mat3(viewMatrix))*vec4(position,1.);gl_Position.z=gl_Position.w;}',fragmentShader:`
    varying vec3 vDirection;uniform sampler2D sky;uniform vec3 sun,moon,sunColor;uniform float sunVisible,moonVisible;
@@ -56,7 +56,7 @@ export function createWeatherSky(renderer:THREE.WebGLRenderer,mobile=false){
    const changed=input.sky!==lastSky||input.environment!==lastEnvironment;
    if(force||changed||time-lastTime>=.25){
     const image=input.environment.image as {width:number;height:number};if(!image||!Number.isFinite(image.width)||!Number.isFinite(image.height))throw Error('Weather needs a ready CubeUV environment');if(!r.environment||r.environment.width!==image.width||r.environment.height!==image.height){r.environment?.dispose();r.environment=new THREE.WebGLRenderTarget(image.width,image.height,{type:THREE.HalfFloatType,depthBuffer:false});r.environment.texture.mapping=THREE.CubeUVReflectionMapping;}
-    const e=r.environmentMaterial.uniforms;e.source.value=input.environment;e.gain.value=input.environmentGain;e.amount.value=Math.min(.96,state.cloud*.72+state.mist*.24);
+    const e=r.environmentMaterial.uniforms;e.source.value=input.environment;e.gain.value=input.environmentGain;e.peakLimit.value=state.cloud*state.cloud;e.amount.value=Math.min(.96,state.cloud*.72+state.mist*.24);
     const previous=renderer.getRenderTarget(),reset=renderer.info.autoReset;
     try{renderer.info.autoReset=false;renderer.setRenderTarget(r.target);renderer.render(r.quad,r.camera);renderer.setRenderTarget(r.environment);renderer.render(r.environmentQuad,r.camera);diagnostics.draws+=2;diagnostics.triangles+=2;diagnostics.updates++;lastTime=time;lastSky=input.sky;lastEnvironment=input.environment;}
     finally{renderer.setRenderTarget(previous);renderer.info.autoReset=reset;}

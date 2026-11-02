@@ -1,4 +1,16 @@
-# M76补正 · 地形自阴影已更新试玩，继续自然形体
+# M79 · 舒适海岸天气初版已更新试玩
+
+## 当前M79 · 2026-11-02
+
+- 普通菜单提供晴天、多云、海雾、细雨及自然变化；手选45秒连续过渡、暂停/后台冻结、保存中途模型/湿度。单批惰性雨池、五类风uniform、共享海水风浪/雨后湿材质、雨声与Rapier抓地已接入。遮雨使用真实洞顶，原驾驶/相机/海岸进退水几何保持。
+- [CPU天气/保存](weather-m79/timeline-cpu.json)、[受控三车干湿物理](weather-m79-vehicle/result.json)、[原27物理工况](weather-m79-vehicle-regression/result.json)通过。9组干燥轨迹与f45d825全状态哈希一致；湿转向有实际变化，当前制动停止距离未变，不写成更长。
+- 三浏览器分批：[菜单/保存/音频3过](weather-m79/browser-menu-first.json)、[天气/海水/镜面15过](weather-m79/browser-regression-first.json)、[雨池生命周期3过](weather-m79/browser-lifecycle-first.json)，分别107.36/340.16/57.82s，无失败/重试/跳过。不是同一次21项调用。三菜单原图全看。
+- [最终24机位](weather-m79-final/result.json)与desktop/mobile各两张按比例联图全部看过，0错误；五类实际uniform与weather.wind一致。[天空/海水光学](weather-m79-optics/result.json)六组合GL0、边界.009918/.12。草实际GPU探针[手机](grass-canopy-weather-m79-mobile/result.json)/[桌面](grass-canopy-weather-m79-desktop/result.json)四工况根点误差<.03mm、稳定世界身份、轮迹/双侧拨动与恢复通过；年龄恢复为GPU模拟，并非本轮等待65秒。
+- [沥青实际shader湿润输出/物理/雨场](weather-m79-surfaces-fixed/result.json)四工况通过：洞内shaderWet0/physicsWet0/无雨，出洞恢复。先前洞口被旧宽范围当作洞内的[failure](weather-m79-surfaces/failure.json)保留；已按实际洞顶统一。48²局部屋顶场与雨16²采样支持不认证所有建筑屋檐。
+- [正常速度实际UI驾驶](weather-drive-m79-second/result.json)46.6814天气秒/530.19m、镜面1316次、昼夜同时流动、Android原生触控接管/暂停冻结/20秒回晴，0错误。原WebM9103945B，5个间隔编码帧及rain-1/rain-3/clearing三原图已看；不称逐帧或真机FPS。首次诊断缓存观察失败保留，等待实际恢复状态后通过。复现：WEATHER_DRIVE_LABEL取新标签，运行scripts/playtest-weather-drive.mjs。
+- [完整RAF成本摘要](weather-m79/cost-summary.json)：M78晴控制→M79晴/雨，540有效GPU/状态+8秒4倍CPU，镜面与世界重烘纳入。雨树/镇P50/P95=4.214/5.794和4.872/6.857ms，CPU+2.53%/+0.83%；晴最大33.90ms、雨最大14.13ms，不称提速/真机FPS。雨末213geo/58–60tex、峰267calls/780105tri，旧超额保留。
+- [45源/4包SHA](weather-m79/build-source.json)、[原子本地发布](weather-m79/local-release.json)：C01K7Jio976130B/CSS17972B，三入口12行一致、26旧JS保留，无push。[普通无query检查](fineleaf-weather-m79-release/result.json)前进4.85m/116投影单缓存/原资源与压草/测试全局关闭；[真实菜单启动天气](fineleaf-weather-m79-release/weather.json)启动雨池、湿润及保存通过，两原图已看。5190当前session87917，Wi-Fi192.168.3.10。
+- 新天气已请求一加12复测，真实iPhone和完整自然天气旅程待验；World1.5/Lighting2.25保留，其余类别未重评，无新平均分。自然群落/陡坡可读性与F06季节尚未完成，Goal active。
 
 ## M78 · 共享大气天气已验证，F08仍在开发 · 2026-11-02
 

@@ -6,7 +6,7 @@ export const ROAD_POSITION_CLEARANCE=.035;
 const wrap=(a:number)=>Math.atan2(Math.sin(a),Math.cos(a));
 export class Driving {
  position=new THREE.Vector3();yaw=0;pitch=0;roll=0;speed=0;steer=0;automatic=false;route:RoadRoute=coast;progress=.84;direction=1;preferHill=false;distance=0;hit=false;offroad=false;
- road:RoadLocation;modelIndex=0;
+ road:RoadLocation;modelIndex=0;wetness=0;
  dynamics:VehicleDynamics|undefined;
  private legacyBraking=false;
  get braking(){return this.dynamics?.braking??this.legacyBraking;}
@@ -57,10 +57,10 @@ export class Driving {
     else{const remaining=(this.direction>0?1-this.progress:this.progress)*hill.length;if(remaining<25){this.junctionTime=Math.max(this.junctionTime,2);if(remaining<6){this.route=coast;this.progress=nearestRoad(this.position.x,this.position.z,coast).t;this.preferHill=false;this.junctionTime=4;}}}
     const s=this.route.sample(this.progress),lookDistance=this.junctionTime>0?5.5:THREE.MathUtils.clamp(6+Math.abs(this.speed)*.75,6,17),look=this.route.sample(this.progress+this.direction*lookDistance/this.route.length),target=look.position.clone().addScaledVector(look.right,1.6*this.direction),dx=target.x-this.position.x,dz=target.z-this.position.z;
     const localX=dx*Math.cos(this.yaw)-dz*Math.sin(this.yaw),steeringAngle=Math.atan2(2*2.56*localX,Math.max(4,dx*dx+dz*dz));
-    const bend=Math.abs(wrap(Math.atan2(look.tangent.x,look.tangent.z)-Math.atan2(s.tangent.x,s.tangent.z))),curveSpeed=Math.sqrt(.66*9.81*2.56/Math.max(.001,Math.abs(Math.tan(steeringAngle)))),targetSpeed=Math.min((this.route===hill?10.5:14)/(1+bend*2.8),curveSpeed,this.junctionTime>0?5.5:Infinity),error=targetSpeed-this.speed;
-    controls={throttle:THREE.MathUtils.clamp(error*.65,0,1),brake:THREE.MathUtils.clamp(-error*.45,0,1),steer:dynamics.normalizedSteer(steeringAngle,this.offroad),handbrake:false};
+    const bend=Math.abs(wrap(Math.atan2(look.tangent.x,look.tangent.z)-Math.atan2(s.tangent.x,s.tangent.z))),curveSpeed=Math.sqrt(.66*(1-this.wetness*.17)*9.81*2.56/Math.max(.001,Math.abs(Math.tan(steeringAngle)))),targetSpeed=Math.min((this.route===hill?10.5:14)/(1+bend*2.8),curveSpeed,this.junctionTime>0?5.5:Infinity),error=targetSpeed-this.speed;
+    controls={throttle:THREE.MathUtils.clamp(error*.65,0,1),brake:THREE.MathUtils.clamp(-error*.45,0,1),steer:dynamics.normalizedSteer(steeringAngle,this.offroad,this.wetness),handbrake:false};
    }
-   const previous=this.position.clone(),previousRotation=dynamics.rotation.clone();dynamics.update(h,controls,this.offroad,this.automatic);
+   const previous=this.position.clone(),previousRotation=dynamics.rotation.clone();dynamics.update(h,controls,this.offroad,this.automatic,this.wetness);
    // Keep the established deep-water boundary. Ordinary hills and steps are
    // solved by the actual chassis/suspension instead of road-distance clamps.
    if(dynamics.position.y<-1.05){previous.y-=ROAD_POSITION_CLEARANCE;dynamics.reset(previous,previousRotation,0);this.hit=true;}

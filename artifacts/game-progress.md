@@ -1,10 +1,22 @@
 # 当前进展 · 2026-11-02
 
+## 当前检查点 · M79已更新本地试玩，待本步提交
+
+- HEAD仍f45d825，当前M79完整天气源码/菜单/保存/雨声/风/干湿抓地/洞顶修正已验证，准备中文commit并立即核验UTF8，不push；Goal active。5190/session87917及LAN192.168.3.10已原子发布C01K7Jio976130B/CSS17972B，三入口12包SHA一致，26旧JS保留。4216 M78控制、4217 M79候选仍在。
+- 菜单3过107.36s、受影响天气/海水/三车镜面15过340.16s、重复雨池3过57.82s，三批全三端/0失败跳过重试，不能混称一次21项。CPU中途保存/坏值拒绝、27原物理及27干湿对照完成；9干燥轨迹与M78精确相同。湿刹本工况停止距离不变。
+- surface-fixed四工况、两端24最终图全部已看、五类实际wind一致、6光学组合及4草GPU工况完成；根误差<.03mm、恢复为模拟年龄。旧洞口失败与早期弱雨对照保留，单次审查已处理，无递归审查/agent任务。
+- weather-drive-m79-second已结束：正常速度46.6814天气秒/530.19m、镜面1316次/昼夜并行/原生触控接管/20秒回晴/0错误。5编码帧+3阶段原图已看，非逐帧/真机。第一版在0采样时过早读暂停诊断失败，修成等待真实恢复状态；首次failure保留。
+- 串行成本三组均结束，每状态540有效完整RAF/镜面/1重烘+8s4倍CPU。雨树/镇GPU P50/P95=4.214/5.794、4.872/6.857ms，CPU+2.53%/+0.83%，不称提速或手机FPS。雨末213geo/58–60tex，267calls/780105tri，原预算超额保留。45源SHA/4包与完整方法见weather-m79/。
+- 普通5190无query前进4.85m，原资源/压力/116投影单缓存/测试全局关闭及实际菜单启动天气/保存通过，normal/early-rain两原图已看。最后tsc通过，所有GPU/agent任务已结束。新增雨天气流畅/雨量已发异步一加12问题，未回复，不以等待用户作为阻塞。
+- World1.5/Lighting2.25保持，F08初版发布但未全地图/自然全轮/真机验收；F06四季、自然群落与陡坡可读性继续推进，不创建重复目标、不完成Goal。
+
+## 以下为M76–M79过程记录（当前状态以上节为准）
+
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 最新检查点 · M77拒绝记录6886803已提交，M78天气候选中
+## 最新检查点 · M78已提交f45d825，M79细雨整合/验证中
 
-- Goal active。HEAD ae4dde4为地形自阴影修正，立即cat-file核验中文UTF8正常、临时文件已删除，无push；原75f6f4e/848f8ce/66d4e7b保持。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
+- Goal active。HEAD f45d825为M78大气阶段；ae4dde4为地形自阴影修正，立即cat-file核验中文UTF8正常、临时文件已删除，无push；原75f6f4e/848f8ce/66d4e7b保持。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
 - 已通过生产构建、三浏览器一次11过/1设备条件跳过（144.84s，无失败重试）；terrain-depth-gl-summary.json每端4次terrain draw偏移正确/同1UUID，其他460–464对象depth draw关闭偏移、颜色无偏移/仍接收阴影、GL0。最终源码daynight-m76-terrain-final 20图（两端844×390低档：白昼/坡地/小镇/出洞/原夕阳/月夜）两张联图全部已看、0错误。
 - 已完成隔离性能：4211/BQ0R3W1w控制→4212/CPz7ET6p，两状态各540完整RAF GPU、无disjoint、均镜面且各含1次世界烘焙；另8s4倍CPU。terrain-depth-cost-summary.json：树GPU P50/P95 4.212/9.674→4.796/9.292ms，镇4.665/9.696→3.976/7.008；CPU任务+3.8%/+1.8%，不能称整体提速。补丁烘焙9.43/9.53ms、峰248/260calls与775279/775804tri，末210/211geo、54/56tex，旧预算超额保留。
 - 真实UI/键盘W/Android原生触控/车内/暂停恢复已完成：daynight-m76-terrain-drive-verified，323.78/348.69m、虚时+.3938/.3975h、各3次重烘/镜面刷新/0错误。两个视频各10/23/29s稀疏编码帧和六个输入阶段原图全看，不称逐帧或真机FPS。键盘末段邻护栏时17.98→1.13m/s，随后巡航恢复；未独立取接触，不当无碰撞路线或新物理故障。两份失败保留：第1过早读80ms诊断，第2近正午17秒不能保证2次1度重烘；最终等待状态、延长自动段20秒，保持>=2断言并存观察数据。
@@ -15,7 +27,16 @@
 - M78源码候选WeatherSky.ts+OceanDrive/Water/Scenery仅内部测试入口，无普通玩家菜单/保存、雨粒/湿材质/风/声音/抓地尚未接入，不能称F08实现。晴天懒旁路无天气资源/绘制；天气合成借用原摄影/PMREM，按活动天气时钟4Hz，mobile512×256、desktop1024×512+同尺寸CubeUV环境（不重复PMREM）。4216/session27895/work/weather-m78-dist，5190不变。first24/horizon24两轮四时段缺晨曦的初图已看，发现低太阳HDR热核仍透厚云，已加峰值压制；单次独立审查另找出固定晨曦HDR未Repeat和海面无天气距离雾，均已修正。
 - M78最终最新构建YOla8uRP963820B/CSS17947，build-source.json记录14源/4资产SHA，物理未改。CPU、最终32图（含dawn）全部看过、光学六组合GPU Repeat/yaw.5/RT边界.009918/.12与水雾绑定GL0完成；三浏览器6专项100.90s与12受影响回归213.61s全部通过/0跳过/0重试。是分批，不当单次18项。先前三份失败报告保留；等待冻结后新诊断帧+WebKit20秒同阈值解决观察问题（初始晴天也fps1，不当真iPhone性能）。
 - M78两组成本串行结束：stable CPz→cloudy YOla，两状态各540全RAF有效GPU/全含镜面/各1世界烘焙+8s4倍CPU，cost-summary.json。树P50/P95 3.832/5.214→4.806/8.706，镇4.880/7.094→4.616/13.806，最大候选35.466ms；CPU+2.9%/−1%，保留开销和旧预算超额，不承诺手机FPS。当前无GPU任务，M78准备中文提交，5190未更新。
-- M79开始细雨独立工厂工作：现有nature_next_research agent拥有且仅写work/weather-rain-m79.ts，禁止GPU/浏览器/源码改动/提交。导出createCoastalDrizzle(scene,mobile,ground)，update(anchor,weather.seconds,rain,wind,inTunnel)，懒180/320固定池/世界格子/小高度图采样裁地，主agent负责采用与实际验证。其余湿地表/统一风/声音/共用物理wetness/菜单/保存仍待接入，F08未完成。
+- M78已提交f45d825，立即中文UTF8核验/临时消息删除，无push；5190仍稳定M76（当前session87917/192.168.3.10），4216/session27895为已验证M78候选。上一Goal turn为progress（两提交+实际证据），无目标阻塞或完成结论。
+- M79源码整合未提交：CoastalDrizzle.ts来自已完成的work/weather-rain-m79.ts，世界格子窄四边形/高度网格/幂等释放，主agent已加盐复用同cell、调垂直可见带。统一wind接入草毯/普通和扫描草灌/树/蕨/水面；wetness接道路/原岸湿PBR并以高度场近似遮雨、同时进入Rapier轮摩擦/转向限度/自动弯速；CoastAudio增加惰性雨噪/风声；Weather.snapshot/restore+真实菜单/自然变化/暂停保存已接入。CPU天气模型含中途序列保存与坏数据拒绝已过，tsc/工作构建通过，完整M79验收/发布未做。
+- M79当前4217/session68207/work/weather-m79-dist。first12图两端/外部-车内-洞内×晴/细雨已全看：雨太弱，隧道隐藏正常。真实同画面雨on/off：初版桌面67变化像素/手机9；第二版640/360粒子、相机锚点后131/12，仍不够。artifacts/weather-m79-{first,second}、rain-visibility{,-second}保留；rain-mask手机原图已看，只有三个远处细点，主要缺少镜头下方/路面附近粒子。厚云下新湿路还暴露环境PMREM太阳峰值过强，已在环境合成加入与天空同样的峰值限制。
+- 第三版3×8m世界层540/960池已构建；真实同画面雨on/off第三轮桌面1401变化像素（311≥4）、手机228（74≥4），只证明粒子可见，不作美术评分。第三轮12图已采，桌面车内/手机外部细雨原图已看，其余待最终图覆盖。保持单批/一高度图/暂停同clock，真实运动与成本待验。
+- 三车×旧/干/湿×滑行/刹车/转向受控27轨迹通过，9组干燥轨迹全部状态哈希与f45d825精确相同；湿转向角及真实轨迹变化、刹车仍可控。该刹车工况未触发摩擦极限，停止时间/距离未变，不宣称刹车距离增加。原27物理工况回归也通过，报告weather-m79-vehicle及weather-m79-vehicle-regression。
+- 单次独立审查发现原groundHeight为驾驶绕过洞顶，导致洞内路面仍湿；新增真实rainCoverHeight及48²惰性局部高度图，原道路/相机/岸线保持。实际GPU探针第一轮洞内shaderWet0/physicsWet0/无雨均通过，但洞外t=.741仍因旧宽范围被当洞内而失败，failure.json保留。现统一按实际洞顶判断雨/音/抓地，等待最新构建重测；不是已通过。Landmarks步行铺面也共享湿材质。
+- 洞顶修正构建C01K7Jio976130B已通过实际surface-fixed四工况：洞内shaderWet0/physicsWet0/无雨，露天/洞口/镇旁shaderWet约.706/.720/.720、对应实际physicsWet相同范围/恢复雨，GL0/0错误。此前失败保留。
+- weather-menu第一项三端3过107.36s，真实选择/保存中途模型/重载/欢迎冻结/44px触达/实际雨Gain/菜单暂停AudioContext全部通过，3原菜单图已看。原天气2+海水2+镜面1三端15回归全过340.16s、无重试/跳过。新增雨池生命周期一项尚待单独执行，不混入已过数字。
+- 无agent运行，5190保持M76；session66070正在weather-drive-m79-first正常速度UI驾驶录像，未完成。雨/水/植物GPU、运动、成本与正常入口仍待验证，F08未完成。
+
 - 本轮进程检查5190/4214/4215均原无监听，5190已恢复session87917/0.0.0.0并HTTP200；实际Wi-Fi地址现在192.168.3.10（不再沿用旧10.158.204.114）。dist仍ae4dde4/CPz7ET6p，未发布M77。World1.5/Lighting2.25保持，季节/天气、自然群落和陡坡可读性仍未完成；用户最新确认原M76手机循环主画面/后视镜顺畅。
 
 

@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {chromium,devices} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+const out=process.env.WEATHER_SURFACE_EVIDENCE??'artifacts/weather-m79-surfaces';await mkdir(out);
+const browser=await chromium.launch({channel:'chrome',args:['--enable-gpu','--use-gl=angle','--use-angle=gl']}),page=await browser.newPage({...devices['Pixel 7'],viewport:{width:844,height:390}}),rows=[],errors=[];
+page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+await page.addInitScript(()=>{localStorage.setItem('coast-settings',JSON.stringify({quality:'low',muted:true}));window.surfaceObjects=[];window.__THREE_DEVTOOLS__=new EventTarget();window.__THREE_DEVTOOLS__.addEventListener('observe',event=>{const r=event.detail;surfaceObjects.push(r);if(r.isWebGLRenderer){const render=r.render;r.render=function(o,c){if(o.isMesh&&o.material?.uniforms?.cloud)window.surfaceSkyTarget=r.getRenderTarget();if(o.isScene&&o.userData.sunShadows&&r.getRenderTarget()===null)window.surfaceCamera=c;return render.call(this,o,c);};}});});
+try{
+ await page.goto((process.env.WEATHER_BASE_URL??'http://127.0.0.1:4217')+'/?test=1');
+ for(const state of['active-play','tunnel','tunnel-exit','town']){
+  await page.evaluate(async state=>{const h=window.__THREE_GAME_TEST_HOOKS__;await h.setState(state);h.setWeather('drizzle',180);h.setPausedForScreenshot(false);},state);
+  const start=await page.evaluate(()=>window.__THREE_GAME_DIAGNOSTICS__.elapsed);await page.waitForFunction(t=>window.__THREE_GAME_DIAGNOSTICS__.elapsed>t+.5,start);await page.evaluate(()=>window.__THREE_GAME_TEST_HOOKS__.setPausedForScreenshot(true));await page.waitForTimeout(180);
+  const sample=await page.evaluate(()=>{
+   const scene=surfaceObjects.find(o=>o.isScene&&o.userData.sunShadows),renderer=surfaceObjects.find(o=>o.isWebGLRenderer),road=scene.getObjectByName('road-network'),meshes=road.children.filter(o=>o.isMesh&&o.material.normalScale?.x===.35&&o.material.roughnessMap),source=meshes[0].material,material=source.clone(),compile=source.onBeforeCompile;
+   // Bridge the already computed production rainWet scalar to the output.
+   // No exposure/height formula is copied or reimplemented by this probe.
+   material.onBeforeCompile=(shader,r)=>{compile.call(source,shader,r);if(!shader.fragmentShader.includes('rainWet=uRainWetness*exposed;'))throw Error('Production wetness expression missing');shader.fragmentShader='float weatherProbeWet=0.0;\n'+shader.fragmentShader.replace('rainWet=uRainWetness*exposed;','rainWet=uRainWetness*exposed;weatherProbeWet=rainWet;').replace('#include <colorspace_fragment>','#include <colorspace_fragment>\ngl_FragColor=vec4(weatherProbeWet,0.0,0.0,1.0);');};material.customProgramCacheKey=()=>source.customProgramCacheKey()+'-rain-scalar-probe';
+   const probe=new scene.constructor();for(const mesh of meshes){const m=mesh.clone(false);m.material=material;m.castShadow=false;m.receiveShadow=false;probe.add(m);}const camera=surfaceCamera.clone(),position=window.__THREE_GAME_DIAGNOSTICS__.player.position;camera.position.set(position.x,position.y+3,position.z);camera.up.set(0,0,1);camera.lookAt(position.x,position.y-1,position.z);camera.fov=18;camera.aspect=1;camera.near=.01;camera.far=10;camera.updateProjectionMatrix();
+   const target=new surfaceSkyTarget.constructor(32,32,{type:surfaceSkyTarget.texture.type,depthBuffer:false}),previous=renderer.getRenderTarget(),gl=renderer.getContext();
+   try{renderer.setRenderTarget(target);renderer.clear();renderer.render(probe,camera);const pixel=new Float32Array(4);gl.readPixels(16,16,1,1,gl.RGBA,gl.FLOAT,pixel);return{pixel:Array.from(pixel),glError:gl.getError(),diagnostics:structuredClone(window.__THREE_GAME_DIAGNOSTICS__)};}
+   finally{renderer.setRenderTarget(previous);target.dispose();material.dispose();probe.clear();}
+  });rows.push({state,...sample});assert.equal(sample.glError,0);assert.equal(sample.pixel[3],1);if(state==='tunnel'){assert.ok(sample.pixel[0]<.001);assert.equal(sample.diagnostics.vehicle.wetness,0);assert.equal(sample.diagnostics.weather.drizzle.active,false);}else{assert.ok(sample.pixel[0]>.6);assert.ok(sample.diagnostics.vehicle.wetness>.6);}
+ }
+ const report={scope:'Production asphalt shader exposes its computed rainWet scalar through a diagnostic output bridge, rendered from above in32x32 HDR with original road geometry/uniforms and no other occluders. Exact top-height cover comes from existing headland triangles; car physics and rain sampled after actual unpaused steps. Does not certify every roof, terrain edge or physical phone.',rows,errors};await writeFile(out+'/result.json',JSON.stringify(report,null,2)+'\n');assert.deepEqual(errors,[]);console.log(JSON.stringify({pass:true,rows:rows.map(r=>({state:r.state,shaderWet:r.pixel[0],physicsWet:r.diagnostics.vehicle.wetness,rain:r.diagnostics.weather.drizzle.active}))}));
+}catch(error){await writeFile(out+'/failure.json',JSON.stringify({message:String(error),rows,errors},null,2)+'\n');throw error;}finally{await browser.close();}

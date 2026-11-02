@@ -17,7 +17,7 @@ export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
  const sections:{group:THREE.Group;inverse:THREE.Matrix4;surface:ReturnType<typeof scanSurface>}[]=[];
  const bodyMaterial=rockMaterial.clone();bodyMaterial.name='Metre textured solid sandstone';bodyMaterial.vertexColors=false;bodyMaterial.color.set('#d7cfbc');usePackedSurfaceRoughness(bodyMaterial);addWetness(bodyMaterial);materials.add(bodyMaterial);
  const localPoint=new THREE.Vector3();
- let disposed=false;const time={value:0};
+ let disposed=false;const time={value:0},wind={value:1};
  const cliffsReady=new GLTFLoader(manager).loadAsync(`${import.meta.env.BASE_URL}assets/models/coastal_cliff_01/cliff-${mobile?'far':'near'}.gltf`).then(gltf=>{
   const sources:THREE.Mesh[]=[];gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh)sources.push(o);});
   if(!sources.length)throw Error('Coastal scan has no mesh');
@@ -58,10 +58,10 @@ export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
    if(disposed||!meshes.length||(mobile&&variant===0))continue;
    const geometry=mergeGeometries(meshes.map(mesh=>mesh.geometry),false);geometries.add(geometry);
    const material=(meshes[0].material as THREE.MeshStandardMaterial).clone();materials.add(material);material.alphaTest=.45;material.transparent=false;material.alphaToCoverage=true;material.side=THREE.DoubleSide;material.normalScale.set(.55,.55);
-   material.onBeforeCompile=shader=>{shader.uniforms.uShrubTime=time;shader.vertexShader='uniform float uShrubTime;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   material.onBeforeCompile=shader=>{shader.uniforms.uShrubTime=time;shader.uniforms.uShrubWind=wind;shader.vertexShader='uniform float uShrubTime,uShrubWind;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
     float h=max(position.y,0.0);float phase=instanceMatrix[3].x*.37+instanceMatrix[3].z*.13;
-    transformed.x+=sin(uShrubTime*1.05+phase)*h*h*.055;
-    transformed.z+=cos(uShrubTime*.8+phase)*h*h*.035;`);};material.customProgramCacheKey=()=> 'scanned-dry-shrub-v1';
+    transformed.x+=sin(uShrubTime*1.05+phase)*h*h*.055*uShrubWind;
+    transformed.z+=cos(uShrubTime*.8+phase)*h*h*.035*uShrubWind;`);};material.customProgramCacheKey=()=> 'scanned-dry-shrub-v1';
    const count=mobile?12:14,instances=new THREE.InstancedMesh(geometry,material,count);instances.name='Scanned dry coastal scrub '+variant;instances.receiveShadow=true;instances.castShadow=!mobile;
    const beats=mobile?[.834,.85,.874,.902]:[.817,.832,.849,.867,.884,.903,.924];
    const placements:THREE.Matrix4[]=[];for(let i=0;i<count;i++){
@@ -90,7 +90,7 @@ export function createScannedCoast(scene:THREE.Scene,options:CoastOptions){
   if(disposed){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}
  });
  const ready=Promise.all([cliffsReady,shrubsReady,reefReady]).then(()=>undefined);
- return{ready,root,
+ return{ready,root,setWind(strength:number){wind.value=strength;},
   update(position:THREE.Vector3,elapsed:number){time.value=elapsed;for(const section of sections)section.group.visible=section.group.position.distanceToSquared(position)<260*260;},
   groundHeight(x:number,z:number){let y=ground(x,z);for(const section of sections){localPoint.set(x,0,z).applyMatrix4(section.inverse);const top=section.surface.height(localPoint.x,localPoint.z);if(top!==undefined)y=Math.max(y,section.group.position.y+top*section.group.scale.y);}return y;},
   dispose(){disposed=true;root.removeFromParent();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}

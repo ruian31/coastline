@@ -19,6 +19,7 @@ export type GrassCanopy = {
   mesh: THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
   update: (elapsed: number, carPosition: THREE.Vector3) => void;
   setLowDetail: (enabled: boolean) => void;
+  setWind:(strength:number)=>void;
   usePhotographedClumps:(texture:THREE.Texture)=>void;
   useFineGrass:(texture:THREE.Texture,farTexture:THREE.Texture)=>void;
   dispose: () => void;
@@ -100,7 +101,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     uCanopyOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
     uCanopyFarOriginCell: { value: new THREE.Vector2(-cellsPerSide / 2, -cellsPerSide / 2) },
     uCanopyCarXZ: { value: new THREE.Vector2() },
-    uCanopyTime: { value: 0 },
+    uCanopyTime: { value: 0 },uCanopyWind:{value:1},
     uCanopyHiddenPoint: { value: new THREE.Vector3(0, minHeight - .1, 0) },
   };
   const material = new THREE.MeshStandardMaterial({
@@ -120,7 +121,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     }
     uniform highp sampler2D uCanopyField;
     uniform vec2 uCanopyTerrainSize, uCanopyOriginCell, uCanopyFarOriginCell, uCanopyCarXZ;
-    uniform float uCanopyTime;
+    uniform float uCanopyTime,uCanopyWind;
     uniform vec3 uCanopyHiddenPoint;
     attribute float aCanopyBlade;
     varying vec3 vCanopyTint;
@@ -245,7 +246,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
     vec2 lean = vec2(cos(leanAngle), sin(leanAngle)) * (.045 + canopyRandom(worldCell, salt + 15u) * .15);
     float phase = canopyRandom(worldCell, salt + 16u) * 6.283185307;
     float gust = sin(uCanopyTime * 1.15 + float(worldCell.x) * .071 + float(worldCell.y) * .053 + phase);
-    lean += vec2(.048, .023) * gust + vec2(.012, -.018) * sin(uCanopyTime * 2.3 + phase);
+    lean += (vec2(.048, .023) * gust + vec2(.012, -.018) * sin(uCanopyTime * 2.3 + phase))*uCanopyWind;
     vec3 canopyForce=coastPlantPressure(vec3(bladeRoot.x,surface.height,bladeRoot.y));
     vec2 halfWidth=bladeWidthAxis*bladeWidth*.5;
     vec3 baseLeft=vec3(-halfWidth.x,canopyOffsetHeight(bladeRoot,-halfWidth,surface),-halfWidth.y);
@@ -302,12 +303,12 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
  float gust=sin(uCanopyTime*1.15+float(worldCell.x)*.071+float(worldCell.y)*.053+phase);
  vec3 canopyPosition;
  if(!middleDistance){
-  float height=.15+stature*.25,width=.01+canopyRandom(worldCell,salt+12u)*.015;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust;
+  float height=.15+stature*.25,width=.01+canopyRandom(worldCell,salt+12u)*.015;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust*uCanopyWind;
   vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y),tip=canopyPressedTip(vec3(lean.x,height,lean.y),height,force,canopyShape,root,surface);
   canopyPosition=vec3(root.x,surface.height,root.y)+(position.y>.5?tip:(position.x<0.0?left:right));objectNormal=normalize(cross(right-left,tip-left));
   vMapUv=vec2(mix(.77,.79,uv.x),mix(.2,.58,uv.y));
  }else{
-  float height=.16+stature*.2,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust,.025*sin(uCanopyTime*1.8+phase));
+  float height=.16+stature*.2,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust*uCanopyWind,.025*sin(uCanopyTime*1.8+phase)*uCanopyWind);
   vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y);
   vec3 topLeft=canopyPressedTip(vec3(lean.x-halfWidth.x,height,lean.y-halfWidth.y),height,force,canopyShape,root,surface),topRight=canopyPressedTip(vec3(lean.x+halfWidth.x,height,lean.y+halfWidth.y),height,force,canopyShape,root,surface);
   vec3 offset=position.y>.5?(position.x<0.0?topLeft:topRight):(position.x<0.0?left:right);canopyPosition=vec3(root.x,surface.height,root.y)+offset;
@@ -388,6 +389,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       uniforms.uCanopyOriginCell.value.set(Math.floor(carPosition.x / diagnostics.cellSize) - cellsPerSide / 2, Math.floor(carPosition.z / diagnostics.cellSize) - cellsPerSide / 2);
       uniforms.uCanopyFarOriginCell.value.set(Math.floor(carPosition.x / diagnostics.farCellSize) - cellsPerSide / 2, Math.floor(carPosition.z / diagnostics.farCellSize) - cellsPerSide / 2);
     },
+    setWind(strength){uniforms.uCanopyWind.value=strength;},
     setLowDetail(enabled) {
       if (disposed) return;
       diagnostics.lowDetail = enabled;

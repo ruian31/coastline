@@ -10,9 +10,9 @@ interface ThreeGameDiagnostics {
     position: { x: number; y: number; z: number };
     speed: number;
   };
-  vehicle?: {engine:string;mass:number;steps:number;colliders:number;fixedTriangles:number;velocity:number[];lateralSpeed:number;steeringAngle:number;wheels:{length:number;force:number;contact:boolean;y:number}[]};
+  vehicle?: {wetness?:number;engine:string;mass:number;steps:number;colliders:number;fixedTriangles:number;velocity:number[];lateralSpeed:number;steeringAngle:number;wheels:{length:number;force:number;contact:boolean;y:number}[]};
   vehicleLights?: {headlights:boolean;braking:boolean;reversing:boolean};
-  weather?: {target:string;natural:boolean;transitioning:boolean;seconds:number;cloud:number;mist:number;rain:number;wind:number;wetness:number;sky:{updates:number;draws:number;triangles:number;active:boolean}};
+  weather?: {target:string;natural:boolean;transitioning:boolean;seconds:number;cloud:number;mist:number;rain:number;wind:number;wetness:number;drizzle?:{ready:boolean;active:boolean;scheduledDraws:number;capacity:number;seconds:number;heightUploads:number};audio?:{ready:boolean;gain:number;windGain:number};sky:{updates:number;draws:number;triangles:number;active:boolean}};
   daylight?: {id:string;loading:boolean;direction:number[];skyIntensity:number;environmentIntensity:number;cycle?:{hour:number;flow:boolean;loading:boolean;cache:{sourceLoads:number;sourceBakes:number;updates:number;resident:string[];peakResident:number}}};
   vehicleMirrors?: {active:boolean;passes:number;draws:number;triangles:number;views:{name:string;updates:number;width:number;height:number}[]};
   cameraRig?: {cockpitEyeError:number|null;orbitYaw:number;orbitPitch:number;boomDistance:number|null;availableDistance:number|null};

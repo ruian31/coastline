@@ -43,7 +43,7 @@ export function createTunnelHeadland(mobile:boolean,ground:(x:number,z:number)=>
  const raw=new THREE.BufferGeometry();raw.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
  const geometry=mergeVertices(raw,.001);raw.dispose();geometry.computeVertexNormals();
  const surface=scanSurface([geometry]);
- return{geometry,groundHeight(x:number,z:number){
+ return{geometry,rainCoverHeight(x:number,z:number){return Math.max(ground(x,z),surface.height(x,z)??-Infinity);},groundHeight(x:number,z:number){
   const base=ground(x,z),roof=surface.height(x,z);if(roof===undefined||roof<=base)return base;
   // Continuous road projection identifies the air corridor; prop-exclusion
   // samples cannot invert a deformed, triangulated mountain boundary.

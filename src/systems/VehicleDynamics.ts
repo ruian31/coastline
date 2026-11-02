@@ -73,11 +73,13 @@ export class VehicleDynamics {
   this.body.setLinvel(this.forward.multiplyScalar(speed),true);this.body.setAngvel({x:0,y:0,z:0},true);this.body.resetForces(true);this.body.resetTorques(true);
   this.reverseDelay=0;this.steer=0;this.steeringAngle=0;this.braking=false;this.contactsReady=false;this.world.propagateModifiedBodyPositionsToColliders();this.readState();
  }
- update(dt:number,input:DriveIntent,offroad=false,automatic=false){
+ private wetness=0;
+ update(dt:number,input:DriveIntent,offroad=false,automatic=false,wetness=0){
+  this.wetness=THREE.MathUtils.clamp(Number.isFinite(wetness)?wetness:0,0,1);
   const p=VEHICLE_PROFILES[this.modelIndex]??VEHICLE_PROFILES[0],mass=p.mass,vehicle=this.controller;
   this.readState();const beforeSpeed=this.speed,absSpeed=Math.abs(beforeSpeed);
   this.steer=THREE.MathUtils.damp(this.steer,input.steer,7,dt);
-  const grip=offroad?.68:.95,maxSteering=this.maxSteering(offroad);
+  const grip=(offroad?.68:.95)*(1-this.wetness*.17),maxSteering=this.maxSteering(offroad,this.wetness);
   this.steeringAngle=this.steer*maxSteering;
   let engine=0,brake=0;
   if(input.throttle>0){this.reverseDelay=0;if(beforeSpeed<-.3)brake=input.throttle*8;else engine=input.throttle*mass*p.acceleration*Math.max(0,1-Math.max(0,beforeSpeed)/(p.maxSpeed*(offroad?.72:1)));}
@@ -101,8 +103,8 @@ export class VehicleDynamics {
   vehicle.updateVehicle(dt,RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC);this.world.timestep=dt;this.world.step();this.steps++;this.contactsReady=true;this.readState();
   this.hit=beforeSpeed-this.speed>2;
  }
- private maxSteering(offroad:boolean){return Math.min(.48,Math.atan((offroad?.68:.95)*.82*9.81*WHEELBASE/(this.speed*this.speed+1)));}
- normalizedSteer(angle:number,offroad:boolean){return THREE.MathUtils.clamp(angle/this.maxSteering(offroad),-1,1);}
+ private maxSteering(offroad:boolean,wetness=0){return Math.min(.48,Math.atan((offroad?.68:.95)*(1-wetness*.17)*.82*9.81*WHEELBASE/(this.speed*this.speed+1)));}
+ normalizedSteer(angle:number,offroad:boolean,wetness=0){return THREE.MathUtils.clamp(angle/this.maxSteering(offroad,wetness),-1,1);}
  private readState(){
   const p=this.body.translation(),q=this.body.rotation(),v=this.body.linvel();this.position.set(p.x,p.y,p.z);this.rotation.set(q.x,q.y,q.z,q.w);this.velocity.set(v.x,v.y,v.z);
   this.forward.set(0,0,1).applyQuaternion(this.rotation);this.right.set(1,0,0).applyQuaternion(this.rotation);this.speed=this.velocity.dot(this.forward);this.lateralSpeed=this.velocity.dot(this.right);
@@ -110,6 +112,6 @@ export class VehicleDynamics {
   // the nominal authored wheels there; never reuse contact data from elsewhere.
   for(let i=0;i<4;i++){const wheel=this.wheels[i];wheel.length=this.contactsReady?(this.controller.wheelSuspensionLength(i)??REST_LENGTH):this.hardpointY-RADIUS;wheel.position.y=this.hardpointY-wheel.length;wheel.rotation=this.controller.wheelRotation(i)??0;wheel.steering=i>=2?this.steeringAngle:0;wheel.contact=this.contactsReady&&this.controller.wheelIsInContact(i);wheel.force=this.contactsReady?(this.controller.wheelSuspensionForce(i)??0):0;}
  }
- get diagnostics(){return{engine:'Rapier 0.21.0',mass:this.body.mass(),steps:this.steps,colliders:this.world.colliders.len(),fixedTriangles:this.triangles,velocity:this.velocity.toArray(),lateralSpeed:this.lateralSpeed,steeringAngle:this.steeringAngle,wheels:this.wheels.map(w=>({length:w.length,force:w.force,contact:w.contact,y:w.position.y}))};}
+ get diagnostics(){return{engine:'Rapier 0.21.0',wetness:this.wetness,mass:this.body.mass(),steps:this.steps,colliders:this.world.colliders.len(),fixedTriangles:this.triangles,velocity:this.velocity.toArray(),lateralSpeed:this.lateralSpeed,steeringAngle:this.steeringAngle,wheels:this.wheels.map(w=>({length:w.length,force:w.force,contact:w.contact,y:w.position.y}))};}
  dispose(){if(!this.disposed){this.disposed=true;this.world.free();}}
 }

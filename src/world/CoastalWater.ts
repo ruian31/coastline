@@ -33,7 +33,7 @@ export function buildShoreField(sample:(x:number,z:number)=>number,size:number,s
 }
 
 const shoreGLSL=`
-uniform sampler2D uShoreField;uniform vec2 uShoreTexel,uShorePatchCenter;uniform float uShoreReady,uShoreTime,uShoreHarmonic;
+uniform sampler2D uShoreField;uniform vec2 uShoreTexel,uShorePatchCenter;uniform float uShoreReady,uShoreTime,uShoreHarmonic,uRainWetness,uRainCoverReady;uniform sampler2D uRainCover;uniform vec4 uRainCoverBounds;
 vec4 coastField(vec2 p){vec2 uv=(p+vec2(530.0,470.0))/vec2(1060.0,940.0);if(uShoreReady<.5||min(uv.x,uv.y)<0.0||max(uv.x,uv.y)>1.0)return vec4(0.0);return texture2D(uShoreField,uv*(1.0-uShoreTexel)+uShoreTexel*.5);}
 float coastHeight(vec4 field){return dot(field.rg,vec2(65280.0,255.0))/65535.0*80.0-8.0;}
 float coastDistance(vec4 field){return field.b*64.0-32.0;}
@@ -46,9 +46,10 @@ float coastWave(vec2 p,float distance,float t){float phase=coastPhase(p,distance
 export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:number},sun:THREE.Vector3,skyIntensity:number){
  let disposed=false,fieldTexture=new THREE.DataTexture(new Uint8Array(4),1,1),ready=false;
  const field={value:fieldTexture},texel={value:new THREE.Vector2(1,1)},hasField={value:0},sky={value:null as THREE.Texture|null},hasSky={value:0},patchCenter={value:new THREE.Vector2()};
- const uniforms={uShoreField:field,uShoreTexel:texel,uShoreReady:hasField,uShoreTime:time,uShorePatchCenter:patchCenter,uShoreHarmonic:{value:mobile?0:.035}};
+ let rainCoverTexture:THREE.DataTexture|undefined,rainCoverSource:{sample:(x:number,z:number)=>number;bounds:THREE.Box3}|undefined;
+ const uniforms={uRainWetness:{value:0},uRainCover:{value:null as THREE.Texture|null},uRainCoverReady:{value:0},uRainCoverBounds:{value:new THREE.Vector4()},uShoreField:field,uShoreTexel:texel,uShoreReady:hasField,uShoreTime:time,uShorePatchCenter:patchCenter,uShoreHarmonic:{value:mobile?0:.035}};
  fieldTexture.needsUpdate=true;
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyYaw:{value:0},uSkyClamp:{value:6},uWaterLight:{value:1},uWeatherFogDensity:{value:0},uWeatherFogColor:{value:new THREE.Color()},uGlitterColor:{value:new THREE.Vector3(2.5,1.35,.49)},uWaterHorizon:{value:new THREE.Color().setRGB(.51,.32,.28)},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyYaw:{value:0},uSkyClamp:{value:6},uWaterLight:{value:1},uWaterWind:{value:1},uWeatherFogDensity:{value:0},uWeatherFogColor:{value:new THREE.Color()},uGlitterColor:{value:new THREE.Vector3(2.5,1.35,.49)},uWaterHorizon:{value:new THREE.Color().setRGB(.51,.32,.28)},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
   vertexShader:`${shoreGLSL}
    varying vec3 vWaterPlane;void main(){vec4 p=modelMatrix*vec4(position,1.0);
    #if WATER_PATCH == 1
@@ -56,7 +57,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
    #endif
    vWaterPlane=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
   fragmentShader:`${shoreGLSL}
-   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity,uSkyYaw,uSkyClamp,uWaterLight,uWeatherFogDensity;uniform vec3 uWeatherFogColor,uSun,uGlitterColor,uWaterHorizon;varying vec3 vWaterPlane;
+   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity,uSkyYaw,uSkyClamp,uWaterLight,uWaterWind,uWeatherFogDensity;uniform vec3 uWeatherFogColor,uSun,uGlitterColor,uWaterHorizon;varying vec3 vWaterPlane;
    float waterHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    float waterNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(waterHash(i),waterHash(i+vec2(1,0)),f.x),mix(waterHash(i+vec2(0,1)),waterHash(i+1.0),f.x),f.y);}
    void main(){
@@ -76,7 +77,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
     float warp=waterNoise(p*.025+t*.012)*6.0,w1=sin(p.x*.17+p.y*.11-t*.73+warp),w2=sin(p.x*-.13+p.y*.23+t*.51+warp*.71);
     float footprint=max(length(dFdx(p)),length(dFdy(p))),rippleFilter=1.0/(1.0+footprint*.6),longRippleFilter=1.0/(1.0+footprint*.16),w3=sin(p.x*.51-p.y*.39-t*1.13+warp*.8)*rippleFilter;
     vec2 fine=(vec2(waterNoise(p*.76+vec2(t*.10,-t*.07)),waterNoise(p.yx*.63+vec2(18.3-t*.08,9.7+t*.11)))-.5)*rippleFilter;
-    vec3 normal=normalize(vec3(-slope.x+(w1*.022+w2*.011)*longRippleFilter+w3*.018+fine.x*.055,1.0,-slope.y+(w2*.024-w1*.012)*longRippleFilter-w3*.014+fine.y*.050));
+    vec3 normal=normalize(vec3(-slope.x+((w1*.022+w2*.011)*longRippleFilter+w3*.018+fine.x*.055)*uWaterWind,1.0,-slope.y+((w2*.024-w1*.012)*longRippleFilter-w3*.014+fine.y*.050)*uWaterWind));
     vec3 view=normalize(cameraPosition-world);float fresnel=pow(1.0-max(dot(normal,view),0.0),4.0);
     float opticalDepth=max(depth,max(0.0,-distance)*.13);
     vec3 water=mix(vec3(.008,.038,.057),vec3(.022,.115,.108),exp(-opticalDepth*.65)),reflection=vec3(.18,.23,.31);
@@ -130,6 +131,15 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
  return{ocean,
   prepare(sample:(x:number,z:number)=>number,solidFloor:(x:number,z:number)=>number){if(disposed)return;const built=buildShoreField(sample,mobile?512:768,solidFloor),texture=new THREE.DataTexture(built.data,built.size,built.size);texture.minFilter=texture.magFilter=THREE.LinearFilter;texture.needsUpdate=true;fieldTexture.dispose();fieldTexture=texture;field.value=texture;cpuField={distance:built.distance,size:built.size};texel.value.set(1/built.size,1/built.size);hasField.value=1;ready=true;ocean.userData.shoreField={size:built.size,bytes:built.data.byteLength,waterLevel:SEA_LEVEL};patchCell.set(Infinity,Infinity);update(new THREE.Vector3(patchCenter.value.x,0,patchCenter.value.y));},
   update,
+  setRainCover(sample:(x:number,z:number)=>number,bounds:THREE.Box3){rainCoverSource={sample,bounds:bounds.clone()};},
+  setWeather(wind:number,wetness:number){
+   material.uniforms.uWaterWind.value=wind;uniforms.uRainWetness.value=wetness;
+   if(wetness>1e-5&&!rainCoverTexture&&rainCoverSource){const{sample,bounds}=rainCoverSource,size=48,data=new Float32Array(size*size),width=bounds.max.x-bounds.min.x,depth=bounds.max.z-bounds.min.z;
+    for(let z=0;z<size;z++)for(let x=0;x<size;x++)data[z*size+x]=sample(bounds.min.x+(x+.5)*width/size,bounds.min.z+(z+.5)*depth/size);
+    rainCoverTexture=new THREE.DataTexture(data,size,size,THREE.RedFormat,THREE.FloatType);rainCoverTexture.name='Sampled tunnel rain cover';rainCoverTexture.minFilter=rainCoverTexture.magFilter=THREE.NearestFilter;rainCoverTexture.generateMipmaps=false;rainCoverTexture.needsUpdate=true;
+    uniforms.uRainCover.value=rainCoverTexture;uniforms.uRainCoverReady.value=1;uniforms.uRainCoverBounds.value.set(bounds.min.x,bounds.min.z,1/width,1/depth);
+   }
+  },
   setWeatherFog(density:number,color:THREE.Color){material.uniforms.uWeatherFogDensity.value=density;material.uniforms.uWeatherFogColor.value.copy(color);},
   setSkyReflection(texture:THREE.Texture){sky.value=texture;hasSky.value=1;},
   setDaylight(preset:DaylightPreset){
@@ -148,15 +158,21 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
      #endif
      vWetShoreWorld=(modelMatrix*shoreWorld).xyz;`);
     shader.fragmentShader='varying vec3 vWetShoreWorld;\n'+shoreGLSL+shader.fragmentShader.replace('#include <metalnessmap_fragment>',`#include <metalnessmap_fragment>
+     if(uRainWetness>.0001&&uShoreReady>.5){
+      float coverHeight=coastHeight(coastField(vWetShoreWorld.xz));vec2 roofUv=(vWetShoreWorld.xz-uRainCoverBounds.xy)*uRainCoverBounds.zw;
+      if(uRainCoverReady>.5&&min(roofUv.x,roofUv.y)>=0.0&&max(roofUv.x,roofUv.y)<=1.0)coverHeight=max(coverHeight,texture2D(uRainCover,roofUv).r);
+      float exposed=smoothstep(.3,1.5,vWetShoreWorld.y+1.8-coverHeight),rainWet=uRainWetness*exposed;
+      diffuseColor.rgb*=mix(1.0,.78,rainWet);roughnessFactor=mix(roughnessFactor,.32,rainWet*.8);
+     }
      if(uShoreReady>.5&&vWetShoreWorld.y>-2.8&&vWetShoreWorld.y<-.65){
       vec4 wetField=coastField(vWetShoreWorld.xz);float shore=coastDistance(wetField);
       float recent=max(coastWave(vWetShoreWorld.xz,shore,uShoreTime),max(coastWave(vWetShoreWorld.xz,shore,uShoreTime-1.5),coastWave(vWetShoreWorld.xz,shore,uShoreTime-3.0)));
       float wet=1.0-smoothstep(recent+.02,recent+.17,vWetShoreWorld.y);
       diffuseColor.rgb*=mix(1.0,.61,wet);roughnessFactor=mix(roughnessFactor,.43,wet*.85);
      }`);
-   };target.customProgramCacheKey=()=>key+'-wet-shore-v1';
+   };target.customProgramCacheKey=()=>key+'-wet-shore-rain-v2';
   },
   get ready(){return ready;},
-  dispose(){disposed=true;ocean.removeFromParent();patch.removeFromParent();geometry.dispose();material.dispose();patchGeometry.dispose();patchMaterial.dispose();fieldTexture.dispose();cpuField=undefined;},
+  dispose(){disposed=true;ocean.removeFromParent();patch.removeFromParent();geometry.dispose();material.dispose();patchGeometry.dispose();patchMaterial.dispose();fieldTexture.dispose();rainCoverTexture?.dispose();rainCoverSource=undefined;cpuField=undefined;},
  };
 }

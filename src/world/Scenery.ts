@@ -61,6 +61,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   addShoreWetness:(material:THREE.MeshStandardMaterial)=>void;
   createShadowCasters:()=>THREE.Group;
   setSkyReflection:(texture:THREE.Texture)=>void;
+  setWeatherFog:(density:number,color:THREE.Color)=>void;
   setDaylight:(preset:DaylightPreset)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -1123,6 +1124,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       }
       if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
+    setWeatherFog:water.setWeatherFog,
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setDaylight:water.setDaylight,
     updateVehicle:vegetationInteraction.update,

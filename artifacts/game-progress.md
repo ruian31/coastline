@@ -2,7 +2,7 @@
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 最新检查点 · M76修复ae4dde4已提交，M77局部岩脚试验中
+## 最新检查点 · M77拒绝记录6886803已提交，M78天气候选中
 
 - Goal active。HEAD ae4dde4为地形自阴影修正，立即cat-file核验中文UTF8正常、临时文件已删除，无push；原75f6f4e/848f8ce/66d4e7b保持。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
 - 已通过生产构建、三浏览器一次11过/1设备条件跳过（144.84s，无失败重试）；terrain-depth-gl-summary.json每端4次terrain draw偏移正确/同1UUID，其他460–464对象depth draw关闭偏移、颜色无偏移/仍接收阴影、GL0。最终源码daynight-m76-terrain-final 20图（两端844×390低档：白昼/坡地/小镇/出洞/原夕阳/月夜）两张联图全部已看、0错误。
@@ -11,7 +11,11 @@
 - 稳定5190/session52233、10.158.204.114已原子更新CPz7ET6p952723B/SHA15d8a620…（CSS17947B）；候选4212/session9437，旧天空补丁对照4211/session90919。daynight-m76-terrain-final/build-source.json及local-release.json三入口11资产33行核对、24旧JS保留，无push，物理源码SHA仍未变。normal无query5.03m、菜单开循环再5.95m/18.712667h、原资源/压草/116投影一次缓存/测试全局关闭、0错误，两原图已看。
 - M76研究和73项证据已结束。M77首组32图已全部采集/看联图（desktop联图先前压宽，比例判断需原图），实际496面封闭/周界埋地/0错误、同姿态，但正常驾驶改善不足，不采用。magenta可见性诊断确认岩脚有50–60%投影可见，并非完全被挡；主要问题是中间隆起、内侧埋地，读成零散低土包。原工厂/两版/报告全部保留。
 - M77第二版16图已完成（session93660成功退出），四张按原比例留边联图已全部看过。两端所有camera/player与原控制精确一致/GL0/错误0。496面封闭、fallback0，但周界相对max(ground,rock)最高外露5.90/9.96cm，浅色规则条带明显，拒绝接入。第一版32图+第二版16图/配方/可见性全部保留；未做被拒版本运动或性能验收。当前无GPU任务，候选4215/session73549仅工作研究。辅助任务额度失败一次后主agent已直接完成，不是Goal阻塞。
-- 下阶段F08天气开始整理接入点，已异步询问舒适观景/丰富风雨偏好；尚未依赖回复实施。季节仍待实现，整体自然质量未达标。
+- M77记录6886803已中文UTF8核验/临时消息清除，无push。M78已收到用户选择：舒适观景、偶尔海雾/细雨。Weather.ts为同一45秒连续过渡/暂停冻结/晴段较长自然时间表/湿润模型，CPU脚本test-weather-timeline.mjs已通过手动中断/完整45秒/暂停/1800秒确定性与湿干过程；不是完整天气功能证明。
+- M78源码候选WeatherSky.ts+OceanDrive/Water/Scenery仅内部测试入口，无普通玩家菜单/保存、雨粒/湿材质/风/声音/抓地尚未接入，不能称F08实现。晴天懒旁路无天气资源/绘制；天气合成借用原摄影/PMREM，按活动天气时钟4Hz，mobile512×256、desktop1024×512+同尺寸CubeUV环境（不重复PMREM）。4216/session27895/work/weather-m78-dist，5190不变。first24/horizon24两轮四时段缺晨曦的初图已看，发现低太阳HDR热核仍透厚云，已加峰值压制；单次独立审查另找出固定晨曦HDR未Repeat和海面无天气距离雾，均已修正。
+- M78最终最新构建YOla8uRP963820B/CSS17947，build-source.json记录14源/4资产SHA，物理未改。CPU、最终32图（含dawn）全部看过、光学六组合GPU Repeat/yaw.5/RT边界.009918/.12与水雾绑定GL0完成；三浏览器6专项100.90s与12受影响回归213.61s全部通过/0跳过/0重试。是分批，不当单次18项。先前三份失败报告保留；等待冻结后新诊断帧+WebKit20秒同阈值解决观察问题（初始晴天也fps1，不当真iPhone性能）。
+- M78两组成本串行结束：stable CPz→cloudy YOla，两状态各540全RAF有效GPU/全含镜面/各1世界烘焙+8s4倍CPU，cost-summary.json。树P50/P95 3.832/5.214→4.806/8.706，镇4.880/7.094→4.616/13.806，最大候选35.466ms；CPU+2.9%/−1%，保留开销和旧预算超额，不承诺手机FPS。当前无GPU任务，M78准备中文提交，5190未更新。
+- M79开始细雨独立工厂工作：现有nature_next_research agent拥有且仅写work/weather-rain-m79.ts，禁止GPU/浏览器/源码改动/提交。导出createCoastalDrizzle(scene,mobile,ground)，update(anchor,weather.seconds,rain,wind,inTunnel)，懒180/320固定池/世界格子/小高度图采样裁地，主agent负责采用与实际验证。其余湿地表/统一风/声音/共用物理wetness/菜单/保存仍待接入，F08未完成。
 - 本轮进程检查5190/4214/4215均原无监听，5190已恢复session87917/0.0.0.0并HTTP200；实际Wi-Fi地址现在192.168.3.10（不再沿用旧10.158.204.114）。dist仍ae4dde4/CPz7ET6p，未发布M77。World1.5/Lighting2.25保持，季节/天气、自然群落和陡坡可读性仍未完成；用户最新确认原M76手机循环主画面/后视镜顺畅。
 
 

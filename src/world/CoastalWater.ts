@@ -48,7 +48,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
  const field={value:fieldTexture},texel={value:new THREE.Vector2(1,1)},hasField={value:0},sky={value:null as THREE.Texture|null},hasSky={value:0},patchCenter={value:new THREE.Vector2()};
  const uniforms={uShoreField:field,uShoreTexel:texel,uShoreReady:hasField,uShoreTime:time,uShorePatchCenter:patchCenter,uShoreHarmonic:{value:mobile?0:.035}};
  fieldTexture.needsUpdate=true;
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyYaw:{value:0},uSkyClamp:{value:6},uWaterLight:{value:1},uGlitterColor:{value:new THREE.Vector3(2.5,1.35,.49)},uWaterHorizon:{value:new THREE.Color().setRGB(.51,.32,.28)},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,defines:{WATER_PATCH:0},uniforms:{...uniforms,uSun:{value:sun},uSkyYaw:{value:0},uSkyClamp:{value:6},uWaterLight:{value:1},uWeatherFogDensity:{value:0},uWeatherFogColor:{value:new THREE.Color()},uGlitterColor:{value:new THREE.Vector3(2.5,1.35,.49)},uWaterHorizon:{value:new THREE.Color().setRGB(.51,.32,.28)},uSkyMap:sky,uSkyIntensity:{value:skyIntensity},uHasSky:hasSky},
   vertexShader:`${shoreGLSL}
    varying vec3 vWaterPlane;void main(){vec4 p=modelMatrix*vec4(position,1.0);
    #if WATER_PATCH == 1
@@ -56,7 +56,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
    #endif
    vWaterPlane=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
   fragmentShader:`${shoreGLSL}
-   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity,uSkyYaw,uSkyClamp,uWaterLight;uniform vec3 uSun,uGlitterColor,uWaterHorizon;varying vec3 vWaterPlane;
+   uniform sampler2D uSkyMap;uniform float uHasSky,uSkyIntensity,uSkyYaw,uSkyClamp,uWaterLight,uWeatherFogDensity;uniform vec3 uWeatherFogColor,uSun,uGlitterColor,uWaterHorizon;varying vec3 vWaterPlane;
    float waterHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    float waterNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(waterHash(i),waterHash(i+vec2(1,0)),f.x),mix(waterHash(i+vec2(0,1)),waterHash(i+1.0),f.x),f.y);}
    void main(){
@@ -90,6 +90,8 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
     color=mix(color,vec3(.69,.71,.65)*uWaterLight,clamp(foam*.78,0.0,.8));
     float viewDistance=length(cameraPosition.xz-p);color=mix(color,uWaterHorizon,smoothstep(650.0,3800.0,viewDistance)*.72);
     float alpha=max(1.0-exp(-max(opticalDepth,.02)*1.8),fresnel*.8);alpha=mix(alpha,1.0,foam*.8);
+    float weatherDepth=max(0.0,-(viewMatrix*vec4(world,1.0)).z),weatherFog=1.0-exp(-uWeatherFogDensity*uWeatherFogDensity*weatherDepth*weatherDepth);
+    color=mix(color,uWeatherFogColor,weatherFog);
     gl_FragColor=vec4(color,alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -128,6 +130,7 @@ export function createCoastalWater(scene:THREE.Scene,mobile:boolean,time:{value:
  return{ocean,
   prepare(sample:(x:number,z:number)=>number,solidFloor:(x:number,z:number)=>number){if(disposed)return;const built=buildShoreField(sample,mobile?512:768,solidFloor),texture=new THREE.DataTexture(built.data,built.size,built.size);texture.minFilter=texture.magFilter=THREE.LinearFilter;texture.needsUpdate=true;fieldTexture.dispose();fieldTexture=texture;field.value=texture;cpuField={distance:built.distance,size:built.size};texel.value.set(1/built.size,1/built.size);hasField.value=1;ready=true;ocean.userData.shoreField={size:built.size,bytes:built.data.byteLength,waterLevel:SEA_LEVEL};patchCell.set(Infinity,Infinity);update(new THREE.Vector3(patchCenter.value.x,0,patchCenter.value.y));},
   update,
+  setWeatherFog(density:number,color:THREE.Color){material.uniforms.uWeatherFogDensity.value=density;material.uniforms.uWeatherFogColor.value.copy(color);},
   setSkyReflection(texture:THREE.Texture){sky.value=texture;hasSky.value=1;},
   setDaylight(preset:DaylightPreset){
    sun.fromArray(preset.direction).normalize();

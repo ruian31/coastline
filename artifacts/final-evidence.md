@@ -1,5 +1,15 @@
 # M76补正 · 地形自阴影已更新试玩，继续自然形体
 
+## M78 · 共享大气天气已验证，F08仍在开发 · 2026-11-02
+
+- 用户选择舒适观景、偶尔海雾/细雨。Weather.ts的共享时钟/45秒过渡/晴段较长的自然计划/湿干模型，WeatherSky.ts的惰性线性HDR合成、天空/IBL/直射/场景雾/海面反射已实现；天气仅测试钩子可选。普通菜单、雨粒、雨后材质、植被风、声音、抓地、保存尚未完成；不发布5190、不称完整天气或总体Goal通过。
+- `artifacts/weather-m78/timeline-cpu.json`由`scripts/test-weather-timeline.mjs`完成45秒、改选、非活动冻结、1800秒确定性、1650秒自然计划、90秒雨段开启与湿干数学检查。物理/材质尚未消费wetness。
+- `artifacts/weather-m78/browser-fourth.json`最终三浏览器6通过/0重试/0跳过，100.90s；`browser-regression.json`原昼夜开关/欢迎冻结/地形GL深度/夕阳缓存12通过，213.61s。不是同一次18项调用。三份先前失败报告保留，诊断80ms缓存通过等待新帧解决；WebKit原5秒观察过短，活动样本帧39→45/seconds .1→.7/paused false，而本机晴天fps约1，扩大到20秒同阈值，不称iPhone性能。
+- `artifacts/weather-m78-final/result.json`32幅（两端×晨曦/正午/夕阳/夜×clear/cloudy/fog/drizzle大气参数），desktop/mobile联图32格全看、0错误。drizzle此时仅大气，无雨粒，不以标签冒充细雨完成。first24/horizon24早期图保留并全看，最终新增晨曦、HDR峰值限制及海面距离雾；旧图不冒充最终源码。
+- 一次独立只读审查提出固定晨曦HDR clamp和自定义水面无天气距离雾，已改owned HDR RepeatWrapping及水面同exp²距离衰减。`scripts/check-weather-atmosphere.mjs`实际GPU半浮点RT读回：`weather-m78-optics/result.json`六组合、source wrap1000/GPU10497、dawn yaw.5、边界曲率最大.009918/.12，水/场景雾绑定相同、GL0。不是全部天空艺术验收。
+- `weather-m78/cost-summary.json`与`mirrors-m67-profile-m78-{control,cloudy}/result.json`是串行同机Android844低档cycle13车内树/镇对照，分别540完整RAF GPU+8秒4倍CPU；新增大气有成本、镇P95升至13.806ms/max35.466ms，不称真机FPS/提速。详见文档09。
+- `weather-m78/build-source.json`记录当前14源文件/4包SHA：index-YOla8uRP.js963820B、CSS17947B，物理源码未改。稳定5190仍CPz7ET6p/M76；4216/session27895仅工作候选。World1.5、Lighting2.25沿用，不因天气层提高自然风景总体验收。
+
 ## M77 · 两种局部岩脚形状均未采用 · 2026-11-02
 
 - 范围：同一40m岩段，原材质/植被/道路保持。`work/build-cliff-apron-m77.mjs`构建控制、第一版和joined工作版；`artifacts/cliff-apron-m77/recipe-{control,candidate,joined-candidate}.json`记录变换与源码SHA，不是正式发布。

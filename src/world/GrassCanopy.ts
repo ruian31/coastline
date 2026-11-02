@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type {VegetationInteraction} from './VegetationInteraction';
 import {centerPlantAlphaCoverage} from './PlantTexture';
+import {applyGrassSeason,createSeasonUniforms,type SeasonUniforms} from './Season';
 
 type GrassCanopyOptions = {
   mobile: boolean;
@@ -12,6 +13,7 @@ type GrassCanopyOptions = {
   /** Signed clearance in metres; negative values forbid growth. Sampled once at terrain vertices. */
   habitat: (x: number, z: number) => number;
   interaction:VegetationInteraction;
+  season?:SeasonUniforms;
 };
 
 export type GrassCanopy = {
@@ -29,7 +31,7 @@ const CELL_SIZE = .75;
 const BLADES_PER_CELL = 32;
 
 /** A fixed-budget, moving GPU window over stable world cells. No placement-matrix updates or world scans. */
-export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat, interaction }: GrassCanopyOptions): GrassCanopy {
+export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat, interaction,season=createSeasonUniforms() }: GrassCanopyOptions): GrassCanopy {
   if (!Number.isFinite(width) || !Number.isFinite(depth) || width <= 0 || depth <= 0 || !Number.isInteger(segments) || segments < 1) {
     throw new RangeError('GrassCanopy requires positive terrain dimensions and an integer segment count.');
   }
@@ -347,7 +349,8 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       float canopyThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
       if(vCanopyCoverage<=canopyThreshold)discard;`:'diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');
   };
-  const cacheKey=()=>`coast-grass-canopy-v6-${cellsPerSide}-${segments}-${fineGrass?'fine-leaves-continuous-body-v1':material.map?'clumps':'blades'}`;
+  applyGrassSeason(material,season);
+  const cacheKey=()=>`coast-grass-canopy-v6-${cellsPerSide}-${segments}-${fineGrass?'fine-leaves-continuous-body-v1':material.map?'clumps':'blades'}-season-v1`;
   material.customProgramCacheKey=cacheKey;
   let centeredCoverage=false;
   function prepareCoverage(){

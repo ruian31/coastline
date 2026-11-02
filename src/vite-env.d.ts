@@ -12,6 +12,7 @@ interface ThreeGameDiagnostics {
   };
   vehicle?: {wetness?:number;engine:string;mass:number;steps:number;colliders:number;fixedTriangles:number;velocity:number[];lateralSpeed:number;steeringAngle:number;wheels:{length:number;force:number;contact:boolean;y:number}[]};
   vehicleLights?: {headlights:boolean;braking:boolean;reversing:boolean};
+  season?: {target:string;transitioning:boolean;seconds:number;amount:number;ground:number[];grass:number[]};
   weather?: {target:string;natural:boolean;transitioning:boolean;seconds:number;cloud:number;mist:number;rain:number;wind:number;wetness:number;drizzle?:{ready:boolean;active:boolean;scheduledDraws:number;capacity:number;seconds:number;heightUploads:number};audio?:{ready:boolean;gain:number;windGain:number};sky:{updates:number;draws:number;triangles:number;active:boolean}};
   daylight?: {id:string;loading:boolean;direction:number[];skyIntensity:number;environmentIntensity:number;cycle?:{hour:number;flow:boolean;loading:boolean;cache:{sourceLoads:number;sourceBakes:number;updates:number;resident:string[];peakResident:number}}};
   vehicleMirrors?: {active:boolean;passes:number;draws:number;triangles:number;views:{name:string;updates:number;width:number;height:number}[]};
@@ -47,6 +48,7 @@ interface ThreeGameTestHooks {
   /** Freeze simulation at an explicit ambient time for animated-surface verification. */
   stepDriving?(seconds:number,intent?:{throttle:number;brake:number;steer:number;handbrake:boolean}):void;
   setSceneTime?(seconds: number): void | Promise<void>;
+  setSeason?(id:string,seconds?:number):void;
   setWeather?(id:string,seconds?:number):void;
   setDaylight?(id:string):Promise<boolean>;
   setDaylightCycle?(hour:number,flow?:boolean):Promise<boolean>;

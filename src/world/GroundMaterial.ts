@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createSeasonUniforms,type SeasonUniforms} from './Season';
 
 type SurfaceMaps={color:THREE.Texture;surface:THREE.Texture};
 
@@ -43,9 +44,10 @@ export function createCoastalBoulderMaterial(maps:SurfaceMaps){
 
 // Shared by the terrain, tunnel cap and graded shoulders. Textures remain
 // owned by Scenery; this function owns only material shading.
-export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps&{available:{value:number}},mobile:boolean){
+export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps&{available:{value:number}},mobile:boolean,season:SeasonUniforms=createSeasonUniforms()){
   const groundMaterial = new THREE.MeshStandardMaterial({ roughness: .96, metalness: 0 });
   groundMaterial.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms,season);
     for (const [prefix, maps] of Object.entries({ Ground:groundMaps, Sand:sandMaps, Field:fieldMaps })) {
       shader.uniforms[`u${prefix}Color`] = { value:maps.color };
       shader.uniforms[`u${prefix}Surface`] = { value:maps.surface };
@@ -55,7 +57,7 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
     shader.vertexShader = 'varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPosition = (modelMatrix*vec4(position,1.0)).xyz;vGroundWorldNormal=normalize(mat3(modelMatrix)*normal);');
     shader.fragmentShader = `varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;
       uniform sampler2D uGroundColor,uGroundSurface,uSandColor,uSandSurface,uFieldColor,uFieldSurface,uRockColor,uRockSurface;
-      uniform float uFieldAvailable;
+      uniform float uFieldAvailable,uSeasonAmount;uniform vec3 uSeasonGround;
       float coastHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float coastNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(coastHash(i),coastHash(i+vec2(1,0)),f.x),mix(coastHash(i+vec2(0,1)),coastHash(i+1.0),f.x),f.y);}
       vec3 coastTriplanar(sampler2D source,vec3 point,float size,vec3 weights){return texture2D(source,point.zy/size).rgb*weights.x+texture2D(source,point.xz/size).rgb*weights.y+texture2D(source,point.xy/size).rgb*weights.z;}
@@ -99,6 +101,11 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       soil=mix(soil,dryGrass,moss*(.48+.32*meadowPattern));
       vec2 fieldColorUv=vGroundPosition.xz/16.0+vec2(macro-.5,meadowPattern-.5)*.19;
       soil=mix(soil,texture2D(uFieldColor,fieldColorUv).rgb*vec3(.92,.97,.85),fieldWeight);
+      if(uSeasonAmount>.00001){
+       float seasonLuma=dot(soil,vec3(.2126,.7152,.0722));
+       float seasonCover=fieldWeight*smoothstep(.025,.12,max(soil.r,soil.g)-soil.b)*(1.0-rockWeight);
+       soil=mix(soil,seasonLuma*uSeasonGround,uSeasonAmount*seasonCover);
+      }
       vec3 albedo=mix(mix(soil,sand,sandWeight),stone,rockWeight);
       float damp=1.0-smoothstep(-.7,1.4,vGroundPosition.y);
       diffuseColor.rgb=albedo*mix(.91,1.16,macro)*mix(1.0,.65,damp);
@@ -119,6 +126,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v1`;
   return groundMaterial;
 }

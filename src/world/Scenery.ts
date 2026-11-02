@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyGrassSeason,createSeasonUniforms,type SeasonLook} from './Season';
 import {createCoastalGroundMaterial,createCoastalBoulderMaterial,usePackedSurfaceRoughness} from './GroundMaterial';
 import {scanSurface} from './SurfaceHeight';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -64,6 +65,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   setSkyReflection:(texture:THREE.Texture)=>void;
   setWeatherFog:(density:number,color:THREE.Color)=>void;
   setWeather:(wind:number,wetness:number)=>void;
+  setSeason:(look:SeasonLook)=>void;
   setDaylight:(preset:DaylightPreset)=>void;
   setLowDetail:(enabled:boolean)=>void;
 } {
@@ -71,7 +73,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   root.name = 'Coastal landscape';
   scene.add(root);
   let random = createSeededRandom(864203);
-  const time = { value: 0 },windStrength={value:1};
+  const time = { value: 0 },windStrength={value:1},season=createSeasonUniforms();
   const sun = GOLDEN_HOUR_SUN.clone();
   const water=createCoastalWater(scene,mobile,time,sun,GOLDEN_HOUR_SKY_INTENSITY);
   const windMaterials: THREE.MeshStandardMaterial[] = [];
@@ -233,13 +235,13 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const ix=Math.min(subdivisions-1,Math.floor(gx)),iz=Math.min(subdivisions-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(subdivisions+1)+ix,b=a+subdivisions+1,d=a+1,c=b+1;
     return u+v<=1?tp.getY(a)*(1-u-v)+tp.getY(d)*u+tp.getY(b)*v:tp.getY(c)*(u+v-1)+tp.getY(b)*(1-u)+tp.getY(d)*(1-v);
   };
-  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile);
+  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile,season);
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
   const vegetationInteraction=createVegetationInteraction((x,z)=>Math.max(groundHeight(x,z),vergeSurface?.height(x,z)??-Infinity));
   root.userData.vegetationInteraction=vegetationInteraction.diagnostics;
-  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,interaction:vegetationInteraction,habitat:(x,z)=>{
+  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,season,interaction:vegetationInteraction,habitat:(x,z)=>{
     if(groundHeight(x,z)<2.8||!naturalVerge(x,z,0))return -32;
     const nearest=closestSurface(x,z);
     return Math.min(32,nearest.distance-nearest.point.width/2-2.4);
@@ -344,7 +346,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   function matrix(x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = random() * Math.PI * 2): THREE.Matrix4 {
     return new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),angle), new THREE.Vector3(sx,sy,sz));
   }
-  function wind(color: number, amplitude: number,crownRoot=false): THREE.MeshStandardMaterial {
+  function wind(color: number, amplitude: number,crownRoot=false,seasonalGrass=false): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness: .9, side: THREE.DoubleSide });
     material.userData.coastalVegetation=true;
     if(crownRoot)material.userData.rigidTree=true;
@@ -360,6 +362,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         transformed.z+=cos(uSceneryTime*.83+phase)*${(amplitude * .55).toFixed(4)}*anchoredHeight*uSceneryWind;`);
     };
     material.customProgramCacheKey = () => `coast-wind-${amplitude}-${crownRoot}`;
+    if(seasonalGrass){material.userData.seasonalGrass=true;applyGrassSeason(material,season);}
     windMaterials.push(material);
     return material;
   }
@@ -508,7 +511,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geometry.computeVertexNormals();return geometry;
   }
-  const grassGeometry=crossedCards(1.10,.75,3),grassMaterial=wind(0xffffff,.095);
+  const grassGeometry=crossedCards(1.10,.75,3),grassMaterial=wind(0xffffff,.095,false,true);
   grassMaterial.map=plantTexture('grass');grassMaterial.alphaTest=.46;grassMaterial.alphaToCoverage=true;groundFollowing(grassMaterial);
   preservePlantCutoutMips(grassMaterial.map,[[0,0,256,256]],.46);
   const grasses:THREE.Matrix4[]=[],grassesColors:THREE.Color[]=[];
@@ -546,7 +549,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   // Shuffle together, so the low-detail prefix thins every patch rather than
   // removing one end of the coast. No runtime quality switch regenerates it.
   for(let i=fieldGrasses.length-1;i>0;i--){const j=Math.floor(fieldRandom()*(i+1));[fieldGrasses[i],fieldGrasses[j]]=[fieldGrasses[j],fieldGrasses[i]];[fieldColors[i],fieldColors[j]]=[fieldColors[j],fieldColors[i]];}
-  const fieldRange=mobile?120:260,fieldMaterial=wind(0xffffff,.095);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);dryFieldColor(fieldMaterial,1);
+  const fieldRange=mobile?120:260,fieldMaterial=wind(0xffffff,.095,false,true);fieldMaterial.copy(grassMaterial);fieldMaterial.name='Dry inland grass with distance thinning';groundFollowing(fieldMaterial);dryFieldColor(fieldMaterial,1);
   const compileField=fieldMaterial.onBeforeCompile,fieldKey=fieldMaterial.customProgramCacheKey();
   fieldMaterial.onBeforeCompile=(shader,renderer)=>{
     compileField(shader,renderer);
@@ -592,9 +595,9 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     root.userData.fineGrass={...root.userData.fineGrass,ready:fine,triangles:sources.map(mesh=>mesh.geometry.index!.count/3),source:fine?'grass_medium_01':'bermuda_grass'};
     textures.push(map);map.anisotropy=mobile?4:8;
     if(fine)grassCanopy.useFineGrass(map,fieldMaterial.map!);else grassCanopy.usePhotographedClumps(map);
-    const material=wind(0xffffff,.16);material.name='Photographed coastal grass cutout';material.map=map;material.alphaTest=.43;material.alphaToCoverage=true;
+    const material=wind(0xffffff,.16,false,true);material.name='Photographed coastal grass cutout';material.map=map;material.alphaTest=.43;material.alphaToCoverage=true;
     groundFollowing(material);
-    const fieldNearMaterial=wind(0xffffff,.16);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);
+    const fieldNearMaterial=wind(0xffffff,.16,false,true);fieldNearMaterial.copy(material);fieldNearMaterial.name='Dry photographed inland grass';groundFollowing(fieldNearMaterial);dryFieldColor(fieldNearMaterial,1.4);
     centerPlantAlphaCoverage(material);centerPlantAlphaCoverage(fieldNearMaterial);
     if(!fine){
     // Real curved blades supply the near clump's body. The photographed stems
@@ -609,7 +612,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       for(const i of [0,1,2,1,3,2,2,3,4,3,5,4,4,5,6])bladeIndices.push(offset+i);
     }
     const bladeGeometry=new THREE.BufferGeometry();bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bladePositions,3));bladeGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bladeColors,3));bladeGeometry.setIndex(bladeIndices);bladeGeometry.computeVertexNormals();
-    const bladeMaterial=wind(0xffffff,.095);bladeMaterial.name='Curved dry grass blades';bladeMaterial.vertexColors=true;groundFollowing(bladeMaterial);dryFieldColor(bladeMaterial,1);
+    const bladeMaterial=wind(0xffffff,.095,false,true);bladeMaterial.name='Curved dry grass blades';bladeMaterial.vertexColors=true;groundFollowing(bladeMaterial);dryFieldColor(bladeMaterial,1);
     vegetationInteraction.attach(bladeMaterial,.85);
     // Copy only the already selected fine clumps, rather than keeping another
     // full field-sized matrix buffer and scanning the field a second time.
@@ -1127,6 +1130,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setWeather(wind,wetness){windStrength.value=wind;grassCanopy.setWind(wind);water.setWeather(wind,wetness);},
+    setSeason(look){season.uSeasonAmount.value=look.amount;season.uSeasonGround.value.setRGB(...look.ground);season.uSeasonGrass.value.setRGB(...look.grass);},
     setWeatherFog:water.setWeatherFog,
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setDaylight:water.setDaylight,

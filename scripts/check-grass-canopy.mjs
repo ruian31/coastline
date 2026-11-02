@@ -19,6 +19,7 @@ try{
  const samples=[];
  for(const state of states){
   await page.evaluate(async state=>{const h=window.__THREE_GAME_TEST_HOOKS__;await h.setState(state);h.setPausedForScreenshot(true);h.setReducedMotion(true);},state);
+  if(process.env.CANOPY_SEASON)await page.evaluate(id=>window.__THREE_GAME_TEST_HOOKS__.setSeason(id,60),process.env.CANOPY_SEASON);
   const report=await page.evaluate(async()=>{
    const T=await import('/__qa/three.module.js'),scene=canopyObjects.find(o=>o.isScene&&o.getObjectByName('Coastal landscape')),renderer=canopyObjects.find(o=>o.isWebGLRenderer),mesh=scene.getObjectByName('World anchored dry grass canopy'),terrain=scene.getObjectByName('Limestone headland and grassy interior'),gl=renderer.getContext();
    const {uniforms,currentProgram}=renderer.properties.get(mesh.material),source=gl.getShaderSource(currentProgram.vertexShader),program=gl.createProgram(),shaders=[],buffers=[],vao=gl.createVertexArray(),tf=gl.createTransformFeedback(),empty=gl.createTexture();

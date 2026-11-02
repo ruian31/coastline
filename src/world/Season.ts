@@ -13,22 +13,43 @@ export const SEASONS:Record<SeasonId,{label:string;look:SeasonLook}>={
 };
 export const isSeasonId=(id:unknown):id is SeasonId=>typeof id==='string'&&Object.hasOwn(SEASONS,id);
 const copyLook=(p:SeasonLook):SeasonLook=>({amount:p.amount,ground:[...p.ground],grass:[...p.grass]});
+const order:readonly SeasonId[]=['spring','summer','autumn','winter'];
+const seasonSeconds=720;
 
-/** Manual phenology transition. It never reseeds placements or pressure data. */
+/** One phenology clock; it never reseeds placements or pressure data. */
 export class CoastalSeasons{
- target:SeasonId='summer';readonly value=copyLook(SEASONS.summer.look);seconds=0;
- private from=copyLook(this.value);private progress=1;
+ target:SeasonId='summer';natural=false;readonly value=copyLook(SEASONS.summer.look);seconds=0;
+ private from=copyLook(this.value);private progress=1;private hold=seasonSeconds;
  select(id:SeasonId){this.target=id;this.from=copyLook(this.value);this.progress=0;}
+ setNatural(enabled:boolean){if(enabled&&!this.natural)this.hold=seasonSeconds;this.natural=enabled;}
  advance(seconds:number,active:boolean){
   if(!active||!Number.isFinite(seconds)||seconds<=0)return false;
-  this.seconds+=seconds;if(this.progress===1)return false;
-  this.progress=Math.min(1,this.progress+seconds/60);if(this.progress>1-1e-10)this.progress=1;
-  const t=this.progress*this.progress*(3-2*this.progress),to=SEASONS[this.target].look;
-  this.value.amount=t===1?to.amount:this.from.amount+(to.amount-this.from.amount)*t;
-  for(const key of ['ground','grass'] as const)for(let i=0;i<3;i++)this.value[key][i]=t===1?to[key][i]:this.from[key][i]+(to[key][i]-this.from[key][i])*t;
-  return true;
+  this.seconds+=seconds;let remaining=seconds,changed=false;
+  // Split at natural boundaries so a saved/replayed interval follows the same
+  // seasons as ordinary frames, even when it crosses an entire year.
+  while(remaining>1e-8){
+   const dt=Math.min(remaining,this.natural?this.hold:remaining);remaining-=dt;
+   if(this.progress<1){
+    this.progress=Math.min(1,this.progress+dt/60);if(this.progress>1-1e-10)this.progress=1;
+    const t=this.progress*this.progress*(3-2*this.progress),to=SEASONS[this.target].look;
+    this.value.amount=t===1?to.amount:this.from.amount+(to.amount-this.from.amount)*t;
+    for(const key of ['ground','grass'] as const)for(let i=0;i<3;i++)this.value[key][i]=t===1?to[key][i]:this.from[key][i]+(to[key][i]-this.from[key][i])*t;
+    changed=true;
+   }
+   if(this.natural){this.hold-=dt;if(this.hold<1e-8){this.hold=seasonSeconds;this.select(order[(order.indexOf(this.target)+1)%order.length]);changed=true;}}
+  }
+  return changed;
  }
- get diagnostics(){return{target:this.target,transitioning:this.progress<1,seconds:this.seconds,...copyLook(this.value)};}
+ get transitioning(){return this.progress<1;}
+ snapshot(){return{target:this.target,natural:this.natural,value:copyLook(this.value),from:copyLook(this.from),progress:this.progress,hold:this.hold,seconds:this.seconds};}
+ restore(saved:unknown){
+  if(!saved||typeof saved!=='object')return false;const s=saved as ReturnType<CoastalSeasons['snapshot']>;
+  const finite=(v:unknown,min:number,max=Infinity):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
+  const look=(v:SeasonLook)=>v&&finite(v.amount,0,1)&&[v.ground,v.grass].every(c=>Array.isArray(c)&&c.length===3&&c.every(n=>finite(n,0,2)));
+  if(!isSeasonId(s.target)||typeof s.natural!=='boolean'||!look(s.value)||!look(s.from)||!finite(s.progress,0,1)||!finite(s.hold,0,seasonSeconds)||!finite(s.seconds,0))return false;
+  this.target=s.target;this.natural=s.natural;Object.assign(this.value,copyLook(s.value));this.from=copyLook(s.from);this.progress=s.progress;this.hold=s.hold;this.seconds=s.seconds;return true;
+ }
+ get diagnostics(){return{target:this.target,natural:this.natural,transitioning:this.transitioning,seconds:this.seconds,remaining:this.hold,...copyLook(this.value)};}
 }
 
 export function createSeasonUniforms(){return{

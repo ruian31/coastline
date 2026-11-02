@@ -1,6 +1,17 @@
-# M80 · 季相表面内部阶段，试玩保持M79
+# M81 · 季节表面、手动选择与缓慢流转已更新试玩
 
-## 当前M80 · 2026-11-02
+## 当前M81 · 2026-11-02
+
+- 普通菜单新增四季选择、60秒连续手选过渡与可选48分钟自然年；完整中途表面/目标/进度和剩余季节时间保存。默认夏季、天气/昼夜独立，花期/季节光照与精确生境遮罩仍未完成，F06不全勾选。
+- [CPU](seasons-m81/timeline-cpu.json)通过自然边界顺序、大区间/8700小步一致、中途保存和坏数据整体拒绝；[三浏览器6过](seasons-m81/browser-first.json)171.50s、0失败/跳过/重试，包括既有表面身份与新菜单/保存/重载/欢迎冻结/实际恢复/中途改选。3菜单原图已看。
+- [新构建默认FBO](seasons-m81-default-source/result.json)两端各两机位相机/车位相同，重复稳定、非空、GL0，M79→M81所有通道0差。地表、草毯、Scenery及两物理源SHA与M80相同；前32幅季相图/两端压草属于M80证据，不算本轮重测。
+- [正常速度实际菜单驾驶](season-drive-m81-first/result.json)60.8143季节秒/712.01m/60样本、途中真实车内/1931镜面pass、春端点/暂停冻结/冬中断恢复、0错误。无季节时间或车辆步进钩子。[5编码帧](season-drive-m81-first/filmstrip.png)和phase-3/winter-start原图已看，不称逐帧/真机或正常速度完整48分钟年循环。
+- [成本复核](seasons-m81/cost-summary.json)：树旁P50/P95=4.694/6.119ms，镇旁5.002/8.365ms/max22.55ms、16帧>12ms；CPU任务约−3.38%/+0.85%。每状态540有效完整RAF含镜面/1世界重烘及8s4倍CPU。没有解释/撤销原M80尾部，不称无成本或提速，既有预算超额保留。
+- [46源/4包SHA](seasons-m81/build-source.json)、[本地原子发布](seasons-m81/local-release.json)三入口12行一致，index-Bxq5BN8V.js981308B/CSS17996B、28旧JS保留，无push。5190/session87917，Wi-Fi192.168.3.10。
+- [普通无query入口](fineleaf-seasons-m81-release/result.json)4.85m/原资源和压草/116投影单缓存/测试全局关闭；[实际季节菜单启动/保存](fineleaf-seasons-m81-release/season.json)32.80m/5.75季节秒、地表与草毯uniform和存档一致、GL0/0错误。normal/season-playing两原图已看。
+- 新增天气与季节尚无真实设备复核；World1.5/Lighting2.25保持。自然群落、陡坡可读性、花期和季节光照继续，Goal active。
+
+## M80表面内部阶段 · 2026-11-02
 
 - 四季表面共享状态与60秒过渡已接入地表、近中远草层；默认夏季沿用原景观，普通菜单/保存/自然年/花期/季节光照未接。5190继续已提交M79，不以内部钩子充当可玩四季。
 - [CPU模型](seasons-m80/timeline-cpu.json)与[三浏览器3项](seasons-m80/browser-first.json)通过，79.41秒、无失败/重试/跳过；实际编译uniform、几何/实例缓冲和压力对象身份、暂停及中断连续性均检查。

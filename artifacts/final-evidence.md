@@ -1,5 +1,13 @@
 # M76补正 · 地形自阴影已更新试玩，继续自然形体
 
+## M77 · 两种局部岩脚形状均未采用 · 2026-11-02
+
+- 范围：同一40m岩段，原材质/植被/道路保持。`work/build-cliff-apron-m77.mjs`构建控制、第一版和joined工作版；`artifacts/cliff-apron-m77/recipe-{control,candidate,joined-candidate}.json`记录变换与源码SHA，不是正式发布。
+- 第一版32幅：`cliff-apron-m77-first/result.json`，两版×desktop1280×720/mobile844×390×cycle13/原固定golden×接近/车内/近/侧。四联图均看过，desktop初版联图压宽，不能据此判比例。候选496面/250顶点/744边/Euler2/无退化坏边，周界采样埋地至少约20cm；接地采样不是精确三角相交证明。真实驾驶视角仍像独立低土包，拒绝。
+- 可见性：`cliff-apron-m77-visibility/result.json`及三个visible原图均已看。临时发光材质/原几何，遮挡前后投影计数为接近2366/4727、近6356/10513、侧1034/1960。仅用于分离遮挡原因，不当最终效果。
+- 第二版16幅：`cliff-apron-m77-joined/result.json`及`comparison.json`；原控制16幅复用，同姿态/相机全部精确匹配、GL0/错误0，四张按比例留边的联图32格全部已看。原岩面三点扫描/内嵌坡脚仍496面；体积桌面432.23/手机430.45m³、拓扑正常/无fallback，但最高周界相对max(地面,原岩面)外露5.90/9.96cm，不能称无缝。纹理形成浅色规则斜条带，车内与近景突兀，拒绝。
+- 未改变产品源码/public资产/稳定dist；没有被拒形状的运动、碰撞、压草或性能通过结论。World1.5/Lighting2.25沿用。5190本轮重启session87917，当前Wi-Fi192.168.3.10，HTTP200；仍为ae4dde4地形阴影修正，不是M77发布。F06季节/F08天气仍未完成。
+
 - 只在大地形缓存深度draw中加入slope polygon offset .5/2，正常颜色、对象caster和receiver normalBias .035保持，自有深度材质复用并释放，无新增目标/贴图/pass。[三浏览器](daynight-m76/browser-terrain-depth.json)一次11过/1设备条件跳过、144.84秒，无失败/重试；[实际GL状态](daynight-m76/terrain-depth-gl-summary.json)每端4次地形偏移正确/1材质UUID，460–464次对象深度draw偏移关闭、颜色无偏移/仍接收阴影、GL0。
 - [有效32工作图](daynight-m76-terrain-depth-study-active/result.json)与[16接触场景图](daynight-m76-terrain-depth-contacts/result.json)联图全部已看；首轮同名代理Scene误判、实际applied=0的32图排除。最终源码[20代表图](daynight-m76-terrain-final/result.json)/[桌面](daynight-m76-terrain-final/desktop-contact.png)/[手机](daynight-m76-terrain-final/mobile-contact.png)全部已看、0错误；两端均844×390低档，实际昼/夜/出洞/小镇等，不混为一次68项正式采集。
 - [真实键盘/原生触控驾驶](daynight-m76-terrain-drive-verified/summary.json)：323.78/348.69m、各3次重烘、镜面/暂停恢复、0错误；[阶段图与6个稀疏编码帧](daynight-m76-terrain-drive-verified/contact.png)已看。键盘段邻护栏时短暂减速未独立取接触证据，不称无碰撞路线。脚本80ms旧诊断、正午观察时长不足的两次失败保留，最终等待状态/延长巡航而保留重烘断言。

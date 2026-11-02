@@ -1,15 +1,19 @@
-# 当前进展 · 2026-11-01
+# 当前进展 · 2026-11-02
 
 路径：/home/ryan/workspace/coastline。用户已授权持续迭代；2026-10-28自动续跑消息到达后重新读取，目标状态已恢复active，不新建重复目标。每个可验证步骤中文 Conventional Commit，不push。
 
-## 最新检查点 · M76地形自阴影已发布，待提交
+## 最新检查点 · M76修复ae4dde4已提交，M77局部岩脚试验中
 
-- Goal active。HEAD75f6f4e为天空亮条修正，原848f8ce/66d4e7b均已UTF8核验/清理临时消息、无push。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
+- Goal active。HEAD ae4dde4为地形自阴影修正，立即cat-file核验中文UTF8正常、临时文件已删除，无push；原75f6f4e/848f8ce/66d4e7b保持。当前地形自阴影修正完成：仅StaticSunShadows.ts新增复用/释放的terrain MeshDepthMaterial（slope offset .5/2），只绑定大地形缓存深度，颜色/对象caster/receiver normalBias .035保持；tests/sun.spec.ts增加实际GL绘制参数和材质UUID复用检查。
 - 已通过生产构建、三浏览器一次11过/1设备条件跳过（144.84s，无失败重试）；terrain-depth-gl-summary.json每端4次terrain draw偏移正确/同1UUID，其他460–464对象depth draw关闭偏移、颜色无偏移/仍接收阴影、GL0。最终源码daynight-m76-terrain-final 20图（两端844×390低档：白昼/坡地/小镇/出洞/原夕阳/月夜）两张联图全部已看、0错误。
 - 已完成隔离性能：4211/BQ0R3W1w控制→4212/CPz7ET6p，两状态各540完整RAF GPU、无disjoint、均镜面且各含1次世界烘焙；另8s4倍CPU。terrain-depth-cost-summary.json：树GPU P50/P95 4.212/9.674→4.796/9.292ms，镇4.665/9.696→3.976/7.008；CPU任务+3.8%/+1.8%，不能称整体提速。补丁烘焙9.43/9.53ms、峰248/260calls与775279/775804tri，末210/211geo、54/56tex，旧预算超额保留。
 - 真实UI/键盘W/Android原生触控/车内/暂停恢复已完成：daynight-m76-terrain-drive-verified，323.78/348.69m、虚时+.3938/.3975h、各3次重烘/镜面刷新/0错误。两个视频各10/23/29s稀疏编码帧和六个输入阶段原图全看，不称逐帧或真机FPS。键盘末段邻护栏时17.98→1.13m/s，随后巡航恢复；未独立取接触，不当无碰撞路线或新物理故障。两份失败保留：第1过早读80ms诊断，第2近正午17秒不能保证2次1度重烘；最终等待状态、延长自动段20秒，保持>=2断言并存观察数据。
 - 稳定5190/session52233、10.158.204.114已原子更新CPz7ET6p952723B/SHA15d8a620…（CSS17947B）；候选4212/session9437，旧天空补丁对照4211/session90919。daynight-m76-terrain-final/build-source.json及local-release.json三入口11资产33行核对、24旧JS保留，无push，物理源码SHA仍未变。normal无query5.03m、菜单开循环再5.95m/18.712667h、原资源/压草/116投影一次缓存/测试全局关闭、0错误，两原图已看。
-- 工作研究全部结束：首轮32图applied0因代理也有Coastal landscape名字，排除；有效active目录32图实际65应用，contacts16图33应用，四张联图全看。当前无浏览器/GPU或重CPU任务、无待用户问题。下一步整理证据/中文commit本补丁，然后实际构建并查看M77岩脚工厂；work/cliff-apron-m77.ts（496面、周界埋.3m、实际ground采样）和work/build-cliff-apron-m77.mjs已准备，尚未构建或产品接入。World1.5/Lighting2.25保持，季节/天气、自然群落和陡坡可读性仍未完成。
+- M76研究和73项证据已结束。M77首组32图已全部采集/看联图（desktop联图先前压宽，比例判断需原图），实际496面封闭/周界埋地/0错误、同姿态，但正常驾驶改善不足，不采用。magenta可见性诊断确认岩脚有50–60%投影可见，并非完全被挡；主要问题是中间隆起、内侧埋地，读成零散低土包。原工厂/两版/报告全部保留。
+- M77第二版16图已完成（session93660成功退出），四张按原比例留边联图已全部看过。两端所有camera/player与原控制精确一致/GL0/错误0。496面封闭、fallback0，但周界相对max(ground,rock)最高外露5.90/9.96cm，浅色规则条带明显，拒绝接入。第一版32图+第二版16图/配方/可见性全部保留；未做被拒版本运动或性能验收。当前无GPU任务，候选4215/session73549仅工作研究。辅助任务额度失败一次后主agent已直接完成，不是Goal阻塞。
+- 下阶段F08天气开始整理接入点，已异步询问舒适观景/丰富风雨偏好；尚未依赖回复实施。季节仍待实现，整体自然质量未达标。
+- 本轮进程检查5190/4214/4215均原无监听，5190已恢复session87917/0.0.0.0并HTTP200；实际Wi-Fi地址现在192.168.3.10（不再沿用旧10.158.204.114）。dist仍ae4dde4/CPz7ET6p，未发布M77。World1.5/Lighting2.25保持，季节/天气、自然群落和陡坡可读性仍未完成；用户最新确认原M76手机循环主画面/后视镜顺畅。
+
 
 ## M76原功能发布检查点（历史，当前状态以上节为准）
 

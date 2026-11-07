@@ -1,4 +1,12 @@
-# M81 · 季节表面、手动选择与缓慢流转已更新试玩
+# M82 · 季相地表小幅修正，继续立体花期
+
+## 当前M82 · 2026-11-08发布
+
+- 地表返绿覆盖加入宽范围颜色限制，减轻部分暖土染绿，无新图/几何；这是有限近似。强限制12图及宽范围8图工作对照已看，前者使春坡过干而拒绝；[正式源码16图](season-soil-m82-source/result.json)4张联图均已看、GL0/0错误。
+- 11月2日[三浏览器3项](season-soil-m82/browser-first.json)71.30s、0失败/跳过/重试；[默认FBO](season-soil-m82-default-source/result.json)两端各两机位与M81逐通道0差、重复稳定/非空/GL0。[完整RAF成本](season-soil-m82/cost-summary.json)树P50/P95=4.784/7.661ms、镇4.728/9.854ms，镇旁有上升、max28.17ms，不称提速/手机FPS。
+- 11月8日确认旧句柄缺失及端口无监听后恢复服务；[新构建一致](season-soil-m82/rebuild-equality-nov8.json)证明新tsc/Vite输出与已验证候选HTML/4包逐字相同，不将旧测试改称本日重跑。[46源/4包SHA](season-soil-m82/build-source.json)、[原子发布](season-soil-m82/local-release.json)三入口12行一致、30旧JS保留，无push。
+- [本日普通无query入口](fineleaf-season-soil-m82-release-nov8/result.json)4.94m、原资源/压草/116投影单缓存/测试全局关闭；[实际季节菜单](fineleaf-season-soil-m82-release-nov8/season.json)32.96m/5.783季节秒、存档与地表/草毯uniform同值、GL0/0错误。两原图已看。5190/session81080、LAN10.36.133.114，候选4220/session46895。
+- 花期/季节光照、精确生境分区与自然风景质量仍不达标，World1.5/Lighting2.25保持；Goal active。新增天气/季节仍无真实设备复核，旧镜面/昼夜接受范围不扩大。
 
 ## 当前M81 · 2026-11-02
 

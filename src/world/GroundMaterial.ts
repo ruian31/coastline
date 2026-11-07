@@ -104,6 +104,9 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       if(uSeasonAmount>.00001){
        float seasonLuma=dot(soil,vec3(.2126,.7152,.0722));
        float seasonCover=fieldWeight*smoothstep(.025,.12,max(soil.r,soil.g)-soil.b)*(1.0-rockWeight);
+       // Reduce warm bare-soil recoloring without erasing the dry grass cover.
+       // This remains a color heuristic, not a vegetation segmentation map.
+       seasonCover*=smoothstep(.50,.73,soil.g/max(soil.r,.001));
        soil=mix(soil,seasonLuma*uSeasonGround,uSeasonAmount*seasonCover);
       }
       vec3 albedo=mix(mix(soil,sand,sandWeight),stone,rockWeight);
@@ -126,6 +129,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v1`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v2`;
   return groundMaterial;
 }

@@ -2,17 +2,17 @@ import * as THREE from 'three';
 
 export type SeasonId='spring'|'summer'|'autumn'|'winter';
 type ColorTriplet=[number,number,number];
-export type SeasonLook={amount:number;ground:ColorTriplet;grass:ColorTriplet};
+export type SeasonLook={amount:number;ground:ColorTriplet;grass:ColorTriplet;bloom:number};
 // Coefficients are linear reflectance multipliers, not display-space colors.
 // Summer is the existing dry coast; evergreen foliage keeps its own materials.
 export const SEASONS:Record<SeasonId,{label:string;look:SeasonLook}>={
- spring:{label:'春 · 草坡返绿',look:{amount:.88,ground:[.67,1.04,.42],grass:[.58,1.02,.34]}},
- summer:{label:'夏 · 金色海岸',look:{amount:0,ground:[1,1,1],grass:[1,1,1]}},
- autumn:{label:'秋 · 暖草初雨',look:{amount:.30,ground:[1.08,.97,.72],grass:[1.08,.91,.57]}},
- winter:{label:'冬 · 海岸湿绿',look:{amount:.66,ground:[.62,.91,.55],grass:[.54,.86,.48]}},
+ spring:{label:'春 · 草坡返绿',look:{amount:.88,ground:[.67,1.04,.42],grass:[.58,1.02,.34],bloom:1}},
+ summer:{label:'夏 · 金色海岸',look:{amount:0,ground:[1,1,1],grass:[1,1,1],bloom:.42}},
+ autumn:{label:'秋 · 暖草初雨',look:{amount:.30,ground:[1.08,.97,.72],grass:[1.08,.91,.57],bloom:.12}},
+ winter:{label:'冬 · 海岸湿绿',look:{amount:.66,ground:[.62,.91,.55],grass:[.54,.86,.48],bloom:.06}},
 };
 export const isSeasonId=(id:unknown):id is SeasonId=>typeof id==='string'&&Object.hasOwn(SEASONS,id);
-const copyLook=(p:SeasonLook):SeasonLook=>({amount:p.amount,ground:[...p.ground],grass:[...p.grass]});
+const copyLook=(p:SeasonLook):SeasonLook=>({amount:p.amount,ground:[...p.ground],grass:[...p.grass],bloom:p.bloom});
 const order:readonly SeasonId[]=['spring','summer','autumn','winter'];
 const seasonSeconds=720;
 
@@ -33,6 +33,7 @@ export class CoastalSeasons{
     this.progress=Math.min(1,this.progress+dt/60);if(this.progress>1-1e-10)this.progress=1;
     const t=this.progress*this.progress*(3-2*this.progress),to=SEASONS[this.target].look;
     this.value.amount=t===1?to.amount:this.from.amount+(to.amount-this.from.amount)*t;
+    this.value.bloom=t===1?to.bloom:this.from.bloom+(to.bloom-this.from.bloom)*t;
     for(const key of ['ground','grass'] as const)for(let i=0;i<3;i++)this.value[key][i]=t===1?to[key][i]:this.from[key][i]+(to[key][i]-this.from[key][i])*t;
     changed=true;
    }
@@ -45,15 +46,18 @@ export class CoastalSeasons{
  restore(saved:unknown){
   if(!saved||typeof saved!=='object')return false;const s=saved as ReturnType<CoastalSeasons['snapshot']>;
   const finite=(v:unknown,min:number,max=Infinity):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
-  const look=(v:SeasonLook)=>v&&finite(v.amount,0,1)&&[v.ground,v.grass].every(c=>Array.isArray(c)&&c.length===3&&c.every(n=>finite(n,0,2)));
+  const look=(v:SeasonLook)=>v&&finite(v.amount,0,1)&&(v.bloom===undefined||finite(v.bloom,0,1))&&[v.ground,v.grass].every(c=>Array.isArray(c)&&c.length===3&&c.every(n=>finite(n,0,2)));
   if(!isSeasonId(s.target)||typeof s.natural!=='boolean'||!look(s.value)||!look(s.from)||!finite(s.progress,0,1)||!finite(s.hold,0,seasonSeconds)||!finite(s.seconds,0))return false;
-  this.target=s.target;this.natural=s.natural;Object.assign(this.value,copyLook(s.value));this.from=copyLook(s.from);this.progress=s.progress;this.hold=s.hold;this.seconds=s.seconds;return true;
+  // M81/M82 saved the same surface state before flowers had a bloom channel.
+  // Keep every existing field exact; initialize only the new flower state.
+  const bloom=SEASONS[s.target].look.bloom;
+  this.target=s.target;this.natural=s.natural;Object.assign(this.value,copyLook({...s.value,bloom:s.value.bloom??bloom}));this.from=copyLook({...s.from,bloom:s.from.bloom??bloom});this.progress=s.progress;this.hold=s.hold;this.seconds=s.seconds;return true;
  }
  get diagnostics(){return{target:this.target,natural:this.natural,transitioning:this.transitioning,seconds:this.seconds,remaining:this.hold,...copyLook(this.value)};}
 }
 
 export function createSeasonUniforms(){return{
- uSeasonAmount:{value:0},uSeasonGround:{value:new THREE.Color(1,1,1)},uSeasonGrass:{value:new THREE.Color(1,1,1)},
+ uSeasonAmount:{value:0},uSeasonGround:{value:new THREE.Color(1,1,1)},uSeasonGrass:{value:new THREE.Color(1,1,1)},uSeasonBloom:{value:SEASONS.summer.look.bloom},
 };}
 export type SeasonUniforms=ReturnType<typeof createSeasonUniforms>;
 

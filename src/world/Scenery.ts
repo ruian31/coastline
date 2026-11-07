@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {applyGrassSeason,createSeasonUniforms,type SeasonLook} from './Season';
+import {createCoastalFlowerGeometry,applyFlowerSeason,type FlowerHead} from './FlowerGeometry';
 import {createCoastalGroundMaterial,createCoastalBoulderMaterial,usePackedSurfaceRoughness} from './GroundMaterial';
 import {scanSurface} from './SurfaceHeight';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -402,26 +403,6 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     matrices.forEach((matrix,i)=>{const e=matrix.elements,scale=Math.max(Math.hypot(e[0],e[2]),Math.hypot(e[8],e[10])),sphere=mesh.geometry.boundingSphere!.clone().applyMatrix4(matrix);sphere.center.y+=slopes[i*3+2];sphere.radius+=.8+reach*scale*Math.hypot(slopes[i*3],slopes[i*3+1]);record.bounds[i].copy(sphere);});
     refreshCellBounds(record);
   }
-  function combined(parts: { geometry: THREE.BufferGeometry; transform?: THREE.Matrix4; color?: THREE.Color }[]): THREE.BufferGeometry {
-    const vertices: number[] = [], normals: number[] = [], colors: number[] = [];
-    for (const part of parts) {
-      const g = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry.clone();
-      if (part.transform) g.applyMatrix4(part.transform);
-      const p=g.getAttribute('position'),n=g.getAttribute('normal');
-      for(let i=0;i<p.count;i++) {
-        vertices.push(p.getX(i),p.getY(i),p.getZ(i));
-        normals.push(n.getX(i),n.getY(i),n.getZ(i));
-        const c=part.color || new THREE.Color(1,1,1); colors.push(c.r,c.g,c.b);
-      }
-      g.dispose();part.geometry.dispose();
-    }
-    const result = new THREE.BufferGeometry();
-    result.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-    result.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
-    result.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-    return result;
-  }
-
   // Rotate three distinct ridges while preserving the existing random sequence,
   // so changing distant geology does not rearrange nearby rocks or plants.
   const islandMatrices: THREE.Matrix4[][] = [[],[],[]];
@@ -841,21 +822,21 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     }catch(error){if(!disposed)root.userData.fernDetail={ready:false,fallback:true,error:String(error)};}
   }
 
-  // Tiny flowering clumps add restrained lavender and pale gold accents along the verge.
-  const flowerParts:{geometry:THREE.BufferGeometry;transform:THREE.Matrix4;color:THREE.Color}[]=[];
+  // Retain the original fifteen random samples so all world placements after
+  // this model stay stable when the old flat flower discs are replaced.
+  const flowerHeads:FlowerHead[]=[];
   for(let i=0;i<5;i++) {
     const x=(random()-.5)*.45,z=(random()-.5)*.45,h=.25+random()*.28;
-    flowerParts.push({geometry:new THREE.ConeGeometry(.018,h,3),transform:matrix(x,h/2,z,1,1,1,0),color:new THREE.Color('#879467')});
-    const petals=new THREE.CircleGeometry(.075,5);petals.rotateX(-Math.PI/2);
-    flowerParts.push({geometry:petals,transform:matrix(x,h,z,1,1,1,0),color:new THREE.Color(i%2?'#b5a5bd':'#d6c28b')});
+    flowerHeads.push({x,z,height:h});
   }
   const flowers:THREE.Matrix4[]=[];
   for(let i=0;i<(mobile?190:370);i++) {
     const anchor=anchors[i%anchors.length],s=coast.sample(anchor.t+(random()-.5)*.004),offset=anchor.side*(7.5+random()*8),x=s.position.x+s.right.x*offset,z=s.position.z+s.right.z*offset,y=groundHeight(x,z);
     if(y<.5||!naturalVerge(x,z,7))continue;flowers.push(matrix(x,y,z,1,1,1));
   }
-  const flowerMaterial=wind(0xffffff,.10);flowerMaterial.vertexColors=true;
-  batch(combined(flowerParts),flowerMaterial,flowers).name='Lavender and dune flowers';
+  const flowerMaterial=wind(0xffffff,.10);flowerMaterial.vertexColors=true;groundFollowing(flowerMaterial);
+  const flowerGeometry=createCoastalFlowerGeometry(flowerHeads,mobile),flowerMesh=batch(flowerGeometry,flowerMaterial,flowers);flowerMesh.name='Lavender and dune flowers';groundSlopes(flowerMesh,flowers);applyFlowerSeason(flowerMaterial,season);
+  root.userData.flowerDetail={heads:flowerHeads.length,placements:flowers.length,triangles:flowerGeometry.index!.count/3,bloom:season.uSeasonBloom.value};
 
   // Bent tapering palm trunks and finely divided fronds read from both cockpit and chase views.
   const trunkPoints=Array.from({length:8},(_,i)=>new THREE.Vector3(Math.sin(i/7*1.5)*.65,i/7*7.8,0));
@@ -1130,7 +1111,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       if(!secondary)for(const detail of foliageDetails)root.userData[detail.key].visible=detail.visible;
     },
     setWeather(wind,wetness){windStrength.value=wind;grassCanopy.setWind(wind);water.setWeather(wind,wetness);},
-    setSeason(look){season.uSeasonAmount.value=look.amount;season.uSeasonGround.value.setRGB(...look.ground);season.uSeasonGrass.value.setRGB(...look.grass);},
+    setSeason(look){season.uSeasonAmount.value=look.amount;season.uSeasonGround.value.setRGB(...look.ground);season.uSeasonGrass.value.setRGB(...look.grass);season.uSeasonBloom.value=look.bloom;root.userData.flowerDetail.bloom=look.bloom;},
     setWeatherFog:water.setWeatherFog,
     setSkyReflection:texture=>water.setSkyReflection(texture),
     setDaylight:water.setDaylight,

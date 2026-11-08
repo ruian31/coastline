@@ -6,7 +6,15 @@
 - [默认完整世界8对独立FBO](season-light-m85-default/result.json)：7对逐通道相同，电脑active-play连续13h有2通道差1级、均差5.43e-7，重复稳定/非空/GL0。没有隐藏花丛；默认中性夏季CPU preset保持原对象。原摄影天空与水/物理/压力/几何源保持，没有M84试验代码。
 - [修后工作64图](season-light-m85-study-second/result.json)与[正式源码32图](season-light-m85-source/result.json)各8联图已看，前灯关闭、晴天、固定相机/车位，是真实静态季相对照，不能当季节日长/太阳轨迹/自然年或真机性能。第一批工具Vector3乘Color导致NaN海面已拒绝并保留，非产品缺陷。
 - [同机成本](season-light-m85/cost-summary.json)：候选树P50/P95=5.259/10.405ms、镇5.368/8.911ms，树>12ms帧3→19；CPU约−2.03%/−3.51%，不宣称提速。候选峰260calls/784869tri、末树210geo54tex/镇211geo56tex，与控制内存数相同，旧预算超额保留。不是停时过渡最坏工况或一加12/iPhoneFPS。
-- 夏中性、春轻冷、秋微暖、冬柔冷，与同一60秒过渡/存档联动；没有新增图片、几何、RT或渲染阶段。季节日长/太阳轨迹、48分钟正常年、自然群落丰富度、新真机接受与旧录制异常仍未完成，World1.5/Lighting2.25不升，Goal active。
+- 夏中性、春轻冷、秋微暖、冬柔冷，与同一60秒过渡/存档联动；没有新增图片、几何、RT或渲染阶段。季节日长/太阳轨迹、48分钟正常年、自然群落丰富度、真实iPhone/热稳定与旧录制异常仍未完成，World1.5/Lighting2.25不升，Goal active。
+
+用户已用一加12Chrome按M85新季节/车内试玩问题复核并明确“主画面和后视镜都顺畅”；这是本设备体验接受，没有新FPS采样或真实iPhone/热稳定结论。
+
+## M86 · 完整冠层筛选，未更新试玩
+
+- provider完整profile探测Tripo/Gemini/ElevenLabs均MISSING，无付费任务；读取三维/图像技能及asset-recovery后，按许可明确扫描素材路线继续。[官方Othonna](https://polyhaven.com/a/othonna_cerarioides)、[Shrub04](https://polyhaven.com/a/shrub_04)、[CC0许可](https://polyhaven.com/license)已核对，官方逐文件size/MD5与本地SHA在work/coastal-canopy-m86-source/downloaded-source.json。两资产共12文件约9.87MB，未加入public，不能称加州原生物种。
+- [修后32幅原生形体图](canopy-m86-source-shapes-second/result.json)与8联图全部已看：7株Othonna+Shrub04，原尺寸正面和统一1m足迹正/侧/低地机位；保留全部源几何/UV/法线/1kPBR，原RGB+alpha无损打包，叶片双面/alpha.45。实际包围球适配视锥并检查八角，最大投影.828，0页面/控制台/HTTP错误。第一批截顶图已[拒绝保留](canopy-m86-source-shapes/rejected.json)，不当完整冠层证据。
+- 仅Othonna g选作下一步小范围实景候选，原生约.497m宽/.463m高/.436m深、3124tri/2材质；其余较直立/裸枝或横向分株，不直接用于完整低灌丛角色。这是平地素材筛选，未做游戏接地、风压、LOD、群落、三浏览器或性能验收，不提高World1.5/Lighting2.25；稳定5190仍M85。
 
 ## M83 · 立体花期已更新试玩，M84天空试验拒绝
 

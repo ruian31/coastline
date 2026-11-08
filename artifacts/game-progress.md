@@ -1,5 +1,20 @@
 # 当前进展 · 2026-11-08
 
+## 当前检查点 · M85已提交，M86开始
+
+- M86原生形体筛选完成，下载session76535、首截图91417、修后12248均结束0。首组高株截顶已标rejected，修后32幅/8联图全看，真实包围球+八角检查maxClip.828<.94，0页面/控制台/HTTP错误。独立viewer有平地/格网，approx golden env.7/key2.5/hemi.9，非实际世界或预算验收。
+- Othonna a–f较直立/基部裸枝，不做低冠层；Shrub04横向多株侧面重叠，不直接当完整灌丛。只选g继续实景小范围混合试验：原始3124tri/2材质，原生约.497×.463×.436m，完整原PBR保留，尚未减面/public/风压/LOD/成本。稳定5190仍4770ca6。M86无活动GPU任务，dev4225/session40730供工作图库，非用户试玩入口。
+- M85一加12新反馈已同步README、08/09/11和final-evidence，接受范围仅本设备季节/车内主画面与镜面，不扩展到iPhone/热稳定/整个游戏。准备本阶段文档提交，之后提取g的完整节点作工作实景对照；Goal active，不push。
+
+- 新收到一加12Chrome对M85春/冬切换约一分钟、车内主画面/镜面的复核，用户明确“主画面和后视镜都顺畅”。本设备体验通过，未扩展到真实iPhone/长时间热稳定/FPS或整体风景。已登记文档09，非阻塞问题已回答。
+- M86两资产官方1k原生GLTF/PBR/alpha下载已结束0：Othonna6文件7922589B，Shrub04六文件1950420B，全size/MD5/SHA通过。7株Othonna原节点57067/29175/12491/9320/3834/3138/3124tri，Shrub04横枝27327tri。几何/原节点变换/PBR保留，原RGB+alpha无损打包为独立preview；并未减面、接入public或批准预算。
+- work/canopy-m86-preview/实际原生图库与32图截图任务已启动：8节点×原尺寸正面/1m足迹正面、侧面、近地，env.7/key2.5/hemi.9/exposure.92近似游戏光，叶片双面/alpha.45，非实际世界/接地/风压/真机验收。当前dev4225及capture句柄见本轮工具，稳定5190仍4770ca6 M85。后续先看全部8联图再选取舍，不能重复M74整家族替换结论。
+
+- M85提交4770ca6，立即cat-file确认中文UTF8正确并删除临时消息，无push；稳定5190为ChRFySFK987857B，LAN10.36.133.114，session15841。已发一次可选一加12新季节/镜面流畅度问题，未等待其回复阻塞开发。Goal active，本轮progress。
+- M86回到自然体量。重读M74完整低冠层、M65共同覆盖、M77岩脚两版等已拒结论，避免重复同一整家族/色带/规则石脚路线。三维/图像技能及asset-recovery已读，三provider完整profile probe均MISSING，无付费任务；按规则使用许可明确扫描素材，未假装生成成功或静默降格。
+- 官方PolyHaven页面/API与CC0已查：Othonna Cerarioides（James Ray Cock/Jenelle van Heerden）、Shrub04（Rico Cilliers）。work/coastal-canopy-m86-source/保留info/files JSON，下载脚本work/download-canopy-m86.py逐size/MD5/SHA，只用于完整原生PBR/alpha形体筛选，不是加州原生保证或预算通过。session73119元数据获取已结束0；当前下载session见work/download-canopy-m86.log，尚未检查模型或进入public。
+- M86实施约定已先写文档10：原尺寸/参考足迹正侧近地看完整冠层，合适才小范围混合群落。稳定5190不受工作素材影响，当前无GPU任务运行。用户未跟踪AGENTS.md、docs12、resource-previews保持原样、不纳入提交。
+
 ## 当前检查点 · M85季节光照候选验证中
 
 - M85最终验证/本地发布已完成，准备独立中文提交。最终源码47SHA/4包与构建一致，ChRFySFK987857B；5190/session15841已发布，4224/session23057为冻结候选，LAN10.36.133.114。三入口12行一致、34旧JS保留。普通无query4.94m，实际季节再32.93m/5.7497秒，实际太阳/天空/环境/水面与保存lighting一致、原资源/压力/116投影单缓存/测试关闭/GL0/0错误，两原图已看。

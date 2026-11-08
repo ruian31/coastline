@@ -1,4 +1,14 @@
-# M83 · 立体花期已更新试玩，M84天空试验拒绝
+# M85 · 季节光照已更新试玩
+
+- [47源/4包SHA](season-light-m85/build-source.json)、[原子发布](season-light-m85/local-release.json)通过；主包ChRFySFK987857B/CSS17996B，三入口12行一致、34旧JS保留。普通无query[原资源/压力/实际驾驶](fineleaf-season-light-m85-release/result.json)4.94m，[实际季节与光照菜单](fineleaf-season-light-m85-release/season.json)再32.93m/5.7497季节秒，太阳/天空/环境/水面与保存系数一致、测试关闭/GL0/0错误，两原图已看。
+- [CPU时钟/新旧迁移](season-light-m85/timeline-cpu.json)、[11524全天季相光样本](season-light-m85/lighting-cpu.json)通过。[浏览器批次与原失败](season-light-m85/browser-summary.json)：最终源码三端5通过/1诊断滞后失败（4.48e-6），等待实际暂停诊断同步后手机单项1通过，不能称一次6全过。实际水面GL值、固定/连续/晴云回晴、真实菜单停时变化、保存/重载覆盖；三张代表车内及三菜单图已看。
+- 单次独立审查找出停时循环未响应季节；[旧候选正常菜单反例](season-light-m85-stopped-counterexample/result.json)差.0016211。现过程复用4Hz原天空RT、季节端点单次force。[正常速度实际菜单驾驶](season-drive-light-m85-stopped/result.json)60.8643季节秒/712.45m，18.7小时不动、235天空更新、1931镜面pass，最后实际RT gainA/B=.2548/.098；没有合成季节秒/驾驶步/瞬移。5个15秒编码帧及phase-3/winter-start原图已看，不作逐帧或完整年循环保证。
+- [默认完整世界8对独立FBO](season-light-m85-default/result.json)：7对逐通道相同，电脑active-play连续13h有2通道差1级、均差5.43e-7，重复稳定/非空/GL0。没有隐藏花丛；默认中性夏季CPU preset保持原对象。原摄影天空与水/物理/压力/几何源保持，没有M84试验代码。
+- [修后工作64图](season-light-m85-study-second/result.json)与[正式源码32图](season-light-m85-source/result.json)各8联图已看，前灯关闭、晴天、固定相机/车位，是真实静态季相对照，不能当季节日长/太阳轨迹/自然年或真机性能。第一批工具Vector3乘Color导致NaN海面已拒绝并保留，非产品缺陷。
+- [同机成本](season-light-m85/cost-summary.json)：候选树P50/P95=5.259/10.405ms、镇5.368/8.911ms，树>12ms帧3→19；CPU约−2.03%/−3.51%，不宣称提速。候选峰260calls/784869tri、末树210geo54tex/镇211geo56tex，与控制内存数相同，旧预算超额保留。不是停时过渡最坏工况或一加12/iPhoneFPS。
+- 夏中性、春轻冷、秋微暖、冬柔冷，与同一60秒过渡/存档联动；没有新增图片、几何、RT或渲染阶段。季节日长/太阳轨迹、48分钟正常年、自然群落丰富度、新真机接受与旧录制异常仍未完成，World1.5/Lighting2.25不升，Goal active。
+
+## M83 · 立体花期已更新试玩，M84天空试验拒绝
 
 - M83源码提交87bc150；[本日新构建逐字一致](flowers-m83/rebuild-equality-nov8.json)、[三入口原子发布](flowers-m83/local-release.json)通过，32旧JS保留。普通无query[启动/原资源/压草绑定](fineleaf-flowers-m83-release-nov8/result.json)4.85m，[季节菜单](fineleaf-flowers-m83-release-nov8/season.json)再32.93m/5.7665季节秒、bloom.42→.4264003、GL0/0错误，两原图已看。5190当前BHzhewW7 986005B；新花期仍待真机体验。
 - M84[显式HDR背景](sky-capture-m84-direct-first/result.json)22秒1315帧44黑；[固定颜色反例](sky-capture-m84-solid-first/result.json)1320帧35黑，正常帧颜色与HDR不同。未解决，产品源码已还原；工作源码/patch留存，未将此试验发布或称作修复。录制异常仍列已知限制，普通不录制旧检查的3900帧范围不扩展。

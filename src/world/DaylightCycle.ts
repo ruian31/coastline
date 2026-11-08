@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
-import {getDaylightPreset,type DaylightId} from './Daylight';
+import {getDaylightPreset,seasonalDaylight,type DaylightId} from './Daylight';
+import {SUMMER_LIGHTING,type SeasonLighting} from './Season';
 
 import {sampleDaylight as sampleCycle,DAYLIGHT_KEYS} from './Daylight';
 
@@ -86,10 +87,10 @@ export function createDaylightCycle(renderer:THREE.WebGLRenderer){
    generator.dispose();renderer.setRenderTarget(previous);renderer.info.autoReset=autoReset;if(lastState&&has(lastState.hour))render(lastState.hour,lastUpdate,true,false);
   }
  }
- let lastState:ReturnType<typeof sampleCycle>|undefined;
- function render(hour:number,time=0,force=false,prune=true){
+ let lastState:ReturnType<typeof sampleCycle>|undefined,lastLighting:Readonly<SeasonLighting>=SUMMER_LIGHTING;
+ function render(hour:number,time=0,force=false,prune=true,lighting:Readonly<SeasonLighting>=lastLighting){
   if(!has(hour))throw new Error('Cycle pair not ready');
-  const state=sampleCycle(hour),{a,b,sun,moon,blend}=state;lastState=state;
+  lastLighting=lighting;const state=sampleCycle(hour),{a,b,sun,moon,blend}=state;state.preset={...seasonalDaylight(state.preset,lighting),sky:1};lastState=state;
   uniforms.mapA.value=maps.get(a.id)!;uniforms.mapB.value=maps.get(b.id)!;uniforms.phase.value=a.id===b.id?0:blend;
   for(const [p,suffix]of [[a,'A'],[b,'B']] as const){
    // Preset dawn has already rotated its authored light direction by PI.
@@ -97,9 +98,9 @@ export function createDaylightCycle(renderer:THREE.WebGLRenderer){
    uniforms[('yaw'+suffix) as 'yawA'|'yawB'].value=(Math.atan2(light.z,light.x)-sourceAz)/(Math.PI*2);
    uniforms[('source'+suffix) as 'sourceA'|'sourceB'].value.set(sourceAz/(Math.PI*2)+.5,Math.asin(raw.y)/Math.PI+.5);
    uniforms[('elevation'+suffix) as 'elevationA'|'elevationB'].value=Math.asin(Math.max(0,light.y));
-   uniforms[('gain'+suffix) as 'gainA'|'gainB'].value=p.sky*p.gain;
+   uniforms[('gain'+suffix) as 'gainA'|'gainB'].value=p.sky*p.gain*lighting.sky;
   }
-  uniforms.sun.value.copy(sun);uniforms.moon.value.copy(moon);uniforms.sunColor.value.set(state.preset.sunColor);uniforms.sunVisible.value=THREE.MathUtils.smoothstep(sun.y,-.009,.03);uniforms.moonVisible.value=THREE.MathUtils.smoothstep(moon.y,-.009,.05);
+  uniforms.sun.value.copy(sun);uniforms.moon.value.copy(moon);uniforms.sunColor.value.set(state.preset.sunColor);uniforms.sunVisible.value=THREE.MathUtils.smoothstep(sun.y,-.009,.03)*lighting.sun;uniforms.moonVisible.value=THREE.MathUtils.smoothstep(moon.y,-.009,.05)*lighting.sun;
   const previous=renderer.getRenderTarget(),autoReset=renderer.info.autoReset;
   try{
    if(force||time-lastUpdate>=.25){

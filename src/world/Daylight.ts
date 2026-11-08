@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {SeasonLighting} from './Season';
 
 // The photographed Kloppenheim06 opening, shared by sky, water and shadows.
 export const GOLDEN_HOUR_SUN=new THREE.Vector3(.7557054630227001,.08121144680959244,.6498568719839308);
@@ -22,6 +23,15 @@ export const DAYLIGHT_PRESETS:readonly DaylightPreset[]=[
 ];
 export const isDaylightId=(value:unknown):value is DaylightId=>DAYLIGHT_PRESETS.some(p=>p.id===value);
 export const getDaylightPreset=(id:DaylightId)=>DAYLIGHT_PRESETS.find(p=>p.id===id)!;
+
+/** Authored seasonal radiance, independent of solar direction/day length.
+ * Keep summer's objects and exact coefficients untouched. */
+export function seasonalDaylight(p:DaylightPreset,l:Readonly<SeasonLighting>):DaylightPreset{
+ if(l.sky===1&&l.sun===1&&l.ambient===1&&l.warmth===0)return p;
+ const w=l.warmth,tint=new THREE.Color().setRGB(1+w*.65,1+w*.15,1-w*.8),soft=new THREE.Color().setRGB(1+w*.25,1,1-w*.35);
+ const color=(c:THREE.ColorRepresentation,t:THREE.Color)=>new THREE.Color(c).multiply(t);
+ return{...p,sky:p.sky*l.sky,environment:p.environment*l.ambient,sunIntensity:p.sunIntensity*l.sun,sunColor:color(p.sunColor,tint),hemiIntensity:p.hemiIntensity*l.ambient,hemiSky:color(p.hemiSky,soft),hemiGround:color(p.hemiGround,soft),fog:color(p.fog,soft),waterHorizon:color(p.waterHorizon??p.fog,soft),waterLight:p.waterLight*l.ambient,glitter:p.glitter.map((v,i)=>v*[tint.r,tint.g,tint.b][i]*l.sun)};
+}
 
 export const DAYLIGHT_HOURS:Record<DaylightId,number>={dawn:6+10/60,day:12,golden:18+42/60,dusk:19.5,night:0};
 export const DAYLIGHT_CYCLE_SECONDS=1800;

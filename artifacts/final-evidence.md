@@ -1,4 +1,7 @@
-# M83 · 立体花期内部阶段，试玩保持M82
+# M83 · 立体花期已更新试玩，M84天空试验拒绝
+
+- M83源码提交87bc150；[本日新构建逐字一致](flowers-m83/rebuild-equality-nov8.json)、[三入口原子发布](flowers-m83/local-release.json)通过，32旧JS保留。普通无query[启动/原资源/压草绑定](fineleaf-flowers-m83-release-nov8/result.json)4.85m，[季节菜单](fineleaf-flowers-m83-release-nov8/season.json)再32.93m/5.7665季节秒、bloom.42→.4264003、GL0/0错误，两原图已看。5190当前BHzhewW7 986005B；新花期仍待真机体验。
+- M84[显式HDR背景](sky-capture-m84-direct-first/result.json)22秒1315帧44黑；[固定颜色反例](sky-capture-m84-solid-first/result.json)1320帧35黑，正常帧颜色与HDR不同。未解决，产品源码已还原；工作源码/patch留存，未将此试验发布或称作修复。录制异常仍列已知限制，普通不录制旧检查的3900帧范围不扩展。
 
 ## 当前M83 · 2026-11-08
 
@@ -8,7 +11,7 @@
 - [早期注册实例矩阵](flowers-m83-world-identity-second/result.json)两端43/42批、66270/41358实例与M82精确一致；后续只修花形/着色。[最终非花FBO](flowers-m83-isolation/result.json)隐藏原花批后四组逐通道0差、GL0，不冒充完整默认图一致。
 - [真实菜单驾驶](season-drive-flowers-m83-first/result.json)60.5976季节秒/709.45m/1921镜面pass，花期春端点/冬中断通过；5个间隔编码帧和phase-3/winter-start原图已看，录像出现黑天，未判全视觉通过。[成本](flowers-m83/cost-summary.json)树5.238/18.713ms、镇5.595/9.401ms，树尾上升、峰265calls/787010tri，旧预算保留，不称提速/手机FPS。
 - 黑天调查：[旧M82录制](sky-capture-m83-m82-control/sky-video-audit.json)、[主画布直接读回](sky-capture-m83-readback/result.json)及[完整GL状态](sky-capture-m83-full-state/result.json)均支持录制条件下确有黑输出，非仅VP8编码。背景draw1/12、绑定、矩阵、强度/曝光正常。背景draw后GL查询会改变复现条件，不能当修复；远裁面/renderer重置/buffer保留均失败。[不录制65秒](sky-capture-m83-no-video-long/result.json)3900帧0黑，[重新开启录制](sky-capture-m83-video-repeat/result.json)1321帧43黑，因果机制仍待查明。
-- [47源/4包SHA](flowers-m83/build-source.json)已核对，BHzhewW7 986005B/CSS17996B，未包含任何天空工作补丁。M83先内部提交，普通5190保持M82；World1.5/Lighting2.25不升，Goal active，继续可靠天空与季节光照。
+- [47源/4包SHA](flowers-m83/build-source.json)已核对，BHzhewW7 986005B/CSS17996B，未包含任何天空工作补丁。M83现已提交并更新普通5190；World1.5/Lighting2.25不升，Goal active，继续季节光照与自然群落，录制限制保留。
 
 ## 当前M82 · 2026-11-08发布
 

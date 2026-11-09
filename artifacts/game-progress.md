@@ -2,6 +2,10 @@
 
 ## M96路肩生境工作候选 · 2026-11-09
 
+- 正式checker的新增Graded断言已在冻结M95四视图通过（artifacts/grass-canopy-m95-graded-regression），不放宽地形/法线/根检查。M96以失败候选取舍和检查盲区修补作为独立步骤，不发布失败字段。
+- **本轮已拒绝并恢复全部生产源码为M95**：独立habitat_m96_review一次只读审查指出Graded支持缺口，无GPU/构建/修改/递归。actual Graded audit四视图完成，grass-verge采样11根在graded、7埋根/max.079255m；active85/46/max.476115m，不能靠原terrain-only检查当接地通过。work/grass-m96-rejected.patch保留源码补丁；4233构建可复查但不发布、不再为已失败候选跑性能/真机。
+- 全texel沥青SAT实际75415eligible/2322tri、padding0/1m无交；all-eligible负控制38751次比较/22724相交。artifacts/grass-habitat-m96-control-checked/result.json，0错误。该证据仅沥青，不含路肩高度或小镇/隧道的离散生境；代码每vertex一次新采样(低主307200/pass、每镜76800/pass)，不是每世界根一次。8原图/4联图已全看，整体收益有限。
+- 已在冻结M95构建4232补同四视图Graded控制，session67592，日志work/check-grass-m95-graded-control.log；结果四处均0根落入Graded、0埋根；只证明该组采样，不扩展为整个地图穷举。正式checker已补Graded采样与.002m最大抬高断言，保留原地形检查。接下来改从实际路肩坡面支持的局部草片推进，先做代表路段，保持草根/风/车压/低开销剔除。
 - 冻结M95构建4232的environment首项三引擎已全部通过90.98s，work/grass-m95-environment-updated.json，0失败/重试/跳过；仅将旧cell断言更新为实际尺寸，根字段/缓冲身份/驾驶移窗/切档阴影路径检查保持。M96四机位TF也通过，新增生境本主机建立166.2ms；active-play近层0→11481（完整容量统计，不是实际低档全量draw），新增道路全texel包络检查进行中session30304，尚未性能/运动验收。
 - M95已提交2aceb29，中文UTF8检查/删除临时消息/无push。候选5192 host0.0.0.0/session35747发布冻结work/grass-m95-coverage-final-dist；用户一加12 Chrome自动档实际反馈“两者都流畅”，doc09/10记入该设备局部体验，不扩展为全地图/数值FPS/热稳定。
 - M95测试environment首项仍硬编码旧.45cell，现按手机.26/桌面.295修正，其他身份/实际地形检查不变；待冻结M95构建跑受影响该项后独立记录。

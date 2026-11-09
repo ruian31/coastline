@@ -2,6 +2,9 @@
 
 ## 当前检查点 · M87首组实景对照完成
 
+- M87第二组真实可见位置对照已完成：work/study-canopy-m87-visible.mjs/session70530结束0，artifacts/canopy-m87-world-visible/result.json为两端各两机位×原/候选8幅，两个联图全部已看。保持3株与1.5/1.9/1.6缩放、native几何/PBR；群落中心改成NDC(.48,-.28)与真实地面交点，原相机不变/GL0/0错误，不移除旧草。各端落点不同且已记录，不当跨设备同世界摆放证明。
+- 手机路肩前景叶体明显可见，说明首组遮挡/位置影响实际可读性；但新株较暗、与原浅草/长草边界脱节，整坡重复稀疏尚未改善，不发布。当前无GPU任务。下一步转向小范围真实群落的基部覆盖、材质响应与预算，不能仅近放/增株。稳定5190仍M85，端口本轮确认活，LAN192.168.3.10；Goal active，上一turn进展为实景8图/记录提交2064948。
+
 - 上一Goal turn为progress（M85代码/发布/用户一加12接受，M86素材筛选/文档提交f2e2156）。本日确认原5190/4224/4225均无监听，恢复5190/session84384与4224/session35586；LAN已变192.168.3.10，已告知用户。没有重复创建目标，Goal active。
 - work/extract-canopy-g-m87.mjs提取完整g为work/canopy-g-m87/canopy-g.glb，4471412B、3124tri/2材质。原position/normal/uv/index逐字相同，中心/贴底平移后世界顶点往返误差0，原normal/ARM与PBR因子保留（原树皮metalFactor1乘原ARM蓝，未擅自改材质）。非public/运行时资产，未压缩纹理。
 - work/study-canopy-m87.mjs任务80918已结束0，artifacts/canopy-m87-world-first/result.json记录两端两真实机位×control/canopy=8幅，两个联图全部已看，原相机/场景不变、GL0/0错误。相机相对三株工作试摆，真实地面Raycaster定位、native尺寸乘1.5/1.9/1.6，植株未加入旧缓存阴影/风压/LOD/碰撞，不能当正式接地/预算/运动验收。

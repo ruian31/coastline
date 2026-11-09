@@ -12,6 +12,8 @@
 
 ## M86 · 完整冠层筛选，未更新试玩
 
+M87第二组[可见位置8图](canopy-m87-world-visible/result.json)及两联图已看：原3株/缩放/PBR，仅中心改为NDC(.48,-.28)与真实地面交点；原相机不变，GL0/0错误。手机路肩前景叶体更可辨，首组遮挡/摆放确有影响；仍偏暗并与旧浅草/长草边界脱节，不作整体风景提升或正式采用。两端分别落点，未移除旧草或补缓存阴影，不是同坐标跨端一致性、风压/LOD/性能证据。
+
 M87首组[实景8幅](canopy-m87-world-first/result.json)与两联图已看：两端各草坡/路肩×原图/三株候选，同相机/原场景、真实地形三角面定位，GL0/0错误。完整g提取GLB4.47MB，原数组一致/世界顶点误差0；未压缩纹理或加入public。少量新叶片没有充分改善整坡层次，路肩仍被旧长草遮挡，未批准采用；新株也尚无缓存阴影、风压、LOD、碰撞或成本证据。稳定试玩保持M85；11月9日恢复端口后LAN为192.168.3.10:5190。
 
 - provider完整profile探测Tripo/Gemini/ElevenLabs均MISSING，无付费任务；读取三维/图像技能及asset-recovery后，按许可明确扫描素材路线继续。[官方Othonna](https://polyhaven.com/a/othonna_cerarioides)、[Shrub04](https://polyhaven.com/a/shrub_04)、[CC0许可](https://polyhaven.com/license)已核对，官方逐文件size/MD5与本地SHA在work/coastal-canopy-m86-source/downloaded-source.json。两资产共12文件约9.87MB，未加入public，不能称加州原生物种。

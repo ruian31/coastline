@@ -1,4 +1,11 @@
-# 当前进展 · 2026-11-08
+# 当前进展 · 2026-11-09
+
+## 当前检查点 · M87首组实景对照完成
+
+- 上一Goal turn为progress（M85代码/发布/用户一加12接受，M86素材筛选/文档提交f2e2156）。本日确认原5190/4224/4225均无监听，恢复5190/session84384与4224/session35586；LAN已变192.168.3.10，已告知用户。没有重复创建目标，Goal active。
+- work/extract-canopy-g-m87.mjs提取完整g为work/canopy-g-m87/canopy-g.glb，4471412B、3124tri/2材质。原position/normal/uv/index逐字相同，中心/贴底平移后世界顶点往返误差0，原normal/ARM与PBR因子保留（原树皮metalFactor1乘原ARM蓝，未擅自改材质）。非public/运行时资产，未压缩纹理。
+- work/study-canopy-m87.mjs任务80918已结束0，artifacts/canopy-m87-world-first/result.json记录两端两真实机位×control/canopy=8幅，两个联图全部已看，原相机/场景不变、GL0/0错误。相机相对三株工作试摆，真实地面Raycaster定位、native尺寸乘1.5/1.9/1.6，植株未加入旧缓存阴影/风压/LOD/碰撞，不能当正式接地/预算/运动验收。
+- 新株草坡仅有少量近处叶片，整坡层次改善不足，路肩原长草遮挡仍明显，不批准发布或全图扩散。下一步需以真实驾驶可读的成片群落/基部层次做对照，避免只散加小株。稳定5190仍4770ca6 M85，World1.5/Lighting2.25不升，无活动GPU任务。原用户未跟踪文件保留。
 
 ## 当前检查点 · M85已提交，M86开始
 

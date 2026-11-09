@@ -12,6 +12,8 @@
 
 ## M86 · 完整冠层筛选，未更新试玩
 
+M87首组[实景8幅](canopy-m87-world-first/result.json)与两联图已看：两端各草坡/路肩×原图/三株候选，同相机/原场景、真实地形三角面定位，GL0/0错误。完整g提取GLB4.47MB，原数组一致/世界顶点误差0；未压缩纹理或加入public。少量新叶片没有充分改善整坡层次，路肩仍被旧长草遮挡，未批准采用；新株也尚无缓存阴影、风压、LOD、碰撞或成本证据。稳定试玩保持M85；11月9日恢复端口后LAN为192.168.3.10:5190。
+
 - provider完整profile探测Tripo/Gemini/ElevenLabs均MISSING，无付费任务；读取三维/图像技能及asset-recovery后，按许可明确扫描素材路线继续。[官方Othonna](https://polyhaven.com/a/othonna_cerarioides)、[Shrub04](https://polyhaven.com/a/shrub_04)、[CC0许可](https://polyhaven.com/license)已核对，官方逐文件size/MD5与本地SHA在work/coastal-canopy-m86-source/downloaded-source.json。两资产共12文件约9.87MB，未加入public，不能称加州原生物种。
 - [修后32幅原生形体图](canopy-m86-source-shapes-second/result.json)与8联图全部已看：7株Othonna+Shrub04，原尺寸正面和统一1m足迹正/侧/低地机位；保留全部源几何/UV/法线/1kPBR，原RGB+alpha无损打包，叶片双面/alpha.45。实际包围球适配视锥并检查八角，最大投影.828，0页面/控制台/HTTP错误。第一批截顶图已[拒绝保留](canopy-m86-source-shapes/rejected.json)，不当完整冠层证据。
 - 仅Othonna g选作下一步小范围实景候选，原生约.497m宽/.463m高/.436m深、3124tri/2材质；其余较直立/裸枝或横向分株，不直接用于完整低灌丛角色。这是平地素材筛选，未做游戏接地、风压、LOD、群落、三浏览器或性能验收，不提高World1.5/Lighting2.25；稳定5190仍M85。

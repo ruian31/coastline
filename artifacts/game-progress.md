@@ -1,5 +1,26 @@
 # 当前进展 · 2026-11-09
 
+## M95最终覆盖修复检查点 · 2026-11-09
+
+- 最终coverage构建8张固定原图/4张联图已全看，artifacts/grass-m95-source-coverage/result.json，0错误；仍是局部细叶进展，不提高全景评分。准备提交该候选步骤，随后继续路肩覆盖调查。
+- 最新用户再次确认M92方向，继续实际自然层次/柔和夕阳。下段旧live/待办已由本段覆盖：4231主draw三引擎3项通过109.996s；原生CDP多触控27.1408m、风时钟13.75s、压力200→870、317镜面pass、主96恢复通过，但视频仍有已知黑天空/蓝帧异常，不能称干净运动验收。普通无query auto入口43.9048m、测试全局未定义、1585帧九列一行天空采样0多数黑点，ordinary.png现已看；只为有界复核，不是无闪烁/手机FPS证明。
+- 4231最新四静态联图已全看。各局部细叶进步仍不足，成片地表和群落差距保留。其他机位TF m95-other-views发现active-play中草normal dot .97948未过原.98，局部offset .99999984；同样是habitat将旧中草压近坡面。修正fine路径全部body仅coverage淡出、尺寸保持；fallback保持旧逻辑。
+- 最终构建work/grass-m95-coverage-final-dist，index-DdjyyMJX.js，4232/session24632。实际TF四机位m95-coverage-final通过：bank/grass/town/active世界normal最小.999724/.999940/.999998/.999998，fade最小均>.99985，根误差最高37.4微米，road0；内陆10978受压/2744淡出非根无埋地、真实双侧拨草、0/20/45/65年龄恢复严格通过。checker现在对所有fixture的fade法线都断言，不放宽阈值。上路active-play近草0、middle9626，需继续研究路肩细节覆盖，不能假称整条路都有新细草。
+- 最终三引擎主draw/切档/真实驾驶与绕看重新3项通过107.604s，artifacts/grass-m95-browser-coverage；fallback先前全6项证据有效，相关实现本轮未变。最新固定8图捕获work/capture-grass-m95-coverage.mjs进行中；GPU成本仍引用此前iUDaxIKO构建，文档09明确最后coverage修正不属于该数据版本。docs09/10已同步边界。
+- 稳定5190仍M85、LAN192.168.3.10，不冒充候选已发布或真机通过。待最终静态图看完提交当前独立M95源码/检查/文档，不包含用户AGENTS/docs12/resource-previews，不push；Goal active，World1.5/Lighting2.25不变。接下来优先解决真实路肩细草覆盖和可绕看的群落衔接，不继续只做微弱亮度变体。
+
+## 当前检查点 · M95真实细草实现与验证中
+
+- M94素材工具/来源/取舍已提交da6708e（中文UTF8核验、删除临时消息，无push）；用户原未跟踪文件仍未动。M95实际生产源码在GrassCanopy/Scenery/OceanDrive内局部实现，未提交，稳定5190仍M85。新增tests/grass-view.spec.ts，更新原GPU检查脚本支持曲叶中段与根部区分。
+- Fine路径实例格从手机48→80/桌面64→96，手机cell.26/桌面.295，近半径9.88/13.57m保留原范围，近层在3m带淡出。每12近三角混6直叶+2株各3面曲叶，整cell16/低8叶，宽3–9mm/高12–35cm。每实例仍32面，但手机低档总102400面（原36864），桌面低147456（原65536）；不能再称总预算不变。中草范围随格数扩大至45.6/55.2m，旧body纹理保持，没有采用M94。fallback仍48/64逻辑格与旧draw count，只预留更大instanceMatrix容量。
+- 主视图窗口是car/camera XZ中点、偏移封顶5m，真实轮压坐标不变；tick先更新相机再给scenery.viewPosition。镜面cull secondary只draw最后8面(start72/count24)，VehicleMirrors finally cull(main)恢复96顶点；不改近叶/轮压数据。独立只读grass_m95_review已结束，无改动/无GPU/不再递归；未找到确定逻辑缺陷，不等于全体验验收。
+- 首真实8图/四联图全看，artifacts/grass-m95-source-first/result.json；较细叶体是局部进展，整体重复地表/群落仍远未达到M92图，World1.5/Lighting2.25不升。source-first是首次构建，不能冒充后续修正版本截图。
+- 实际TF首m95-first失败在fading normal dot .96455；GPU局部offset三角参考dot .99999972。m95-normal-diagnostic保留具体triangle22：曲叶中边被habitat coverage .011缩到约58微米，world float量化破坏法线参考。已在生产改细叶维持尺寸、habitat/range只淡coverage；m95-fixed通过（world min dot .99402、199根误差32微米、根位移0、10978受压/2744淡出非根点无埋地、20/45/65秒恢复且65秒严格rest0、道路命中0、低前缀/移窗/风根误差0）。未放宽原.98法线阈值。原checker曾把三角前两点都当根，现只对真实Y0根面作pressure统计，接触扩展到所有非根点，避免漏掉新曲叶中段。
+- UI首Chrome4项通过；发现instanceMatrix无uuid，首批该字段不能证明身份，已改持有实际对象reference。之后RUN_WEBKIT全6项通过，artifacts/grass-m95-browser-second各引擎JSON与work/grass-m95-browser-second.json报告记录、156.7s，含原生GL drawArraysInstanced主96/镜24、恢复、切档资源身份、真实keyboard/mouse与fine GLB404普通入口旧预算。该批在4230、normal-dist构建，尚未包含隐藏点跳过变形优化。
+- 最终优化为mask/海/路/视窗外0覆盖的点跳过风/压力/曲叶计算，初始化隐藏varying。最新构建work/grass-m95-cull-final-dist，主index-iUDaxIKO.js，4231/session87570；GPU m95-cull-final再次通过，保留同上接触/恢复/移窗结果。当前session3706旧首测、46412全6测均terminal；session43817 GPU最新terminal0。当前live GPU为session44908：work/grass-m95-browser-final.json只重验受影响真实主视图用例的三引擎，命令刚启动，勿并发GPU。
+- 性能全为同RTX4050、低844x390、2真实静止view、540完整RAF+8s4xCPU；control=M89，first=M95无镜面LOD，mirror-final=M95镜面粗草，cull-final=最新隐藏跳过。understory chase GPU P50/P95 control3.993/8.170→latest4.583/7.455ms；bank cockpit6.371/8.092→5.575/11.554ms，不能称总体加速，P95仍有上升。CPUtask4679/7812→4865/7947ms，cockpit frames481→438；不能当真机FPS。镜面峰提交694638→617838三角为确切减少，source latest vs control峰增量仍存在。原始artifacts/mirrors-m67-profile-m95-*完整保留；没有真机通过结论。
+- 还需：latest三引擎主draw检查、最新固定图、真实触控/绕看运动、普通无query入口、必要的其他地表fixture GPU检查与手机复测。不得凭阶段验证发布/完成整个Goal。最近preview恢复为5190/session14726、4227/session56961（M89控制）、4228/95190、4229/42034、4230/69064、4231/87570，实际是否live须再验；LAN192.168.3.10。当前源码/测试未提交，待本步验证完成按commit技能提交，不push。
+
 ## 当前检查点 · M93/M94实际草体工作对照
 
 - 当前已恢复稳定5190/session14726与候选4227/session56961，LAN192.168.3.10；下方“无监听”为前次中断时状态。soft-proxy桌面联图现已看完，仍拒绝。正式M94准备工具已锁源SHA、执行/语法检查，生成PNG SHA6bba2440…，源与制备元数据已保存，准备独立候选素材提交；不接入public或运行时。

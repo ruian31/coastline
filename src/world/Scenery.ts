@@ -46,7 +46,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   ready:Promise<void>;
   prepareVerge:(parts:THREE.BufferGeometry[])=>void;
   prepareFerns:(source:Promise<THREE.MeshStandardMaterial|undefined>)=>Promise<void>;
-  update: (elapsed: number, carPosition: THREE.Vector3) => void;
+  update: (elapsed: number, carPosition: THREE.Vector3, viewPosition?:THREE.Vector3) => void;
   updateVehicle:(elapsed:number,car:THREE.Object3D,wheelContacts:readonly THREE.Vector3[])=>void;
   dispose: () => void;
   groundHeight: (x:number,z:number) => number;
@@ -1099,6 +1099,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       return group;
     },
     cullForCamera(camera,secondary=false){
+      grassCanopy.setSecondaryView(secondary);
       camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
       const detailBudgets=new Map<string,{cap:number;candidates:{detail:FoliageDetail;index:number;distance:number}[]}>();
       for(const detail of secondary?[]:foliageDetails){
@@ -1174,10 +1175,10 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         record.limit=enabled?Math.min(full,Math.max(1,Math.floor(full*factor))):full;
       }
     },
-    update(elapsed, carPosition) {
+    update(elapsed, carPosition, viewPosition) {
       time.value=elapsed;
       water.update(carPosition);
-      grassCanopy.update(elapsed,carPosition);
+      grassCanopy.update(elapsed,carPosition,viewPosition);
       sky.position.set(carPosition.x,0,carPosition.z);
     },
     dispose() {

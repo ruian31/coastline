@@ -1,0 +1,31 @@
+{
+  "provider": "Built-in image_gen tool",
+  "date": "2026-11-09",
+  "scope": "User-approved concept target only. Image edit from an actual M89 screenshot, not a working game screenshot, benchmark, texture or background. The in-image Chinese caption explicitly states this. User accepted the natural layering and soft sunset; implementation must remain a real interactive3D scene with desktop/mobile support.",
+  "userDecision": "接近，就按这种自然层次和柔和夕阳推进",
+  "files": [
+    {
+      "file": "source-assets/coast-art-target-m92-input.png",
+      "bytes": 1632228,
+      "sha256": "d9ee211154b56f42b9b96e8c2b7faa7064e6e549031d05aab3154eb07a3f26a7",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "file": "source-assets/coast-art-target-m92.png",
+      "bytes": 3216239,
+      "sha256": "69919d60df1693a3e010966aeb772ea408ef4debff66ca0125a1c9fae719ef6f",
+      "dimensions": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "source-assets/coast-art-target-m92.prompt.txt",
+      "bytes": 2592,
+      "sha256": "76b5f3b4c90c76abb928d2e186322e763706aba55bba894b3b49a8164d5ee3d7"
+    }
+  ]
+}

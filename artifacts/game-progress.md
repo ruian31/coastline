@@ -1,5 +1,26 @@
 # 当前进展 · 2026-11-09
 
+## 当前检查点 · M89候选浏览器与形变验证
+
+- 用户最新状态询问已回答：当前主工作是自然风景，性能是配套；没有将候选冒充试玩版。上一纯状态答复为no-progress，本轮已核实原4227/PID17917与测试终态、创建资源提交badc891并推进GPU/浏览器/运动证据。Goal active；不重复创建或宣称整体完成。
+- 第四版build通过，4227为work/understory-m89-test-dist，主index-BvqQXUkR.js；旧4226仅v1参考，勿当最新。首work/understory-m89-browser-first.json：6项5过，WebKit键盘8.5m要求在25秒观察时仅7.759m。tests只延窗口至60秒并finally存轨迹；session80151终态0，second报告WebKit2过，9.4697m/closest.136m/6株压力标记。Chrome4项首轮过；记录批次范围，不称一次6过。
+- work/check-understory-m89-shader.mjs首因未提供GPU仍活跃UV属性失败，保留失败；补原UV重复采样后second成功。正式scripts/check-understory-shader.mjs/session53828终态0，artifacts/understory-shader-m89-verified/result.json为188处叶面/12组GPU有限差分形变法线对照，min dot .9986976、平均压低.138–.150m、GL0/0错误。受控风/压力与坡面检查，不是逐根地面或原压力恢复全重验。
+- 最新8图artifacts/understory-m89-final-views/result.json及四联图全看；移动录制session26401终态0，artifacts/understory-m89-motion/result.json/视频及8帧联图已看，真实鼠标orbit/键盘穿行/手刹，约28.82m、0错误。新冠层仍小且被长草遮挡，整体山坡稀疏/纹理重复未解决；不加评分、不发布5190。
+- 性能control30147/candidate81428均终态0，artifacts/mirrors-m67-profile-m89-{control,candidate}/result.json；相同原bank-inland cockpit机位/低档844×390、golden、正常风，540完整RAF+8s4xCPU，新增两primitive实际绘制。GPU P50/P95 6.135/8.498→6.134/7.200ms，CPUtask7894→7945ms，2geometry/3texture增量。只称该机位未见明显GPU上升，不称真机或全路线通过。
+- 当前无浏览器GPU任务，稳定5190仍M85/4770ca6，LAN192.168.3.10。用户原未跟踪AGENTS/docs12/resource-previews未动。后续将实际候选源码/验证提交，继续处理地表尺度、植被基部与坡面层次，不重复材质去AO或继续只加小株。
+
+## M89实现过程记录
+
+- 实际候选初版4226/session36088（understory-m89-final-dist）已做16正式机位/四联图全部已看、18株/两primitive编译链/GL0/0错误，不能据此称风压或群落已验收。随后补ImageBitmap所有权（持有至dispose、异步晚到关闭去重）与仅query/DEV的understory实际穿行fixture；第三版构建通过，未运行该版GPU。
+- 自审法线发现风与地面位移是独立相加，不是两次顺序剪切。当前局部法线已改为对应联合Jacobian的逆转置，并放在既有pressure normal前，key v2；不改风/地面position公式。第四版构建中，work/build-understory-m89-fourth.log。需实际GPU验证，不能复用v1图/通过。
+- 同一独立代理已完成唯一QA文件tests/understory.spec.ts，两个测试覆盖真实keyboard穿行/压力场、质量切换不截近株、GL实际绑定、暂停恢复和GLB404普通驾驶，未运行GPU；需主代理先审阅/tsc与串行执行。当前没有浏览器GPU任务，稳定5190仍M85。
+
+- 上一turn为真实材质16图/证据提交c54ed09的progress。本轮已从纯试摆转入实际资源/源码。3D director授权一次只读understory_integration_review已结束，未改文件/未跑GPU，具体约束已采用：Material.copy后groundFollowing重设植物标志、保留hook链、独立groundSlopes与剪切法线修正、不进入近景cap竞争、不把小株加入低分辨率世界阴影缓存。
+- 新scripts/prepare-coastal-understory.mjs生成work/understory-m89-512/understory.glb1723096B（原4471412B），保留3124tri/原2材质，位置/法线/UV/索引往返SHA精确。原两材质metalFactor不同且ARM蓝非零，不强行合并；只合并逐字相同图片为3张512。基色线性光alpha加权、法线加权归一、ARM原通道，alpha覆盖.916370→.916603，无膨胀。work/understory-m89-512/source.json记录，public/assets/models/coastal_understory/已加入候选文件与官方CC0来源/逐文件MD5/SHA，尚未发布dist。
+- work/compare-understory-m89-quality.mjs/session83101结束0，artifacts/understory-m89-quality/result.json为两端两真实机位×native1k/512=8图，两联图全部已看：细小边缘有差异，整体完整冠形保留，GL0/0错误。此为静态资源压缩检查，不当自然群落、运动、LOD或真机验收。
+- Scenery.ts已实现局部understoryReady：独立seed9741301、3个固定coast区域各6株候选，地形/道路/坡度过滤，完整native geometry/PBR、风动/地面跟随/压力、25–35m dither渐隐、37mCPU剔除。InstanceBatch/registerInstances/batch增加可选maxDistance，不伪造LOD或共享near cap；末尾法线wrapper在压力normal前做地面逆转置。ready纳入sceneReady；只receive原阴影，无cast/新增车辆或镜头实体。
+- 首tsc/Vite构建通过；材质名补scrub以复用.55植物压力强度后，最终构建session见work/build-understory-m89-second.log。下一步实际浏览器编译/原摆放与root-GPU/风压/过渡/质量切换及失败释放检查、真实机位与成本；不得仅凭构建发布。稳定5190仍4770ca6 M85，LAN192.168.3.10。用户原未跟踪AGENTS/docs12/resource-previews未动，当前候选改动未提交。
+
 ## 当前检查点 · M88材质诊断完成
 
 - 本轮确认5190/4224仍监听，工作树仅用户原未跟踪文件，上一turn真实可见位置8图与提交dd78425为progress。当前Goal active，不完成/阻塞/重复创建。

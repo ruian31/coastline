@@ -1,5 +1,14 @@
 # 当前进展 · 2026-11-09
 
+## M96路肩生境工作候选 · 2026-11-09
+
+- 冻结M95构建4232的environment首项三引擎已全部通过90.98s，work/grass-m95-environment-updated.json，0失败/重试/跳过；仅将旧cell断言更新为实际尺寸，根字段/缓冲身份/驾驶移窗/切档阴影路径检查保持。M96四机位TF也通过，新增生境本主机建立166.2ms；active-play近层0→11481（完整容量统计，不是实际低档全量draw），新增道路全texel包络检查进行中session30304，尚未性能/运动验收。
+- M95已提交2aceb29，中文UTF8检查/删除临时消息/无push。候选5192 host0.0.0.0/session35747发布冻结work/grass-m95-coverage-final-dist；用户一加12 Chrome自动档实际反馈“两者都流畅”，doc09/10记入该设备局部体验，不扩展为全地图/数值FPS/热稳定。
+- M95测试environment首项仍硬编码旧.45cell，现按手机.26/桌面.295修正，其他身份/实际地形检查不变；待冻结M95构建跑受影响该项后独立记录。
+- M96未提交工作源仅GrassCanopy：独立512²R32F生境采样替代fine路径原121/161格粗生境保守空白，实际height/slope/terrain支持仍旧真实三角网格；每根额外一次nearest texelFetch，half-diagonal+.4m guard，增加1MiB纹理。只在fine资源成功时建立，回退不建立；记录buildMs，dispose释放。尚未通过画面/所有根位置/成本与真机，不发布。
+- 本工作source构建work/grass-m96-habitat-dist/index-B-eWNYyr.js，4233/session48060；TF session13412进行四机位，日志work/check-grass-m96-habitat.log，勿并发GPU。checker已绑定实际新uniform texture unit2。准备work/capture-grass-m96-habitat.mjs，两视图改active-play/field-verge的8图，尚未运行。
+- 512中心负生境/最近道路sample仍需额外核查所有近叶根不侵入真实沥青，不能只凭纹理更密宣称正确。目标仍未达标，继续真实场景，World1.5/Lighting2.25不变。
+
 ## M95最终覆盖修复检查点 · 2026-11-09
 
 - 最终coverage构建8张固定原图/4张联图已全看，artifacts/grass-m95-source-coverage/result.json，0错误；仍是局部细叶进展，不提高全景评分。准备提交该候选步骤，随后继续路肩覆盖调查。

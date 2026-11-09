@@ -1,0 +1,143 @@
+{
+  "origin": {
+    "id": "othonna_cerarioides",
+    "page": "https://polyhaven.com/a/othonna_cerarioides",
+    "license": "CC0-1.0",
+    "licensePage": "https://polyhaven.com/license",
+    "authors": [
+      "James Ray Cock",
+      "Jenelle van Heerden"
+    ],
+    "files": [
+      {
+        "path": "othonna_cerarioides_1k.gltf",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/othonna_cerarioides/othonna_cerarioides_1k.gltf",
+        "size": 21758,
+        "md5": "868c491cb934ca1a1524d905a9866a68",
+        "sha256": "cbbe57f895038c490f2b73d3c068a478f74c6e74d19c8d21ae96cb78567e5a56"
+      },
+      {
+        "path": "textures/othonna_cerarioides_diff_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/othonna_cerarioides/othonna_cerarioides_diff_1k.jpg",
+        "size": 641517,
+        "md5": "b9b55a58caea647bbddb44627c93a366",
+        "sha256": "0c120c71434ad4fef576a20ad72f8cc93ba9b903302f1c253f22183ec1a270c4"
+      },
+      {
+        "path": "textures/othonna_cerarioides_nor_gl_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/othonna_cerarioides/othonna_cerarioides_nor_gl_1k.jpg",
+        "size": 945491,
+        "md5": "7110e3749dcab4e90ee311ef95574b1a",
+        "sha256": "228e3ca2422ddbaa9c5685bad13428122b8b99c0de13b61648bba3d222818dcb"
+      },
+      {
+        "path": "othonna_cerarioides.bin",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/othonna_cerarioides/othonna_cerarioides.bin",
+        "size": 5552964,
+        "md5": "be60ab52933bf10ac179481ae7d30c62",
+        "sha256": "7bb550540f0a6733eb30576fd798f57940d4854183013ca3ef29815a7de7aa8a"
+      },
+      {
+        "path": "textures/othonna_cerarioides_arm_1k.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/othonna_cerarioides/othonna_cerarioides_arm_1k.jpg",
+        "size": 718041,
+        "md5": "4f99818ba4420799278bdaf9edb29e2f",
+        "sha256": "089664c80ea5466630757487c0a14e27571775e4337cb28b6feab15a93710011"
+      },
+      {
+        "path": "textures/othonna_cerarioides_alpha_1k.png",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/othonna_cerarioides/othonna_cerarioides_alpha_1k.png",
+        "size": 42818,
+        "md5": "6c4c1ffb3f72a0d95038ddeeffbd050d",
+        "sha256": "e9cf201af38a416a87ab772b51a43ec82a92f6cff891840955d190f35bd0cc5c"
+      }
+    ]
+  },
+  "scope": "Work runtime candidate only. Complete3124tri geometry/UV/normal/index exact after roundtrip, original2 material factors retained because bark and leaf metal factors differ. Merge only duplicate image resources into3 shared512 maps. Albedo reduced in linear light weighted by original alpha, data maps alpha-weighted, tangent normals renormalized. No alpha dilation or coverage expansion; texture reduction is lossy and requires visual approval. Not terrain/wind/pressure/LOD/shadow or phone acceptance.",
+  "source": "work/canopy-g-m87/canopy-g.glb",
+  "sourceSha256": "8c42b4331edce764b37fe8c8c0810b9e718719b5b5868971611dfe828970340f",
+  "triangles": 3124,
+  "materials": [
+    {
+      "name": "othonna_cerarioides_leaves",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metal": 0,
+      "roughness": 1,
+      "normalScale": 1,
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.45,
+      "doubleSided": true
+    },
+    {
+      "name": "othonna_cerarioides",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metal": 1,
+      "roughness": 1,
+      "normalScale": 1,
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.45,
+      "doubleSided": true
+    }
+  ],
+  "maps": [
+    {
+      "role": "color",
+      "width": 512,
+      "height": 512,
+      "bytes": 577490,
+      "sha256": "2a0299c697b24e645576cefe94a9d071b13f1c8915f79bb8152cca21891daa2d",
+      "sourceImageSha256": "3c9f4fa8492d9d1da922f469fc72a06fb4834223fbedc11d50f06b61b7e165e7",
+      "maxNormalLengthError": 0,
+      "sourceCoverage": 0.9163703918457031,
+      "coverage": 0.9166030883789062
+    },
+    {
+      "role": "normal",
+      "width": 512,
+      "height": 512,
+      "bytes": 549985,
+      "sha256": "71194350d732e587a3850da7cc5d85aa648d7158d3f1634c862105534cf9d86c",
+      "sourceImageSha256": "228e3ca2422ddbaa9c5685bad13428122b8b99c0de13b61648bba3d222818dcb",
+      "maxNormalLengthError": 0.0062090972580421955
+    },
+    {
+      "role": "surface",
+      "width": 512,
+      "height": 512,
+      "bytes": 456179,
+      "sha256": "83fc9c04a64021c5e18b0956f0593085f5c6fbb6f50714a30f793661426b224b",
+      "sourceImageSha256": "089664c80ea5466630757487c0a14e27571775e4337cb28b6feab15a93710011",
+      "maxNormalLengthError": 0
+    }
+  ],
+  "attributes": [
+    {
+      "POSITION": "1962ac6c0d2f5092219cd0ca4b741d6dee8c03f6c48221f3189618b819dbe332",
+      "NORMAL": "f90e62c420ff221559426f49806693533c726f61546a98e7823e76ba235b7802",
+      "TEXCOORD_0": "cbcfd054ddd282ee41cfee4c71d40ae8ab128282c9d88abea0dd421a56020cd0",
+      "indices": "858c0c4fd735e78aeb110c3de43e95f3c761f7357d5cf7ec6e7d5a1e029e9f5a"
+    },
+    {
+      "POSITION": "b0008c6a77b6f03c8f26e22bb9ad99108d9b9e52523ac57bbf88af3cfe5392b9",
+      "NORMAL": "5368dae67aec10c0ef3414d287ae7ae50f34d81c76f3b8e486539f5b97ab9537",
+      "TEXCOORD_0": "a0cd1437e98b2059b794980da015107b5ab306787ebee7eef749272b7d32acd8",
+      "indices": "916c28739a33003d06a9ae5364305907ac81c65926f73597a4b7a721b1c61be4"
+    }
+  ],
+  "glb": {
+    "path": "public/assets/models/coastal_understory/understory.glb",
+    "bytes": 1723096,
+    "sha256": "df5d0e9dc5f8c0b294b84f62d499cefa7eb1825d9597130236e270aa1fe5f518"
+  },
+  "textures": 3
+}

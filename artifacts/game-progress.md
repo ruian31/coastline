@@ -1,5 +1,12 @@
 # 当前进展 · 2026-11-09
 
+## 当前检查点 · M88材质诊断完成
+
+- 本轮确认5190/4224仍监听，工作树仅用户原未跟踪文件，上一turn真实可见位置8图与提交dd78425为progress。当前Goal active，不完成/阻塞/重复创建。
+- work/study-canopy-m88-material.mjs/session71362结束0，artifacts/canopy-m88-material/result.json记录两端两机位×control/native/noAO/response=16图，两联图全看；同几何/缩放/落点/基色，独立材质克隆，不改共享Source。组合response只改roughness.9/metal0/normalScale.6，不声称分离三参数因果。
+- 已核对源gltf两材质均无occlusionTexture，去AO控制本来就无实际功能变化，不能当真实AO实验。pixel-comparison.json三组0通道差，电脑路肩5通道差1级，保留微量量化差异。组合response有局部变化，草/灌丛边界仍脱节，未批准发布或声明找到完整偏暗原因。无活动GPU任务，稳定5190仍M85/4770ca6，LAN192.168.3.10。
+- 下一工作应围绕完整小群落的真实摆放/基部层次，并在选定后接风压、近远LOD和既有预算，不继续重复去AO或仅近放小株。所有M86/M87源与GLB留存，不重复下载/生成。准备本阶段中文文档提交、核验UTF8，不push。
+
 ## 当前检查点 · M87首组实景对照完成
 
 - M87第二组真实可见位置对照已完成：work/study-canopy-m87-visible.mjs/session70530结束0，artifacts/canopy-m87-world-visible/result.json为两端各两机位×原/候选8幅，两个联图全部已看。保持3株与1.5/1.9/1.6缩放、native几何/PBR；群落中心改成NDC(.48,-.28)与真实地面交点，原相机不变/GL0/0错误，不移除旧草。各端落点不同且已记录，不当跨设备同世界摆放证明。

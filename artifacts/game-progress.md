@@ -1,5 +1,16 @@
 # 当前进展 · 2026-11-09
 
+## 当前检查点 · M93/M94实际草体工作对照
+
+- 当前已恢复稳定5190/session14726与候选4227/session56961，LAN192.168.3.10；下方“无监听”为前次中断时状态。soft-proxy桌面联图现已看完，仍拒绝。正式M94准备工具已锁源SHA、执行/语法检查，生成PNG SHA6bba2440…，源与制备元数据已保存，准备独立候选素材提交；不接入public或运行时。
+- M92用户确认目标仍为主方向，a72abed已提交原/目标/提示词/sourceJSON。Goal经用户暂停后已恢复active；中断不代表完成。上一阶段为实际截图/素材/验证progress。
+- M93：work/study-grass-m93-curved.mjs原32面/96顶点中24近三角换8株3面两段曲叶、远8面保持，artifacts/grass-m93-curved-leaves的8图/两联图已看，收益很小。红近叶/蓝中草真实遮挡mask另8图已看，artifacts/grass-m93-screen-coverage/result.json：手机near2358/2399px，middle17611/15370px，control同色匹配0；只计GrassCanopy严格RGB命中，不是全世界植被或精确AA面积。细叶只占手机约.7%画面，旧中草更显眼。
+- M93视窗试验：camera/car midpoint capped5m、fine fade8→3m，另加曲叶，共12图/两联图全看，artifacts/grass-m93-view-window。原1–4cm叶片来到前景后像粗杆。最新thin-dense将近cell.45→.25、叶3–8mm/12–35cm、fade2m，保持32面/原实例数；artifacts/grass-m93-thin-dense/result.json12图/两联图全看，session32929报告完成后中断handle失效，终态依据日志captures12+完整JSON。细度改善但近半径缩到手机5.5/桌面7.5m，整体收益仍不足，尚未生产采用。下一实际方向是提高有效近叶密度且保留原近范围，不能仅缩小范围让图好看；需要显式记录预算增量和测量。
+- M94：内置image_gen两次透明atlas输出同类红黄异常，首PNG1254²仅3全不透明像素/约103万partial，均拒绝，work/dry-grass-m94-rejected保留原图/提示词。第三次用同一工具生成opaque RGB黑底四草簇，source-assets/dry-coastal-grass-atlas-m94-rgb.png及prompt是当前自有未跟踪文件；SHA fc389dba…，未发布。work/prepare-grass-m94-atlas.mjs及待提交scripts/prepare-coastal-grass-body.mjs采用soft-black-key smoothstep(6,40,maxRGB)、阈值16 bbox/4pxpad、fit448/common baseline480生成work/dry-grass-m94/atlas1024.png1131627B/SHA6bba2440…，不是恢复原生alpha，暗叶可能变薄。正式脚本已跑/语法检查并锁源SHA，资源本身与草体在世界的适配分开判断。
+- M94 actual world图：artifacts/grass-m94-{atlas-world,proportions,paired-tufts,soft-proxy}/result.json各8图，两联图均已看（soft桌面仍待看）。单簇替换、只收窄body矩阵、每card双完整簇及软代理法线均仍读成零散硬草团/褐块，未采用。旧geometry/count/布局除proportions刻意仅换body宽列外保持；paired使用显式原UV梯度避免fract的mip跳变。soft是代理叶束法线近似，不是几何法线正确证明。不要继续重复这些未解决体量/群落衔接的变体。
+- M94 upload诊断artifacts/grass-m94-upload-diagnostic/result.json2图，实际同renderer1x1 RT texelFetch alpha8点完全匹配CPU flippedY，texture.flipY=true；排除这些点的上传颠倒，不把草团问题归因Y反。页面/GL均0；未做该asset真机/运动/成本。
+- 最近确认preview进程5190/4227因中断均无监听；前次恢复handles17714/16703也已失效。dist仍M85，work/understory-m89-test-dist仍M89。LAN192.168.3.10。需要在下一GPU任务前恢复，勿据旧handle当live或重复杀用户进程。当前无GPU任务；原用户未跟踪AGENTS/docs12/resource-previews未动。M93/M94尚无生产源码修改，未据工作图加评分或更新5190。
+
 ## 当前检查点 · M92新美术目标已获用户确认
 
 - 用户接受内置image_gen所生成的实景重绘方向：“接近，就按这种自然层次和柔和夕阳推进”。source-assets/coast-art-target-m92.png及输入/提示词/source.json已保存；PNG1672×941，SHA69919d60…，明确图内标注非实机。不要重生成同一概念、不要把图当运行或视觉验收；下一工作是实际3D可驾驶示范草坡。

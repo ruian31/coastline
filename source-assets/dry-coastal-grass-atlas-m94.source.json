@@ -1,0 +1,117 @@
+{
+  "provider": "Built-in image_gen tool",
+  "date": "2026-11-09",
+  "reference": "source-assets/coast-art-target-m92.png",
+  "generation": "Opaque RGB black matte, after two rejected transparent attempts. Generated natural-style albedo, not a scan or calibrated PBR material.",
+  "files": [
+    {
+      "file": "source-assets/dry-coastal-grass-atlas-m94-rgb.png",
+      "bytes": 2017444,
+      "sha256": "fc389dba8c37a9279d0cdde48eea5400f4405bace18a4aaf3afecca02e4a0480"
+    },
+    {
+      "file": "source-assets/dry-coastal-grass-atlas-m94-rgb.prompt.txt",
+      "bytes": 1537,
+      "sha256": "c1fe3a359ea4bad1ea2c3183ab8c8a5a631ac15891033c9100141f9a7d4359df"
+    },
+    {
+      "file": "scripts/prepare-coastal-grass-body.mjs",
+      "bytes": 3017,
+      "sha256": "0bdc29de91bf799a3464e19c3472fac693fa2830fef9ff016513ff9f5fa77fa7"
+    }
+  ],
+  "preparation": {
+    "provider": "Built-in image_gen tool",
+    "source": {
+      "file": "source-assets/dry-coastal-grass-atlas-m94-rgb.png",
+      "bytes": 2017444,
+      "sha256": "fc389dba8c37a9279d0cdde48eea5400f4405bace18a4aaf3afecca02e4a0480"
+    },
+    "prompt": "source-assets/dry-coastal-grass-atlas-m94-rgb.prompt.txt",
+    "scope": "Opaque RGB intermediate with black background. Deterministic soft-black-key alpha= smoothstep(6,40,max(R,G,B)), no semantic redraw or alpha dilation. This heuristic is not recovered native alpha and can thin dark leaves; requires mip/edge and in-world visual approval. Source silhouette bounds include alpha>16,4px crop padding, fit into448x448 and common rooted baseline at480 in each512 cell. Runtime candidate only.",
+    "entries": [
+      {
+        "cell": 0,
+        "bbox": {
+          "left": 34,
+          "top": 107,
+          "width": 577,
+          "height": 427
+        },
+        "empty": 270290,
+        "opaque": 103435,
+        "width": 448,
+        "height": 332,
+        "left": 32,
+        "top": 148
+      },
+      {
+        "cell": 1,
+        "bbox": {
+          "left": 23,
+          "top": 113,
+          "width": 565,
+          "height": 420
+        },
+        "empty": 280310,
+        "opaque": 94495,
+        "width": 448,
+        "height": 333,
+        "left": 544,
+        "top": 147
+      },
+      {
+        "cell": 2,
+        "bbox": {
+          "left": 26,
+          "top": 121,
+          "width": 597,
+          "height": 395
+        },
+        "empty": 274420,
+        "opaque": 98797,
+        "width": 448,
+        "height": 296,
+        "left": 32,
+        "top": 696
+      },
+      {
+        "cell": 3,
+        "bbox": {
+          "left": 21,
+          "top": 65,
+          "width": 581,
+          "height": 453
+        },
+        "empty": 273974,
+        "opaque": 100581,
+        "width": 448,
+        "height": 349,
+        "left": 544,
+        "top": 643
+      }
+    ],
+    "output": {
+      "file": "work/dry-grass-m94/atlas1024.png",
+      "bytes": 1131627,
+      "sha256": "6bba24402d2b9bc2990b55d84660b86854acb9e7007a568ca108d50747b253f7"
+    }
+  },
+  "rejected": [
+    {
+      "file": "work/dry-grass-m94-rejected/first.png",
+      "sha256": "85b52b3cfcf7c29c2c07325996c02e477ac37520a469b48624df50e3d0390de8",
+      "opaque": 3,
+      "transparent": 536092,
+      "reason": "Colored fringe and invalid transparency, not imported"
+    },
+    {
+      "file": "work/dry-grass-m94-rejected/second.png",
+      "sha256": "d4167e864133ec5ffc8557d502528fb8eab10e66f6cb805c7a0b1e5c1cdcd531",
+      "opaque": 34,
+      "transparent": 835319,
+      "reason": "Colored fringe and invalid transparency, not imported"
+    }
+  ],
+  "adoption": "Internal candidate only. Full real-world comparisons still show isolated hard/dark clumps; no public/runtime adoption, no phone or visual-score approval."
+}

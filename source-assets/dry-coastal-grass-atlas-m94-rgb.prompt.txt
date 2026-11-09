@@ -1,0 +1,7 @@
+Create a square OPAQUE RGB production game texture source with four dry short coastal grass tufts in a2x2 arrangement on a perfectly solid pure black background. This stage deliberately requires opaque RGB and a black matte, NOT PNG transparency. Black background everywhere between individual blades and between cells, with no shadow or lighting gradient.
+
+Reference image: use only the foreground grass style of the approved coast target. Do not include the environment. Four complete separate low rounded tufts, each rooted within its own equal square cell with12% black padding on all sides. Same scale, roughly40cm high/55cm wide. Vary their curved leaves and lean so they are not clones. Side/front view at grass height.
+
+Photorealistic diffuse albedo grass: many individual thin gently arching straw-gold and muted ochre blades with some grey-olive basal leaves, dense coherent root crowns and airy upper leaf silhouettes, crisp black air gaps between blades. Each blade has an opaque continuous leaf surface. Fine realistic fibers, no blur. Neutral overcast lighting, moderate midtone colors with no nearly black leaf interiors; the only pure black is background.
+
+No pampas plumes, feathers, wheat ears, flowers, broad tan fans or solid sheets between grass blades. No rigid vertical fence of spikes, no soil/rocks, no colored matte fringe, no red or yellow outline, no scenery, no labels or grid lines. Preserve all leaf tips and root crowns with padding. Do not make the plants translucent and do not output an alpha channel.

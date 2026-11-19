@@ -1,5 +1,8 @@
 import {test,expect} from '@playwright/test';
-import {writeFile} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
+
+const evidenceDirectory=process.env.DAYLIGHT_EVIDENCE_DIR??'artifacts';
+test.beforeAll(async()=>{await mkdir(evidenceDirectory,{recursive:true});});
 
 test('五个海岸时段同步实际天空水面阴影和暂停镜面',async({page},info)=>{
  test.setTimeout(240000);const mobile=info.project.name.includes('mobile');await page.setViewportSize(mobile?{width:844,height:390}:{width:1280,height:720});
@@ -30,13 +33,13 @@ test('五个海岸时段同步实际天空水面阴影和暂停镜面',async({pa
   expect(after.renderer.textures).toBeLessThanOrEqual(initial.renderer.textures);expect(after.renderer.geometries).toBeLessThanOrEqual(initial.renderer.geometries);
   records.push({id,before,after,changedMirrors,actual});
  }
- await page.locator('#daylight-select').scrollIntoViewIfNeeded();const menuImage=`artifacts/daynight-m75-menu-${info.project.name}.png`;await page.screenshot({path:menuImage});
+ await page.locator('#daylight-select').scrollIntoViewIfNeeded();const menuImage=`${evidenceDirectory}/daynight-m75-menu-${info.project.name}.png`;await page.screenshot({path:menuImage});
  const size=await page.locator('#daylight-select').boundingBox();expect(size!.height).toBeGreaterThanOrEqual(44);expect(size!.width).toBeGreaterThanOrEqual(140);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('coast-settings')!).daylight);expect(saved).toBe('night');
  // The initializer preserves localStorage on reload; observe the saved choice.
  hdrRequests.length=0;await page.reload();await page.evaluate(async()=>{const h=window.__THREE_GAME_TEST_HOOKS__!;await h.setState('active-play');h.setPausedForScreenshot(true);});
  await expect.poll(async()=>(await read()).daylight!.id,{timeout:45000}).toBe('night');expect(hdrRequests).toHaveLength(1);expect(hdrRequests[0]).toContain('/daylight/qwantani_moon_noon_puresky.hdr');expect((await read()).lighting!.bakes).toBe(1);expect(errors).toEqual([]);
- await writeFile(`artifacts/daynight-m75-browser-${info.project.name}.json`,JSON.stringify({records,menuImage,size,reloadHdrRequests:hdrRequests,errors},null,2)+'\n');
+ await writeFile(`${evidenceDirectory}/daynight-m75-browser-${info.project.name}.json`,JSON.stringify({records,menuImage,size,reloadHdrRequests:hdrRequests,errors},null,2)+'\n');
 });
 
 test('时段慢请求与加载失败保留最新的可用天空',async({page},info)=>{

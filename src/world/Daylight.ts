@@ -5,6 +5,35 @@ import type {SeasonLighting} from './Season';
 export const GOLDEN_HOUR_SUN=new THREE.Vector3(.7557054630227001,.08121144680959244,.6498568719839308);
 export const GOLDEN_HOUR_SKY_INTENSITY=.26;
 
+/** Compress strong highlights and add diffuse warm horizon radiance once,
+ * before the same half-float photo feeds the sky, sea and reflections. */
+export function softenGoldenHour(texture:THREE.DataTexture) {
+ const {data,width,height}=texture.image;
+ if(!(data instanceof Uint16Array)||data.length!==width*height*4)return;
+ const azimuth=Math.atan2(GOLDEN_HOUR_SUN.z,GOLDEN_HOUR_SUN.x);
+ const horizonScatter=new Float32Array(width);
+ for(let x=0;x<width;x++){
+  const longitude=((x+.5)/width-.5)*Math.PI*2;
+  horizonScatter[x]=.19*(.36+.64*Math.max(0,Math.cos(longitude-azimuth)));
+ }
+ const {fromHalfFloat,toHalfFloat}=THREE.DataUtils;
+ for(let y=0;y<height;y++){
+  const elevation=(.5-(y+.5)/height)*Math.PI;
+  const horizon=Math.exp(-((elevation/.27)**2));
+  const diffuse=.10+Math.exp(-((elevation/.42)**2))*.08;
+  for(let x=0;x<width;x++){
+   const pixel=(y*width+x)*4;
+   const r=fromHalfFloat(data[pixel]),g=fromHalfFloat(data[pixel+1]),b=fromHalfFloat(data[pixel+2]);
+   const luma=.2126*r+.7152*g+.0722*b;
+   const shoulder=1/(1+.13*Math.max(0,luma-1.4));
+   const scatter=horizon*horizonScatter[x];
+   data[pixel]=toHalfFloat((r+(luma-r)*diffuse)*shoulder+scatter*1.2);
+   data[pixel+1]=toHalfFloat((g+(luma-g)*diffuse)*shoulder+scatter*.87);
+   data[pixel+2]=toHalfFloat((b+(luma-b)*diffuse)*shoulder+scatter*.64);
+  }
+ }
+}
+
 export type DaylightId='dawn'|'day'|'golden'|'dusk'|'night';
 export type DaylightPreset={
  id:DaylightId;label:string;clock:string;asset?:string;gain:number;rotation:number;

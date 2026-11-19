@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
-import {getDaylightPreset,seasonalDaylight,type DaylightId} from './Daylight';
+import {getDaylightPreset,seasonalDaylight,softenGoldenHour,type DaylightId} from './Daylight';
 import {SUMMER_LIGHTING,type SeasonLighting} from './Season';
 
 import {sampleDaylight as sampleCycle,DAYLIGHT_KEYS} from './Daylight';
@@ -15,6 +15,7 @@ export function createDaylightCycle(renderer:THREE.WebGLRenderer){
    const p=getDaylightPreset(id),response=await fetch(import.meta.env.BASE_URL+'assets/environment/'+(p.asset?'daylight/'+p.asset+'.hdr':'sky-mobile.hdr'),{signal:abort.signal});if(!response.ok)throw new Error('Sky unavailable: '+id);
    const parsed=new HDRLoader().parse(await response.arrayBuffer());if(disposed)return;
    const texture=new THREE.DataTexture(parsed.data,parsed.width,parsed.height,THREE.RGBAFormat,parsed.type);texture.colorSpace=THREE.LinearSRGBColorSpace;texture.flipY=true;texture.wrapS=THREE.RepeatWrapping;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;
+   if(id==='golden')softenGoldenHour(texture);
    texture.name='Cycle '+id+' HDR';maps.set(id,texture);data.sourceLoads++;
    try{const environment=bakeEnvironment(p,texture);environment.texture.name='Cycle '+id+' PMREM';environments.set(id,environment);data.sourceBakes++;}catch(error){maps.delete(id);texture.dispose();throw error;}
    data.peakResident=Math.max(data.peakResident,maps.size);data.resident=[...maps.keys()];

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
 import {createScenery,GOLDEN_HOUR_SUN} from '../world/Scenery';
-import {getDaylightPreset,seasonalDaylight,isDaylightId,DAYLIGHT_HOURS,advanceDaylightHour,wrapDaylightHour,formatDaylightHour,type DaylightId} from '../world/Daylight';
+import {getDaylightPreset,seasonalDaylight,softenGoldenHour,isDaylightId,DAYLIGHT_HOURS,advanceDaylightHour,wrapDaylightHour,formatDaylightHour,type DaylightId} from '../world/Daylight';
 import {createCoastalDrizzle} from '../world/CoastalDrizzle';
 import {CoastalWeather,isWeatherId,WEATHER} from '../world/Weather';
 import {CoastalSeasons,isSeasonId,SEASONS} from '../world/Season';
@@ -93,6 +93,7 @@ export class OceanDrive {
    const path=preset.asset?'daylight/'+preset.asset+'.hdr':this.mobile?'sky-mobile.hdr':'sky.hdr';
    texture=await new HDRLoader(loadingManager).loadAsync(import.meta.env.BASE_URL+'assets/environment/'+path);
    if(this.disposed||request!==this.daylightRequest){texture.dispose();return false;}
+   if(id==='golden')softenGoldenHour(texture);
    texture.mapping=THREE.EquirectangularReflectionMapping;texture.wrapS=THREE.RepeatWrapping;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;
    const generator=new THREE.PMREMGenerator(this.renderer);
    try{target=generator.fromEquirectangular(texture);}finally{generator.dispose();}

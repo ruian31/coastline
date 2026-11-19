@@ -399,9 +399,119 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const attribute=record.groundSlopes?.attribute??new THREE.InstancedBufferAttribute(slopes.slice(),3);
     if(record.groundSlopes){(attribute.array as Float32Array).set(slopes);attribute.needsUpdate=true;record.slots.fill(-1);}
     attribute.setUsage(THREE.DynamicDrawUsage);mesh.geometry.setAttribute('instanceGroundSlope',attribute);record.groundSlopes={source:slopes,attribute};
+    if(debugPlacements)mesh.userData.authoredGroundSlopes=slopes;
     mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox!,reach=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));
     matrices.forEach((matrix,i)=>{const e=matrix.elements,scale=Math.max(Math.hypot(e[0],e[2]),Math.hypot(e[8],e[10])),sphere=mesh.geometry.boundingSphere!.clone().applyMatrix4(matrix);sphere.center.y+=slopes[i*3+2];sphere.radius+=.8+reach*scale*Math.hypot(slopes[i*3],slopes[i*3+1]);record.bounds[i].copy(sphere);});
     refreshCellBounds(record);
+  }
+  function prepareRoadsideGrass(parts:THREE.BufferGeometry[]){
+    // First representative stretches: grow on the actual graded triangles,
+    // with independent random choices that never move established scenery.
+    const centers=[.12,.84].map(t=>coast.sample(t).position);
+    const rng=createSeededRandom(972631),positions:number[]=[],colors:number[]=[];
+    for(let leaf=0;leaf<8;leaf++){
+      const angle=leaf*2.39996,height=.28+rng()*.35,width=.006+rng()*.006;
+      const cos=Math.cos(angle),sin=Math.sin(angle),reach=.09+rng()*.18;
+      const left=[-sin*width/2,0,cos*width/2],right=[sin*width/2,0,-cos*width/2];
+      const midLeft=[cos*reach*.3-sin*width*.3,height*.82,sin*reach*.3+cos*width*.3];
+      const midRight=[cos*reach*.3+sin*width*.3,height*.82,sin*reach*.3-cos*width*.3];
+      const tip=[cos*reach,height*(.55+rng()*.25),sin*reach];
+      for(const face of [[left,right,midLeft],[right,midRight,midLeft],[midLeft,midRight,tip]]){
+        for(const vertex of face){
+          positions.push(...vertex);
+          const fraction=vertex[1]/height;
+          colors.push(.22+fraction*.36,.18+fraction*.29,.09+fraction*.14);
+        }
+      }
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geometry.computeVertexNormals();
+    const matrices:THREE.Matrix4[]=[];
+    const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+    const point=new THREE.Vector3(),ab=new THREE.Vector3(),ac=new THREE.Vector3(),cross=new THREE.Vector3();
+    const surface=(x:number,z:number)=>Math.max(groundHeight(x,z),vergeSurface?.height(x,z)??-Infinity);
+    for(const part of [...parts,terrain]){
+      const pos=part.getAttribute('position'),index=part.index;
+      if(!index)continue;
+      for(let i=0;i<index.count;i+=3){
+        a.fromBufferAttribute(pos,index.getX(i));
+        b.fromBufferAttribute(pos,index.getX(i+1));
+        c.fromBufferAttribute(pos,index.getX(i+2));
+        point.copy(a).add(b).add(c).multiplyScalar(1/3);
+        if(!centers.some(center=>Math.hypot(point.x-center.x,point.z-center.z)<30))continue;
+        ab.subVectors(b,a);ac.subVectors(c,a);
+        cross.crossVectors(ab,ac);
+        const count=Math.floor(Math.abs(cross.y)*.5*(part===terrain?8:12)+rng());
+        for(let j=0;j<count;j++){
+          let u=rng(),v=rng();
+          if(u+v>1){u=1-u;v=1-v;}
+          point.copy(a).addScaledVector(ab,u).addScaledVector(ac,v);
+          if(point.y<2.8||rng()<.12||!naturalVerge(point.x,point.z,0)||obstacles.some(o=>(point.x-o.x)**2+(point.z-o.z)**2<o.radius**2))continue;
+          const distance=Math.min(...centers.map(center=>Math.hypot(point.x-center.x,point.z-center.z)));
+          const patch=.5+.28*Math.sin(point.x*.18+Math.sin(point.z*.1))+.22*Math.sin(point.z*.21+Math.sin(point.x*.13));
+          const cover=(1-THREE.MathUtils.smoothstep(distance,22,30))*(.2+.8*THREE.MathUtils.smoothstep(patch,.2,.8));
+          if(rng()>cover)continue;
+          if(part===terrain){
+            const {distance}=closestSurface(point.x,point.z);
+            if(distance<8||distance>18||vergeSurface?.height(point.x,point.z)!==undefined)continue;
+          }
+          const step=.15;
+          const slopeX=(surface(point.x+step,point.z)-surface(point.x-step,point.z))/(2*step);
+          const slopeZ=(surface(point.x,point.z+step)-surface(point.x,point.z-step))/(2*step);
+          if(Math.hypot(slopeX,slopeZ)>.65)continue;
+          const size=.85+rng()*.3;
+          matrices.push(matrix(point.x,groundHeight(point.x,point.z)+.002,point.z,size,size*(.65+.35*patch),size,rng()*Math.PI*2));
+        }
+      }
+    }
+    const material=wind(0xffffff,.095,false,true);
+    material.name='Fine gold grass on graded coastal verges';
+    material.vertexColors=true;
+    groundFollowing(material);
+    const mesh=batch(geometry,material,matrices,undefined,undefined,35);
+    mesh.name='Fine grass on actual coastal verges';
+    mesh.userData.roadsideFine=true;
+    groundSlopes(mesh,matrices);
+    partitionField(mesh);
+    const compile=material.onBeforeCompile,key=material.customProgramCacheKey();
+    material.onBeforeCompile=(shader,renderer)=>{
+      compile.call(material,shader,renderer);
+      // Solve the combined wind, ground and pressure Jacobian. Composing the
+      // pressure approximation after a wind normal fails on thin bent leaves.
+      shader.vertexShader='varying float vRoadsideDistance;\n'+shader.vertexShader.replace('#include <defaultnormal_vertex>',`
+        #ifdef USE_INSTANCING
+          float vergeScaleY=max(length(instanceMatrix[1].xyz),.001);
+          vec2 vergeSlope=vec2(dot(instanceGroundSlope.xy,instanceMatrix[0].xz),dot(instanceGroundSlope.xy,instanceMatrix[2].xz))/vergeScaleY;
+          float vergePhase=instanceMatrix[3].x*.34+instanceMatrix[3].z*.19;
+          float vergeAngle=uSceneryTime*1.25+vergePhase+position.y*.2;
+          vec2 vergeShear=position.y>=0.?vec2(.095*(sin(vergeAngle)+max(position.y,0.)*.2*cos(vergeAngle)),.05225*cos(uSceneryTime*.83+vergePhase))*uSceneryWind:vec2(0.);
+          vec3 vergeDelta=position.y>=0.?coastPlantForce*length(coastPlantBasis[1])*vec3(.95,-.93,.95):vec3(0.);
+          vergeDelta.y+=dot(instanceGroundSlope.xy,vergeDelta.xz);
+          vec3 vergePressure=vec3(dot(vergeDelta,coastPlantBasis[0])/dot(coastPlantBasis[0],coastPlantBasis[0]),dot(vergeDelta,coastPlantBasis[1])/dot(coastPlantBasis[1],coastPlantBasis[1]),dot(vergeDelta,coastPlantBasis[2])/dot(coastPlantBasis[2],coastPlantBasis[2]));
+          vergeShear+=vergePressure.xz;
+          float vergeDet=1.+vergePressure.y-dot(vergeShear,vergeSlope);
+          float vergeNormalY=(normal.y-dot(vergeShear,normal.xz))/(abs(vergeDet)<.00001?(vergeDet<0.?-.00001:.00001):vergeDet);
+          objectNormal=normalize(vec3(normal.x-vergeSlope.x*vergeNormalY,vergeNormalY,normal.z-vergeSlope.y*vergeNormalY));
+        #endif
+        #include <defaultnormal_vertex>`)
+        .replace('#include <begin_vertex>',`#include <begin_vertex>
+          vRoadsideDistance=length((modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xz-cameraPosition.xz);`);
+      shader.fragmentShader='varying float vRoadsideDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
+        float roadsideCoverage=1.-smoothstep(25.,33.,vRoadsideDistance);
+        if(roadsideCoverage<=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453))discard;`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_pars_fragment>',`#include <lights_physical_pars_fragment>
+        void RE_Direct_VergeLeaf(const in IncidentLight directLight,const in vec3 geometryPosition,const in vec3 geometryNormal,const in vec3 geometryViewDir,const in vec3 geometryClearcoatNormal,const in PhysicalMaterial physical,inout ReflectedLight reflectedLight){
+          RE_Direct_Physical(directLight,geometryPosition,geometryNormal,geometryViewDir,geometryClearcoatNormal,physical,reflectedLight);
+          reflectedLight.directDiffuse+=directLight.color*BRDF_Lambert(physical.diffuseContribution)*max(-dot(geometryNormal,directLight.direction),0.)*.45;
+        }
+        #undef RE_Direct
+        #define RE_Direct RE_Direct_VergeLeaf
+      `);
+    };
+    material.customProgramCacheKey=()=>key+'-actual-verge-grass-normal-transmission-v3';
+    root.userData.roadsideGrass={placements:matrices.length,centers:centers.map(p=>p.toArray()),trianglesPerTuft:24,range:35,fade:[25,33],castsShadow:false};
   }
   // Rotate three distinct ridges while preserving the existing random sequence,
   // so changing distant geology does not rearrange nearby rocks or plants.
@@ -1068,7 +1178,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   return {
     ready:Promise.all([grassReady,scrubReady,barkReady,frondsReady,treeReady,understoryReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
-    prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
+    prepareVerge(parts){vergeSurface=parts.length?scanSurface(parts):undefined;for(const record of visibleBatches)if(record.groundSlopes)groundSlopes(record.mesh,record.matrices);if(parts.length&&!root.userData.roadsideGrass)prepareRoadsideGrass(parts);root.userData.vergeSurface={ready:Boolean(vergeSurface),parts:parts.length};},
     groundHeight:cameraGroundHeight,rainCoverHeight:headland.rainCoverHeight,
     terrainHeight:groundHeight,
     terrainMaterial:groundMaterial,
@@ -1128,6 +1238,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         for(let i=0;i<Math.min(budget.cap,budget.candidates.length);i++){const candidate=budget.candidates[i];candidate.detail.near[candidate.index]=1;root.userData[candidate.detail.key].selected++;}
       }
       for(const record of visibleBatches){const{mesh,matrices,colors,bounds,slots,limit,lod,groundSlopes}=record;let count=0,changed=false;
+        if(secondary&&mesh.userData.roadsideFine){mesh.count=0;continue;}
         const secondaryRange=secondary?(lod?.impostorRange??foliageDetails.find(detail=>detail.near===lod?.near)?.impostorRange):undefined;
         const range=lod?.range??record.maxDistance,candidates=fieldCandidates(record,range);
         for(let slot=0;slot<(candidates?.length??limit);slot++){

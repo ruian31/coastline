@@ -17,17 +17,17 @@ const probe=(page:any)=>page.evaluate(()=>{
  return{config:structuredClone(m.userData.grassCanopy),count:m.count,capacity:m.instanceMatrix.count,geometry:m.geometry.uuid,matrixSame:m.instanceMatrix===w.grassMatrixReference,pressure:p.uniforms.uPlantPressure.value.uuid,
   shaderSide:Number(/const int CANOPY_SIDE = (\d+);/.exec(gl.getShaderSource(p.currentProgram.vertexShader))?.[1]),drawRange:{...m.geometry.drawRange},glError:gl.getError(),draws:structuredClone(w.grassDraws),diagnostics:structuredClone(window.__THREE_GAME_DIAGNOSTICS__!)};
 });
-async function watchDraws(page:any){
- await page.evaluate(()=>{
-  const w=window as any,s=w.grassObjects.find((o:any)=>o.isScene&&o.userData.sunShadows),r=w.grassObjects.find((o:any)=>o.isWebGLRenderer),m=s.getObjectByName('World anchored dry grass canopy'),gl=r.getContext(),before=m.onBeforeRender,after=m.onAfterRender,draw=gl.drawArraysInstanced.bind(gl);
+async function watchDraws(page:any,name='World anchored dry grass canopy'){
+ await page.evaluate((name:string)=>{
+  const w=window as any,s=w.grassObjects.find((o:any)=>o.isScene&&o.userData.sunShadows),r=w.grassObjects.find((o:any)=>o.isWebGLRenderer),m=s.getObjectByName(name),gl=r.getContext(),before=m.onBeforeRender,after=m.onAfterRender,draw=gl.drawArraysInstanced.bind(gl);
   m.onBeforeRender=function(...args:any[]){before.apply(this,args);w.grassDrawing={camera:args[2].position.toArray(),target:r.getRenderTarget()?.texture.name??'main'};};
   m.onAfterRender=function(...args:any[]){after.apply(this,args);w.grassDrawing=null;};
   gl.drawArraysInstanced=function(mode:number,first:number,count:number,instances:number){
-   if(w.grassDrawing){const program=gl.getParameter(gl.CURRENT_PROGRAM);w.grassDraws.push({...w.grassDrawing,first,count,instances,
-    center:Array.from(gl.getUniform(program,gl.getUniformLocation(program,'uCanopyCarXZ'))),car:Array.from(gl.getUniform(program,gl.getUniformLocation(program,'uPlantCar'))),linked:gl.getProgramParameter(program,gl.LINK_STATUS)});if(w.grassDraws.length>160)w.grassDraws.shift();}
+   if(w.grassDrawing){const program=gl.getParameter(gl.CURRENT_PROGRAM),center=gl.getUniformLocation(program,'uCanopyCarXZ');w.grassDraws.push({...w.grassDrawing,first,count,instances,
+    center:center?Array.from(gl.getUniform(program,center)):null,car:Array.from(gl.getUniform(program,gl.getUniformLocation(program,'uPlantCar'))),linked:gl.getProgramParameter(program,gl.LINK_STATUS)});if(w.grassDraws.length>160)w.grassDraws.shift();}
    return draw(mode,first,count,instances);
   };
- });
+ },name);
 }
 
 test('真实主视图与镜面采用各自草体范围，切档不重建，驾驶与绕看保持窗口约束',async({page},info)=>{
@@ -73,4 +73,43 @@ test('细草资源404后使用原预算回退并能从普通入口驾驶',async(
  const before=await diagnostics(page);await page.keyboard.down('ArrowUp');try{await expect.poll(async()=>{const d=await diagnostics(page);return Math.hypot(d.player.position.x-before.player.position.x,d.player.position.z-before.player.position.z);},{timeout:30000}).toBeGreaterThan(3);}finally{await page.keyboard.up('ArrowUp');}
  const end=await probe(page);expect(end.glError).toBe(0);expect(errors).toEqual([]);expect(badResponses).toEqual([]);
  await writeFile(`${out}/fallback-${info.project.name}.json`,JSON.stringify({scope:'Only fine model404; actual ordinary start button and trusted keyboard driving. Legacy photographed fallback shader/draw-side budget retained; reserved instance storage is still larger. Not phone performance.',blocked,initial,end,errors,badResponses},null,2)+'\n');
+});
+
+test('路肩草地经过镜面绘制后仍在主视图中显示', async ({page}, info) => {
+  test.setTimeout(150000);
+  await mkdir(out, {recursive:true});
+  await observe(page, info.project.name!=='desktop-chrome');
+  const errors:string[]=[];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type()==='error') errors.push(message.text());
+  });
+  await page.goto('/?test=1');
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('grass-verge'));
+  const name='Fine grass on actual coastal verges';
+  await watchDraws(page, name);
+  const mainDraws=() => page.evaluate(() => (window as any).grassDraws);
+  await expect.poll(async () => (await mainDraws()).length, {timeout:30000}).toBeGreaterThan(3);
+  await page.locator('[data-camera="1"]').click();
+  const start=await diagnostics(page);
+  await page.evaluate(() => { (window as any).grassDraws.length=0; });
+  await expect.poll(async () => (await diagnostics(page)).vehicleMirrors.passes, {timeout:30000})
+    .toBeGreaterThan(start.vehicleMirrors.passes+3);
+  await expect.poll(async () => (await mainDraws()).length, {timeout:15000}).toBeGreaterThan(3);
+  await page.keyboard.down('ArrowUp');
+  try {
+    await expect.poll(async () => {
+      const {player}=await diagnostics(page);
+      return Math.hypot(player.position.x-start.player.position.x, player.position.z-start.player.position.z);
+    }, {timeout:45000}).toBeGreaterThan(8);
+  } finally {
+    await page.keyboard.up('ArrowUp');
+  }
+  const draws=await mainDraws(), end=await diagnostics(page);
+  expect(draws.length).toBeGreaterThan(3);
+  expect(draws.every((draw:any) => draw.target==='main' && draw.first===0 &&
+    draw.count===72 && draw.instances>0 && draw.linked)).toBe(true);
+  expect(end.vehicleMirrors.passes).toBeGreaterThan(start.vehicleMirrors.passes+5);
+  expect(errors).toEqual([]);
+  await writeFile(`${out}/roadside-${info.project.name}.json`, JSON.stringify({start,end,draws,errors},null,2)+'\n');
 });

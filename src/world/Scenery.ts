@@ -10,6 +10,7 @@ import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPhotographedPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
 import {createGrassCanopy} from './GrassCanopy';
+import {createPalmBayMeadow,palmBayShrubGroups} from './PalmBayMeadow';
 import {createVegetationInteraction} from './VegetationInteraction';
 import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
@@ -236,13 +237,15 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const ix=Math.min(subdivisions-1,Math.floor(gx)),iz=Math.min(subdivisions-1,Math.floor(gz)),u=gx-ix,v=gz-iz,a=iz*(subdivisions+1)+ix,b=a+subdivisions+1,d=a+1,c=b+1;
     return u+v<=1?tp.getY(a)*(1-u-v)+tp.getY(d)*u+tp.getY(b)*v:tp.getY(c)*(u+v-1)+tp.getY(b)*(1-u)+tp.getY(d)*(1-v);
   };
-  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile,season);
+  const meadow=createPalmBayMeadow((x,z)=>closestSurface(x,z).distance);
+  textures.push(meadow.uMeadowMap.value);
+  const groundMaterial=createCoastalGroundMaterial(groundMaps,sandMaps,rockMaps,fieldMaps,mobile,season,meadow);
   water.addWetness(groundMaterial);
   place(terrain, groundMaterial, 'Limestone headland and grassy interior').receiveShadow = true;
 
   const vegetationInteraction=createVegetationInteraction((x,z)=>Math.max(groundHeight(x,z),vergeSurface?.height(x,z)??-Infinity));
   root.userData.vegetationInteraction=vegetationInteraction.diagnostics;
-  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,season,interaction:vegetationInteraction,habitat:(x,z)=>{
+  const grassCanopy=createGrassCanopy({mobile,terrain,width:1060,depth:940,segments:subdivisions,season,meadow,interaction:vegetationInteraction,habitat:(x,z)=>{
     if(groundHeight(x,z)<2.8||!naturalVerge(x,z,0))return -32;
     const nearest=closestSurface(x,z);
     return Math.min(32,nearest.distance-nearest.point.width/2-2.4);
@@ -906,6 +909,17 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
         placements.push(matrix(p.x,y-.025,p.z,size,size,size,angle));
       }
     }
+    const originalPlacements=placements.length;
+    for(const [cx,cz,angle,scale] of palmBayShrubGroups){
+      const cos=Math.cos(angle),sin=Math.sin(angle);
+      for(const [dx,dz,size] of [[0,0,3.18],[.72,.38,2.28],[-.65,.26,2.53]]){
+        const x=cx+(cos*dx-sin*dz)*scale,z=cz+(sin*dx+cos*dz)*scale;
+        const y=groundHeight(x,z),width=size*scale;
+        if(y<2.8||!naturalVerge(x,z,12+width*.3)||obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<(o.radius+width*.28)**2))continue;
+        placements.push(matrix(x,y-.025,z,width,width*.84,width,angle+size*1.5));
+      }
+    }
+    root.userData.meadowShrubs=placements.length-originalPlacements;
     for(const [part,source]of sources.entries()){
       const geometry=source.geometry.clone().applyMatrix4(source.matrixWorld),material=wind(0xffffff,.065);material.copy(source.material as THREE.MeshStandardMaterial);material.name='Coastal understory scrub '+part;material.side=THREE.DoubleSide;material.alphaToCoverage=true;material.transparent=false;material.alphaTest=.45;
       groundFollowing(material);const before=material.onBeforeCompile,key=material.customProgramCacheKey();

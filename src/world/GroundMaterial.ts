@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createSeasonUniforms,type SeasonUniforms} from './Season';
+import {meadowShader,type MeadowUniforms} from './PalmBayMeadow';
 
 type SurfaceMaps={color:THREE.Texture;surface:THREE.Texture};
 
@@ -44,10 +45,11 @@ export function createCoastalBoulderMaterial(maps:SurfaceMaps){
 
 // Shared by the terrain, tunnel cap and graded shoulders. Textures remain
 // owned by Scenery; this function owns only material shading.
-export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps&{available:{value:number}},mobile:boolean,season:SeasonUniforms=createSeasonUniforms()){
+export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:SurfaceMaps,rockMaps:SurfaceMaps,fieldMaps:SurfaceMaps&{available:{value:number}},mobile:boolean,season:SeasonUniforms=createSeasonUniforms(),meadow?:MeadowUniforms){
   const groundMaterial = new THREE.MeshStandardMaterial({ roughness: .96, metalness: 0 });
   groundMaterial.onBeforeCompile = shader => {
     Object.assign(shader.uniforms,season);
+    if(meadow)Object.assign(shader.uniforms,meadow);
     for (const [prefix, maps] of Object.entries({ Ground:groundMaps, Sand:sandMaps, Field:fieldMaps })) {
       shader.uniforms[`u${prefix}Color`] = { value:maps.color };
       shader.uniforms[`u${prefix}Surface`] = { value:maps.surface };
@@ -55,7 +57,7 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
     shader.uniforms.uRockColor={value:rockMaps.color};shader.uniforms.uRockSurface={value:rockMaps.surface};
     shader.uniforms.uFieldAvailable=fieldMaps.available;
     shader.vertexShader = 'varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPosition = (modelMatrix*vec4(position,1.0)).xyz;vGroundWorldNormal=normalize(mat3(modelMatrix)*normal);');
-    shader.fragmentShader = `varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;
+    shader.fragmentShader = (meadow?meadowShader:'') + `varying vec3 vGroundPosition;varying vec3 vGroundWorldNormal;
       uniform sampler2D uGroundColor,uGroundSurface,uSandColor,uSandSurface,uFieldColor,uFieldSurface,uRockColor,uRockSurface;
       uniform float uFieldAvailable,uSeasonAmount;uniform vec3 uSeasonGround;
       float coastHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -93,6 +95,7 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       vec3 stone=coastTriplanar(uRockColor,vGroundPosition,3.5,triWeights);
       ${mobile ? '' : `soil=mix(soil,texture2D(uGroundColor,soilUv*1.73+vec2(17.3,9.7)).rgb,coastNoise(vGroundPosition.xz*.08)*.34);
       sand=mix(sand,texture2D(uSandColor,sandUv*1.57+vec2(3.7,8.1)).rgb,.26);`}
+      ${meadow?'vec3 gravel=soil;':''}
       // Dry the photographed moss selectively; preserve its scanned grain
       // instead of painting most of the soil with a flat meadow color.
       float moss=smoothstep(.005,.035,soil.g-soil.r*.93);
@@ -101,6 +104,16 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       soil=mix(soil,dryGrass,moss*(.48+.32*meadowPattern));
       vec2 fieldColorUv=vGroundPosition.xz/16.0+vec2(macro-.5,meadowPattern-.5)*.19;
       soil=mix(soil,texture2D(uFieldColor,fieldColorUv).rgb*vec3(.92,.97,.85),fieldWeight);
+      ${meadow?`
+        vec4 meadowCover=palmBayMeadow(vGroundPosition.xz);
+        float meadowMix=meadowCover.a*(1.-smoothstep(.23,.42,slope));
+        float grit=dot(gravel,vec3(.28,.58,.14));
+        vec3 bareEarth=mix(gravel,grit*vec3(1.39,1.18,.91),.8)*1.04;
+        vec3 dryTurf=soil*vec3(1.30,1.06,.77);
+        soil=mix(soil,mix(bareEarth,dryTurf,meadowCover.r)*(1.-meadowCover.g*.19),meadowMix*.78);
+        fieldWeight=mix(fieldWeight,meadowCover.r*uFieldAvailable,meadowMix*.72);
+        sandWeight*=1.-meadowMix*.44;
+      `:''}
       if(uSeasonAmount>.00001){
        float seasonLuma=dot(soil,vec3(.2126,.7152,.0722));
        float seasonCover=fieldWeight*smoothstep(.025,.12,max(soil.r,soil.g)-soil.b)*(1.0-rockWeight);
@@ -129,6 +142,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v2`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v2${meadow?'-palm-bay':''}`;
   return groundMaterial;
 }

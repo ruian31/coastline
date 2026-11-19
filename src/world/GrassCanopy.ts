@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type {VegetationInteraction} from './VegetationInteraction';
 import {centerPlantAlphaCoverage} from './PlantTexture';
 import {applyGrassSeason,createSeasonUniforms,type SeasonUniforms} from './Season';
+import {meadowShader,type MeadowUniforms} from './PalmBayMeadow';
 
 type GrassCanopyOptions = {
   mobile: boolean;
@@ -14,6 +15,7 @@ type GrassCanopyOptions = {
   habitat: (x: number, z: number) => number;
   interaction:VegetationInteraction;
   season?:SeasonUniforms;
+  meadow?:MeadowUniforms;
 };
 
 export type GrassCanopy = {
@@ -32,7 +34,7 @@ const CELL_SIZE = .75;
 const BLADES_PER_CELL = 32;
 
 /** A fixed-budget, moving GPU window over stable world cells. No placement-matrix updates or world scans. */
-export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat, interaction,season=createSeasonUniforms() }: GrassCanopyOptions): GrassCanopy {
+export function createGrassCanopy({ mobile, terrain, width, depth, segments, habitat, interaction,season=createSeasonUniforms(),meadow }: GrassCanopyOptions): GrassCanopy {
   if (!Number.isFinite(width) || !Number.isFinite(depth) || width <= 0 || depth <= 0 || !Number.isInteger(segments) || segments < 1) {
     throw new RangeError('GrassCanopy requires positive terrain dimensions and an integer segment count.');
   }
@@ -302,6 +304,16 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
  // ring made one grass body vanish just as the independent leaves appeared.
  float edge=middleDistance?1.0-smoothstep(farRadius-8.0,farRadius,d):1.0-smoothstep(max(0.0,nearRadius-3.0),nearRadius,d);
  float canopyVisibility=surface.inside*step(0.0,surface.minClearance)*smoothstep(guard,guard+1.25,surface.clearance)*smoothstep(.68,.88,groundNormal.y)*smoothstep(.4,2.8,surface.height);
+ float meadowHeight=1.;
+ ${meadow?`
+   if(canopyVisibility>0.){
+     vec4 cover=palmBayMeadow(root);
+     float turf=smoothstep(.12,.8,cover.r);
+     float keep=step(canopyRandom(worldCell,salt+27u),mix(1.,mix(.12,1.,turf),cover.a));
+     canopyVisibility*=keep;
+     meadowHeight=mix(1.,mix(.43,.92,turf),cover.a);
+   }
+ `:''}
  // All bodies fade in coverage, not dimensions. A habitat-scaled card can
  // also collapse almost into the slope and lose its face at world precision.
  float canopyShape=step(.00001,canopyVisibility);canopyVisibility*=edge;
@@ -315,7 +327,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
  vec3 force=coastPlantPressure(vec3(root.x,surface.height,root.y));
  float gust=sin(uCanopyTime*1.15+float(worldCell.x)*.071+float(worldCell.y)*.053+phase);
  if(!middleDistance){
-  float height=.12+stature*.23,width=.003+canopyRandom(worldCell,salt+12u)*.004;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust*uCanopyWind;
+  float height=(.12+stature*.23)*meadowHeight,width=.003+canopyRandom(worldCell,salt+12u)*.004;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(c,s)*(.02+canopyRandom(worldCell,salt+14u)*.10)+vec2(.04,.02)*gust*uCanopyWind;
   vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y),tip=canopyPressedTip(vec3(lean.x,height,lean.y),height,force,canopyShape,root,surface);
   vec3 offset;
   if(localLeaf<6u){offset=position.y>.5?tip:(position.x<0.0?left:right);objectNormal=normalize(cross(right-left,tip-left));}
@@ -333,7 +345,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
   canopyPosition=vec3(root.x,surface.height,root.y)+offset;
   vMapUv=vec2(mix(.77,.79,uv.x),mix(.2,.58,uv.y));
  }else{
-  float height=.16+stature*.2,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust*uCanopyWind,.025*sin(uCanopyTime*1.8+phase)*uCanopyWind);
+  float height=(.16+stature*.2)*meadowHeight,width=.55+canopyRandom(worldCell,salt+12u)*.4;vec2 halfWidth=vec2(c,s)*width*.5,lean=vec2(.035+.04*gust*uCanopyWind,.025*sin(uCanopyTime*1.8+phase)*uCanopyWind);
   vec3 left=vec3(-halfWidth.x,canopyOffsetHeight(root,-halfWidth,surface),-halfWidth.y),right=vec3(halfWidth.x,canopyOffsetHeight(root,halfWidth,surface),halfWidth.y);
   vec3 topLeft=canopyPressedTip(vec3(lean.x-halfWidth.x,height,lean.y-halfWidth.y),height,force,canopyShape,root,surface),topRight=canopyPressedTip(vec3(lean.x+halfWidth.x,height,lean.y+halfWidth.y),height,force,canopyShape,root,surface);
   vec3 offset=position.y>.5?(position.x<0.0?topLeft:topRight):(position.x<0.0?left:right);canopyPosition=vec3(root.x,surface.height,root.y)+offset;
@@ -345,7 +357,8 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
 `;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = declarations.replace(`const int CANOPY_SIDE = ${cellsPerSide};`,`const int CANOPY_SIDE = ${fineGrass?cellsPerSide:fallbackSide};`) + (fineGrass?fineDeclarations:'') + shader.vertexShader
+    if(fineGrass&&meadow)Object.assign(shader.uniforms,meadow);
+    shader.vertexShader = declarations.replace(`const int CANOPY_SIDE = ${cellsPerSide};`,`const int CANOPY_SIDE = ${fineGrass?cellsPerSide:fallbackSide};`) + (fineGrass?fineDeclarations+(meadow?meadowShader:''):'') + shader.vertexShader
       .replace('#include <beginnormal_vertex>', fineGrass?prepareFineLeaf:prepareBlade)
       .replace('#include <begin_vertex>', fineGrass?'#include <begin_vertex>\ntransformed=canopyVisibility>0.0?canopyPosition:uCanopyHiddenPoint;':placeBlade);
     interaction.setupShader(shader);
@@ -374,7 +387,7 @@ export function createGrassCanopy({ mobile, terrain, width, depth, segments, hab
       if(vCanopyCoverage<=canopyThreshold)discard;`:'diffuseColor.a*=vCanopyCoverage;\n#include <alphatest_fragment>');
   };
   applyGrassSeason(material,season);
-  const cacheKey=()=>`coast-grass-canopy-v7-${fineGrass?cellsPerSide:fallbackSide}-${segments}-${fineGrass?'thin-hybrid-continuous-body-v2':material.map?'clumps':'blades'}-season-v1`;
+  const cacheKey=()=>`coast-grass-canopy-v7-${fineGrass?cellsPerSide:fallbackSide}-${segments}-${fineGrass?'thin-hybrid-continuous-body-v2':material.map?'clumps':'blades'}-season-v1${fineGrass&&meadow?'-palm-bay':''}`;
   material.customProgramCacheKey=cacheKey;
   let centeredCoverage=false;
   function prepareCoverage(){

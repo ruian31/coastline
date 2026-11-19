@@ -36,6 +36,12 @@ try{
     const hidden=uniforms.uCanopyHiddenPoint.value;gl.uniform3f(gl.getUniformLocation(program,'uCanopyHiddenPoint'),hidden.x,hidden.y,hidden.z);
     gl.uniform1f(gl.getUniformLocation(program,'uCanopyWind'),uniforms.uCanopyWind.value);
     gl.uniform1f(gl.getUniformLocation(program,'uCanopyTime'),2.5);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,renderer.properties.get(field).__webglTexture);gl.uniform1i(gl.getUniformLocation(program,'uCanopyField'),0);
+    if(uniforms.uMeadowMap){
+     const meadow=renderer.properties.get(uniforms.uMeadowMap.value).__webglTexture;
+     gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,meadow);
+     gl.uniform1i(gl.getUniformLocation(program,'uMeadowMap'),2);
+     gl.uniform4fv(gl.getUniformLocation(program,'uMeadowBounds'),uniforms.uMeadowBounds.value.toArray());
+    }
     gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,empty);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(4));gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
     const bindPressure=({enabled=true,car=true,age=0,offset=0}={})=>{for(const [name,{value}]of Object.entries(uniforms).filter(([name])=>name.startsWith('uPlant'))){const at=gl.getUniformLocation(program,name);if(value.isTexture){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,enabled?renderer.properties.get(value).__webglTexture:empty);gl.uniform1i(at,1);}else if(value.isVector3)gl.uniform3f(at,name==='uPlantCar'?value.x+offset:value.x,name==='uPlantCar'&&!car?-1000:value.y,value.z);else if(value.isVector2)gl.uniform2f(at,name==='uCanopyCarXZ'?value.x+offset:value.x,value.y);else gl.uniform1f(at,name==='uPlantTime'?(value+age)%6553.6:value);}};bindPressure();
     const authoredPosition=mesh.geometry.getAttribute('position'),vertices=authoredPosition.count,capacity=mesh.userData.grassCanopy.fullCount,output=gl.createBuffer();buffers.push(output);gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK,tf);gl.bindBuffer(gl.TRANSFORM_FEEDBACK_BUFFER,output);gl.bufferData(gl.TRANSFORM_FEEDBACK_BUFFER,capacity*vertices*16,gl.STREAM_READ);gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER,0,output);

@@ -35,7 +35,7 @@ const probe=(page:any)=>page.evaluate(()=>{
   for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){const col=x+dx,row=z+dz;if(col>=0&&row>=0&&col<size&&row<size)peak=Math.max(peak,data[(row*size+col)*4]);}
   if(peak>16)markedPlants++;
  }
- return{rows,metadata:structuredClone(root.userData.understory),interaction:{...root.userData.vegetationInteraction},markedPlants,textureVersion:shared.version,glError:r.getContext().getError(),diagnostics:structuredClone(window.__THREE_GAME_DIAGNOSTICS__!)};
+ return{rows,metadata:structuredClone(root.userData.understory),meadowShrubs:root.userData.meadowShrubs,interaction:{...root.userData.vegetationInteraction},markedPlants,textureVersion:shared.version,glError:r.getContext().getError(),diagnostics:structuredClone(window.__THREE_GAME_DIAGNOSTICS__!)};
 });
 
 test('完整低灌丛共享真实风压，画质切换保留近株，键盘穿行后暂停恢复',async({page},info)=>{
@@ -57,16 +57,22 @@ test('完整低灌丛共享真实风压，画质切换保留近株，键盘穿�
   }
  });
  await expect.poll(async()=>{const p=await probe(page);return p.rows.every((r:any)=>r.draw?.linked&&r.draw?.pressureBound);},{timeout:20000}).toBe(true);
- const initial=await probe(page);expect(initial.metadata.ready).toBe(true);expect(initial.metadata.placements).toBe(18);expect(initial.rows[0].placements).toEqual(initial.rows[1].placements);
- expect(initial.rows.every((r:any)=>r.count>0&&r.pressureSame&&r.groundAttribute===18)).toBe(true);
+ const initial=await probe(page);
+ expect(initial.metadata.ready).toBe(true);
+ expect(initial.meadowShrubs).toBeGreaterThanOrEqual(6);
+ expect(initial.meadowShrubs).toBeLessThanOrEqual(9);
+ const placements=18+initial.meadowShrubs;
+ expect(initial.metadata.placements).toBe(placements);
+ expect(initial.rows[0].placements).toEqual(initial.rows[1].placements);
+ expect(initial.rows.every((r:any)=>r.count>0&&r.pressureSame&&r.groundAttribute===placements)).toBe(true);
  expect(initial.rows[0].textures).toEqual(initial.rows[1].textures);expect(new Set(initial.rows.flatMap((r:any)=>r.textures).filter(Boolean)).size).toBe(3);
- for(const r of initial.rows){expect(r.dimensions).toEqual([[512,512],[512,512],[512,512]]);expect(r.placements).toHaveLength(18);expect(r.draw.wind).toBeCloseTo(r.wind,4);expect(r.draw.pressureTime).toBeCloseTo(r.pressureTime,4);}
+ for(const r of initial.rows){expect(r.dimensions).toEqual([[512,512],[512,512],[512,512]]);expect(r.placements).toHaveLength(placements);expect(r.draw.wind).toBeCloseTo(r.wind,4);expect(r.draw.pressureTime).toBeCloseTo(r.pressureTime,4);}
  const quality=[];
  await page.locator('#menu-button').click();await expect.poll(async()=>(await read(page)).state!.paused).toBe(true);
  for(const tier of ['high','low']){
   await page.locator('#quality-select').selectOption(tier);await expect.poll(async()=>(await read(page)).state!.quality).toBe(tier);
   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
-  const current=await probe(page);expect(current.metadata.placements).toBe(18);
+  const current=await probe(page);expect(current.metadata.placements).toBe(placements);
   for(let i=0;i<2;i++){
    expect(current.rows[i].placements).toEqual(initial.rows[i].placements);expect(current.rows[i].count).toBe(initial.rows[i].count);
    expect(current.rows[i].geometry).toBe(initial.rows[i].geometry);expect(current.rows[i].pressure).toBe(initial.rows[i].pressure);
@@ -97,7 +103,7 @@ test('完整低灌丛共享真实风压，画质切换保留近株，键盘穿�
  await page.locator('#resume-button').click();await expect.poll(async()=>(await read(page)).elapsed,{timeout:15000}).toBeGreaterThan(paused.diagnostics.elapsed+.3);
  const resumed=await probe(page);expect(resumed.glError).toBe(0);expect(errors).toEqual([]);
  await page.screenshot({path:`${out}/${info.project.name}-playing.png`,scale:'css'});
- await writeFile(`${out}/${info.project.name}.json`,JSON.stringify({scope:'Production understory fixture only for setup/frozen quality comparison. Actual shared compiled material uniforms and main-view GL pressure binding,18 authored placements/quality preservation, trusted keyboard drive through patch, actual UI pause/resume. Raw marks near plant roots prove the swept pressure field reached the authored patch, not exact GPU vertex displacement or visual contact. Browser device emulation is not physical-phone performance. No synthetic driving steps or pressure/season time.',initial,quality,before,driven,closest,samples,paused,frozen,resumed,errors},null,2)+'\n');
+ await writeFile(`${out}/${info.project.name}.json`,JSON.stringify({scope:'Production understory fixture only for setup/frozen quality comparison. Actual shared compiled material uniforms and main-view GL pressure binding, stable authored placements/quality preservation, trusted keyboard drive through patch, actual UI pause/resume. Raw marks near plant roots prove the swept pressure field reached the authored patch, not exact GPU vertex displacement or visual contact. Browser device emulation is not physical-phone performance. No synthetic driving steps or pressure/season time.',initial,quality,before,driven,closest,samples,paused,frozen,resumed,errors},null,2)+'\n');
 });
 
 test('低灌丛资源404时仍可从普通按钮开始驾驶',async({page},info)=>{

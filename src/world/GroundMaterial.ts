@@ -113,6 +113,7 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
         soil=mix(soil,mix(bareEarth,dryTurf,meadowCover.r)*(1.-meadowCover.g*.19),meadowMix*.78);
         fieldWeight=mix(fieldWeight,meadowCover.r*uFieldAvailable,meadowMix*.72);
         sandWeight*=1.-meadowMix*.44;
+        rockWeight=mix(rockWeight,.58,meadowCover.b*meadowMix);
       `:''}
       if(uSeasonAmount>.00001){
        float seasonLuma=dot(soil,vec3(.2126,.7152,.0722));
@@ -142,6 +143,6 @@ export function createCoastalGroundMaterial(groundMaps:SurfaceMaps,sandMaps:Surf
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal=normalize(mat3(viewMatrix)*mixedGroundNormal);`);
   };
-  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v2${meadow?'-palm-bay':''}`;
+  groundMaterial.customProgramCacheKey = () => `coastal-dry-field-rock-v9-${mobile}-season-v2${meadow?'-palm-bay-scree':''}`;
   return groundMaterial;
 }

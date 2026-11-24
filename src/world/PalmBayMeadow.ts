@@ -7,6 +7,36 @@ export const palmBayShrubGroups = [
   [226.5, 174.1, 2.1, 1],
 ] as const;
 
+// The rock apron and the rooted crowns use the same irregular patches of soil.
+export const palmBayScrubPatches = [
+  {x:220.4,z:155.4,bearing:.7,scale:1.48},
+  {x:224.5,z:160.4,bearing:.38,scale:1.34},
+  {x:216.7,z:166.9,bearing:-.87,scale:1.15},
+  {x:224.1,z:174.5,bearing:1.92,scale:1.22},
+  {x:215.7,z:180,bearing:-.28,scale:1.18},
+  {x:206.3,z:183.9,bearing:-.51,scale:.92},
+] as const;
+
+function scrubPatchCoordinates(x:number,z:number,patch:typeof palmBayScrubPatches[number]){
+  const px=(x-patch.x)/patch.scale, pz=(z-patch.z)/patch.scale;
+  const cos=Math.cos(patch.bearing), sin=Math.sin(patch.bearing);
+  return [px*cos+pz*sin,pz*cos-px*sin];
+}
+
+function scrubShoulder(along:number,across:number){
+  return 1-THREE.MathUtils.smoothstep(Math.hypot((along+.13)*.67,across*1.1),.65,1.95);
+}
+
+export function palmBayScrubCover(x:number,z:number){
+  let cover=0;
+  for(const patch of palmBayScrubPatches){
+    if(Math.abs(x-patch.x)>4.7||Math.abs(z-patch.z)>4.7)continue;
+    const [along,across]=scrubPatchCoordinates(x,z,patch);
+    cover=Math.max(cover,scrubShoulder(along,across));
+  }
+  return cover;
+}
+
 /** Locally authored grass and bare earth coverage, shared by the ground and
  * fine grass shaders. Alpha blends the meadow into the surrounding island. */
 export function createPalmBayMeadow(roadClearance: (x: number, z: number) => number) {
@@ -30,13 +60,21 @@ export function createPalmBayMeadow(roadClearance: (x: number, z: number) => num
       +.26*Math.sin(dx*.71-dz*.17+1.8)
       +.19*Math.cos(dx*.21+dz*.85);
     const grass=smoothstep(patches,-.8,.36);
-    let shrubSoil=0;
+    let shrubSoil=0, exposedStone=0;
     for (const [sx,sz,,scale] of palmBayShrubGroups) {
       shrubSoil=Math.max(shrubSoil,1-smoothstep(Math.hypot(x-sx,z-sz)/scale,.65,2.2));
+    }
+    for (const patch of palmBayScrubPatches) {
+      if(Math.abs(x-patch.x)>4.7||Math.abs(z-patch.z)>4.7)continue;
+      const [along,across]=scrubPatchCoordinates(x,z,patch);
+      shrubSoil=Math.max(shrubSoil,scrubShoulder(along,across));
+      const stones=Math.hypot((along-.31)*.85,(across-.5)*1.35);
+      exposedStone=Math.max(exposedStone,(1-smoothstep(stones,.2,1.16))*(.73+.27*Math.sin(x*3.1-z*2.5)));
     }
     const i=(row*resolution+column)*4;
     data[i]=Math.round(clamp(grass*(1-shrubSoil*.95),0,1)*255);
     data[i+1]=Math.round(shrubSoil*255);
+    data[i+2]=Math.round(exposedStone*255);
     data[i+3]=Math.round(weight*255);
   }
   const map = new THREE.DataTexture(data,resolution,resolution,THREE.RGBAFormat);

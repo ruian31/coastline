@@ -10,7 +10,8 @@ import { createSeededRandom } from '../utils/random';
 import {createPalmCrown,createPhotographedPalmCrown,createPineCrown,createPineNeedleAtlas} from './TreeGeometry';
 import {createCoastalWater} from './CoastalWater';
 import {createGrassCanopy} from './GrassCanopy';
-import {createPalmBayMeadow,palmBayShrubGroups} from './PalmBayMeadow';
+import {createPalmBayMeadow,palmBayScrubCover,palmBayScrubPatches,palmBayShrubGroups} from './PalmBayMeadow';
+import {createCoastalScrubGeometry} from './CoastalScrubGeometry';
 import {createVegetationInteraction} from './VegetationInteraction';
 import {loadCoastalTree} from './CoastalTree';
 import {preservePlantCutoutMips,preservePlantNormalMips,preserveRooibosCutoutMips,centerPlantAlphaCoverage} from './PlantTexture';
@@ -383,6 +384,19 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     };
     material.customProgramCacheKey=()=>windKey+'-ground-plane-v2';
   }
+  function fadeLowFoliage(material:THREE.MeshStandardMaterial){
+    const before=material.onBeforeCompile,key=material.customProgramCacheKey();
+    material.onBeforeCompile=(shader,renderer)=>{
+      before.call(material,shader,renderer);
+      shader.vertexShader='varying float vUnderstoryDistance;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+        vUnderstoryDistance=length((modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xz-cameraPosition.xz);`);
+      shader.fragmentShader='varying float vUnderstoryDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
+        float understoryCoverage=1.-smoothstep(25.,35.,vUnderstoryDistance);
+        float understoryThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
+        if(understoryCoverage<=understoryThreshold)discard;`);
+    };
+    material.customProgramCacheKey=()=>key+'-understory-distance-v1';
+  }
   function dryFieldColor(material:THREE.MeshStandardMaterial,brightness:number){
     const compile=material.onBeforeCompile,key=material.customProgramCacheKey();
     material.onBeforeCompile=(shader,renderer)=>{
@@ -562,7 +576,24 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   rockMaterial.normalScale.set(.72,.72);
   water.addWetness(rockMaterial);
   const boulderMaterial=createCoastalBoulderMaterial(rockMaps);water.addWetness(boulderMaterial);
-  batch(rockShape,boulderMaterial,rocks,rockColors).name='Coastal limestone boulders';
+  const scree:THREE.Matrix4[]=[],screeColors:THREE.Color[]=[];
+  const screeUp=new THREE.Vector3(0,1,0),screeNormal=new THREE.Vector3(),screeRotation=new THREE.Matrix4();
+  for(const patch of palmBayScrubPatches){
+    const cos=Math.cos(patch.bearing),sin=Math.sin(patch.bearing);
+    for(const [along,across,width,height,depth,turn] of [[.46,.84,.78,.185,.45,.1],[-.14,.53,.42,.13,.25,1.4],[.96,.49,.28,.12,.24,-.7]]){
+      const x=patch.x+(along*cos-across*sin)*patch.scale,z=patch.z+(along*sin+across*cos)*patch.scale;
+      const y=groundHeight(x,z),step=.23;
+      if(y<3||!naturalVerge(x,z,10))continue;
+      screeNormal.set(groundHeight(x-step,z)-groundHeight(x+step,z),step*2,groundHeight(x,z-step)-groundHeight(x,z+step)).normalize();
+      const stone=matrix(0,0,0,width*patch.scale,height*patch.scale,depth*patch.scale,patch.bearing+turn);
+      // Bury the base in the slope. These low fragments share the ground collision.
+      stone.premultiply(screeRotation.makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(screeUp,screeNormal)));
+      stone.setPosition(x,y-.045,z);
+      scree.push(stone);
+      screeColors.push(new THREE.Color('#c2b8a6').multiplyScalar(.93+width*.16));
+    }
+  }
+  batch(rockShape,boulderMaterial,[...rocks,...scree],[...rockColors,...screeColors]).name='Coastal limestone boulders';
   root.userData.boulderAsset={id:'boulder_01',triangles:512,closed:true,metreScale:1.8,sharedMaps:true,geometrySha256:boulderShape.geometrySha256};
 
   // Procedural leaf atlases retain fine organic silhouettes without thousands of opaque triangles.
@@ -609,6 +640,12 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
   grassMaterial.map=plantTexture('grass');grassMaterial.alphaTest=.46;grassMaterial.alphaToCoverage=true;groundFollowing(grassMaterial);
   preservePlantCutoutMips(grassMaterial.map,[[0,0,256,256]],.46);
   const grasses:THREE.Matrix4[]=[],grassesColors:THREE.Color[]=[];
+  const reducedGrass=new THREE.Vector3();
+  function lowerGrassInScrubBeds(placement:THREE.Matrix4){
+    const cover=palmBayScrubCover(placement.elements[12],placement.elements[14]);
+    if(cover>.02)placement.scale(reducedGrass.set(1-cover*.31,1-cover*.69,1-cover*.31));
+    return placement;
+  }
   const anchors=Array.from({length:360},(_,i)=>({t:i/360+(random()-.5)*.001,side:i%2?1:-1,offset:8+random()*14}));
   for(let i=0;i<(mobile?3300:5700);i++) {
     const anchor=anchors[i%anchors.length],route=i%7===0?hill:coast;
@@ -616,7 +653,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     const x=s.position.x+s.right.x*offset,z=s.position.z+s.right.z*offset,y=groundHeight(x,z);
     if(y<-.4 || !naturalVerge(x,z,6.8))continue;
     const size=.58+random()*.8;
-    grasses.push(matrix(x,y-.05,z,size,size*(.55+random()*.6),size));
+    grasses.push(lowerGrassInScrubBeds(matrix(x,y-.05,z,size,size*(.55+random()*.6),size)));
     grassesColors.push(new THREE.Color().setHSL(.16+random()*.04,.11,.74+random()*.16));
   }
   const grassMesh=batch(grassGeometry,grassMaterial,grasses,grassesColors);grassMesh.name='Layered wind moving grass clusters';
@@ -636,7 +673,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
       const gradient=Math.hypot((groundHeight(x+.3,z)-groundHeight(x-.3,z))/.6,(groundHeight(x,z+.3)-groundHeight(x,z-.3))/.6);
       if(gradient>.6)continue;
       const size=.8+fieldRandom()*.85,tall=fieldRandom()<.18,height=size*(tall?.75+fieldRandom()*.35:.45+fieldRandom()*.35);
-      fieldGrasses.push(matrix(x,y-.05,z,size,height,size,fieldRandom()*Math.PI*2));
+      fieldGrasses.push(lowerGrassInScrubBeds(matrix(x,y-.05,z,size,height,size,fieldRandom()*Math.PI*2)));
       fieldColors.push(new THREE.Color().setHSL(.105+fieldRandom()*.025,.24,.65+fieldRandom()*.16));
     }
   }
@@ -922,13 +959,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     root.userData.meadowShrubs=placements.length-originalPlacements;
     for(const [part,source]of sources.entries()){
       const geometry=source.geometry.clone().applyMatrix4(source.matrixWorld),material=wind(0xffffff,.065);material.copy(source.material as THREE.MeshStandardMaterial);material.name='Coastal understory scrub '+part;material.side=THREE.DoubleSide;material.alphaToCoverage=true;material.transparent=false;material.alphaTest=.45;
-      groundFollowing(material);const before=material.onBeforeCompile,key=material.customProgramCacheKey();
-      material.onBeforeCompile=(shader,renderer)=>{before.call(material,shader,renderer);shader.vertexShader='varying float vUnderstoryDistance;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-        vUnderstoryDistance=length((modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xz-cameraPosition.xz);`);shader.fragmentShader='varying float vUnderstoryDistance;\n'+shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
-        float understoryCoverage=1.-smoothstep(25.,35.,vUnderstoryDistance);
-        float understoryThreshold=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
-        if(understoryCoverage<=understoryThreshold)discard;`);};
-      material.customProgramCacheKey=()=>key+'-understory-distance-v1';
+      groundFollowing(material);fadeLowFoliage(material);
       const mesh=batch(geometry,material,placements,undefined,undefined,37);mesh.name='Complete coastal understory '+part;groundSlopes(mesh,placements);
       const compile=material.onBeforeCompile,cacheKey=material.customProgramCacheKey();
       material.onBeforeCompile=(shader,renderer)=>{compile.call(material,shader,renderer);shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
@@ -1189,6 +1220,25 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     ...pineObstacles,
     ...rocks.map(m=>({x:m.elements[12],z:m.elements[14],radius:Math.max(Math.hypot(m.elements[0],m.elements[2]),Math.hypot(m.elements[8],m.elements[10]))*.85+.78})),
   ];
+  const coastalScrub:THREE.Matrix4[]=[],scrubColors:THREE.Color[]=[];
+  for(const patch of palmBayScrubPatches){
+    const cos=Math.cos(patch.bearing),sin=Math.sin(patch.bearing);
+    for(const [along,across,width,height,turn] of [[-.27,-.15,1.04,1.03,0],[-.92,.24,.65,.73,2.1],[.63,-.31,.78,.64,-.7]]){
+      const x=patch.x+(along*cos-across*sin)*patch.scale,z=patch.z+(along*sin+across*cos)*patch.scale;
+      const y=groundHeight(x,z),scale=width*patch.scale;
+      if(y<3||!naturalVerge(x,z,10+scale)||obstacles.some(o=>(x-o.x)**2+(z-o.z)**2<(o.radius+scale*.4)**2))continue;
+      coastalScrub.push(matrix(x,y-.028,z,scale,height*patch.scale,scale*.81,patch.bearing+turn));
+      scrubColors.push(new THREE.Color('#ffffff').multiplyScalar(.87+height*.13));
+    }
+  }
+  const scrubShape=coastalScrub.length?createCoastalScrubGeometry(1010269,!mobile):undefined;
+  if(scrubShape){
+    const material=wind(0xffffff,.052);
+    material.name='Palm Bay coastal scrub';material.vertexColors=true;
+    groundFollowing(material);fadeLowFoliage(material);
+    const shrub=batch(scrubShape.geometry,material,coastalScrub,scrubColors,undefined,37);
+    shrub.name='Palm Bay spreading scrub crowns';groundSlopes(shrub,coastalScrub);
+  }
   return {
     ready:Promise.all([grassReady,scrubReady,barkReady,frondsReady,treeReady,understoryReady]).then(()=>{let count=0;root.traverse(object=>{if(object instanceof THREE.InstancedMesh)count++;});root.userData.sceneryBudget.instancedBatches=count;}),
     prepareFerns,
@@ -1224,6 +1274,7 @@ export function createScenery(scene: THREE.Scene, mobile: boolean,loadingManager
     },
     cullForCamera(camera,secondary=false){
       grassCanopy.setSecondaryView(secondary);
+      if(scrubShape)scrubShape.geometry.setDrawRange(0,secondary?scrubShape.mirrorIndexCount:scrubShape.fullIndexCount);
       camera.updateMatrixWorld();camera.getWorldPosition(viewPosition);viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewProjection);
       const detailBudgets=new Map<string,{cap:number;candidates:{detail:FoliageDetail;index:number;distance:number}[]}>();
       for(const detail of secondary?[]:foliageDetails){
